@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/magnet-link-bms.html" }
+  ]
+}
