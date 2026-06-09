@@ -1521,7 +1521,26 @@
       library:   'Shared Documents',
     };
 
-    let _msalInstance = null;
+    let _msalInstance    = null;
+    let _currentBmsUserId = null;
+
+    const getMsAccountForUser = (userId) => {
+      if (!userId) return null;
+      const mapping = JSON.parse(localStorage.getItem('bms_ms_accounts') || '{}');
+      const homeId  = mapping[String(userId)];
+      if (!homeId) return null;
+      return getMsal().getAllAccounts().find(a => a.homeAccountId === homeId) || null;
+    };
+    const saveMsAccountLink = (userId, account) => {
+      const m = JSON.parse(localStorage.getItem('bms_ms_accounts') || '{}');
+      m[String(userId)] = account.homeAccountId;
+      localStorage.setItem('bms_ms_accounts', JSON.stringify(m));
+    };
+    const removeMsAccountLink = (userId) => {
+      const m = JSON.parse(localStorage.getItem('bms_ms_accounts') || '{}');
+      delete m[String(userId)];
+      localStorage.setItem('bms_ms_accounts', JSON.stringify(m));
+    };
     const getMsal = () => {
       if (!_msalInstance) {
         _msalInstance = new window.msal.PublicClientApplication({
@@ -1540,11 +1559,12 @@
 
     const getToken = async () => {
       const msal = getMsal();
-      const accounts = msal.getAllAccounts();
-      if (accounts.length === 0) {
-        await msal.loginPopup({ scopes: SP_SCOPES });
+      let account = getMsAccountForUser(_currentBmsUserId);
+      if (!account) {
+        const res = await msal.loginPopup({ scopes: SP_SCOPES });
+        saveMsAccountLink(_currentBmsUserId, res.account);
+        account = res.account;
       }
-      const account = msal.getAllAccounts()[0];
       const res = await msal.acquireTokenSilent({ scopes: SP_SCOPES, account }).catch(async () =>
         msal.acquireTokenPopup({ scopes: SP_SCOPES, account })
       );
@@ -2131,9 +2151,10 @@
       const daysWithUs    = joinDate ? Math.floor((now - joinDate) / 86400000) : null;
 
       const TABS = [
-        { id:'info',    label:t('prf_info'),        icon:'client' },
-        { id:'stats',   label:t('prf_att_salary'),  icon:'clock2' },
-        { id:'perms',   label:t('prf_perms'),       icon:'shield2' },
+        { id:'info',      label:t('prf_info'),        icon:'client'  },
+        { id:'stats',     label:t('prf_att_salary'),  icon:'clock2'  },
+        { id:'perms',     label:t('prf_perms'),       icon:'shield2' },
+        { id:'microsoft', label:'Microsoft',           icon:'web'     },
       ];
 
       const StatCard = ({ label, value, sub, color='text-white', icon }) => (
@@ -2370,6 +2391,65 @@
                   )}
                 </div>
               )}
+
+              {/* ── Microsoft Account Tab ── */}
+              {tab === 'microsoft' && (() => {
+                const [msAcc, setMsAcc] = React.useState(() => getMsAccountForUser(user.id));
+                const [msLoading, setMsLoading] = React.useState(false);
+                const connect = async () => {
+                  setMsLoading(true);
+                  try {
+                    const msal = getMsal();
+                    const scopes = [...SP_SCOPES, ...MAIL_SCOPES, ...CHAT_SCOPES];
+                    const res = await msal.loginPopup({ scopes });
+                    saveMsAccountLink(user.id, res.account);
+                    if (user.id === _currentBmsUserId) _currentBmsUserId = user.id;
+                    setMsAcc(res.account);
+                  } catch(e) { console.error(e); }
+                  setMsLoading(false);
+                };
+                const disconnect = () => {
+                  removeMsAccountLink(user.id);
+                  setMsAcc(null);
+                };
+                return (
+                  <div className="px-6 py-5 space-y-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                        <svg viewBox="0 0 23 23" width="16" height="16"><rect x="1" y="1" width="10" height="10" fill="#f25022"/><rect x="12" y="1" width="10" height="10" fill="#7fba00"/><rect x="1" y="12" width="10" height="10" fill="#00a4ef"/><rect x="12" y="12" width="10" height="10" fill="#ffb900"/></svg>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-white">Microsoft Account</div>
+                        <div className="text-xs text-slate-500">Outlook · SharePoint · Teams</div>
+                      </div>
+                    </div>
+                    {msAcc ? (
+                      <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Ic name="check" size={13} className="text-emerald-400"/>
+                          <span className="text-emerald-400 text-sm font-medium">متصل</span>
+                        </div>
+                        <div className="text-slate-300 text-sm">{msAcc.username}</div>
+                        <div className="text-slate-500 text-xs">{msAcc.name || msAcc.displayName || ''}</div>
+                        <button onClick={disconnect}
+                          className="w-full mt-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-lg py-2 text-xs font-medium transition-colors">
+                          قطع الاتصال
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="bg-slate-800/60 border border-slate-700/40 rounded-xl p-4 space-y-3 text-center">
+                        <p className="text-slate-400 text-sm">لم يتم ربط حساب Microsoft بعد</p>
+                        <p className="text-slate-600 text-xs">اربط حسابك للوصول إلى Outlook و SharePoint و Teams</p>
+                        <button onClick={connect} disabled={msLoading}
+                          className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                          <svg viewBox="0 0 23 23" width="14" height="14"><rect x="1" y="1" width="10" height="10" fill="#fff"/><rect x="12" y="1" width="10" height="10" fill="#fff"/><rect x="1" y="12" width="10" height="10" fill="#fff"/><rect x="12" y="12" width="10" height="10" fill="#fff"/></svg>
+                          {msLoading ? '...' : 'ربط حساب Microsoft'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Footer save */}
@@ -2871,10 +2951,9 @@
           const [inbox, setInbox]   = useState(0);
           const [drafts, setDrafts] = useState(0);
           useEffect(() => {
-            const msal = getMsal();
-            if (!msal.getAllAccounts().length) { setSt('no_auth'); return; }
-            const acc = msal.getAllAccounts()[0];
-            msal.acquireTokenSilent({ scopes: MAIL_SCOPES, account: acc })
+            const acc = getMsAccountForUser(_currentBmsUserId);
+            if (!acc) { setSt('no_auth'); return; }
+            getMsal().acquireTokenSilent({ scopes: MAIL_SCOPES, account: acc })
               .then(r => Promise.allSettled([
                 fetch('https://graph.microsoft.com/v1.0/me/mailFolders/inbox?$select=unreadItemCount', { headers:{ Authorization:`Bearer ${r.accessToken}` } }).then(x=>x.json()),
                 fetch('https://graph.microsoft.com/v1.0/me/mailFolders/drafts?$select=totalItemCount', { headers:{ Authorization:`Bearer ${r.accessToken}` } }).then(x=>x.json()),
@@ -2916,10 +2995,9 @@
           const [chatCount, setChatCount] = useState(0);
           const [userName, setUserName]   = useState('');
           useEffect(() => {
-            const msal = getMsal();
-            if (!msal.getAllAccounts().length) { setSt('no_auth'); return; }
-            const acc = msal.getAllAccounts()[0];
-            msal.acquireTokenSilent({ scopes: CHAT_SCOPES, account: acc })
+            const acc = getMsAccountForUser(_currentBmsUserId);
+            if (!acc) { setSt('no_auth'); return; }
+            getMsal().acquireTokenSilent({ scopes: CHAT_SCOPES, account: acc })
               .then(r => Promise.allSettled([
                 fetch('https://graph.microsoft.com/v1.0/me?$select=displayName', { headers:{ Authorization:`Bearer ${r.accessToken}` } }).then(x=>x.json()),
                 fetch('https://graph.microsoft.com/v1.0/me/chats?$top=50&$select=id,chatType', { headers:{ Authorization:`Bearer ${r.accessToken}` } }).then(x=>x.json()),
@@ -6867,9 +6945,8 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
 
       /* ── Auto-restore session on mount ── */
       useEffect(() => {
-        const msal = getMsal();
-        const accounts = msal.getAllAccounts();
-        if (accounts.length > 0) setSpUser(accounts[0]);
+        const account = getMsAccountForUser(_currentBmsUserId);
+        if (account) setSpUser(account);
       }, []);
 
       /* ── Auto-sync when spUser + project are ready ── */
@@ -6883,6 +6960,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
         try {
           const msal = getMsal();
           const res = await msal.loginPopup({ scopes: SP_SCOPES });
+          saveMsAccountLink(_currentBmsUserId, res.account);
           setSpUser(res.account);
           showToast(t('des_sp_connected'));
         } catch(e) { showToast(t('des_sp_connect_err') + e.message); }
@@ -6891,7 +6969,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
 
       /* ── Logout ── */
       const handleSpLogout = () => {
-        getMsal().logoutPopup();
+        removeMsAccountLink(_currentBmsUserId);
         setSpUser(null);
       };
 
@@ -10095,11 +10173,12 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
 
     const getMailToken = async () => {
       const msal = getMsal();
-      const accounts = msal.getAllAccounts();
-      if (accounts.length === 0) {
-        await msal.loginPopup({ scopes: MAIL_SCOPES });
+      let account = getMsAccountForUser(_currentBmsUserId);
+      if (!account) {
+        const res = await msal.loginPopup({ scopes: MAIL_SCOPES });
+        saveMsAccountLink(_currentBmsUserId, res.account);
+        account = res.account;
       }
-      const account = msal.getAllAccounts()[0];
       const res = await msal.acquireTokenSilent({ scopes: MAIL_SCOPES, account }).catch(async () =>
         msal.acquireTokenPopup({ scopes: MAIL_SCOPES, account })
       );
@@ -10519,9 +10598,12 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
 
     const getChatToken = async () => {
       const msal = getMsal();
-      const accounts = msal.getAllAccounts();
-      if (accounts.length === 0) await msal.loginPopup({ scopes: CHAT_SCOPES });
-      const account = msal.getAllAccounts()[0];
+      let account = getMsAccountForUser(_currentBmsUserId);
+      if (!account) {
+        const res = await msal.loginPopup({ scopes: CHAT_SCOPES });
+        saveMsAccountLink(_currentBmsUserId, res.account);
+        account = res.account;
+      }
       const res = await msal.acquireTokenSilent({ scopes: CHAT_SCOPES, account }).catch(async () =>
         msal.acquireTokenPopup({ scopes: CHAT_SCOPES, account })
       );
@@ -11635,6 +11717,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       };
 
       const handleLogin = user => {
+        _currentBmsUserId = user.id;
         setCurrentUser(user);
         const savedTheme = localStorage.getItem(`bms_theme_${user.id}`) || 'dark';
         const savedLang  = localStorage.getItem(`bms_lang_${user.id}`)  || 'ar';
