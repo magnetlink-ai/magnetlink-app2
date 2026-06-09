@@ -763,7 +763,7 @@
         tm_edit_info:'تعديل البيانات', tm_add_client:'إضافة Client',
         tm_add_member:'إضافة موظف', tm_name:'الاسم *',
         tm_name_ph:'الاسم الكامل', tm_email_req:'البريد الإلكتروني *',
-        tm_rank_lbl:'الرتبة', tm_no_roles:'— لا توجد رتب متاحة —',
+        tm_rank_lbl:'الرتبة', tm_no_roles:'— لا توجد رتب متاحة —', tm_optional:'اختياري',
         tm_salary_lbl:'الراتب ($)', tm_join_date:'تاريخ الانضمام',
         tm_client_perms:'الصلاحيات — الأقسام المسموح بها',
         tm_save_changes:'حفظ التعديلات',
@@ -919,7 +919,7 @@
         d_lead6_notes:'بانتظار موافقة الإدارة على الميزانية',
         d_lead7_name:'عيادة الشفاء',
         d_lead7_notes:'يريد موقع + SEO - اجتماع الأسبوع القادم',
-        d_team1_name:'أحمد المدير', d_team2_name:'سارة المصممة', d_team3_name:'محمد المطور',
+        d_team1_name:'المالك', d_team2_name:'سارة المصممة', d_team3_name:'محمد المطور',
         d_prj1_name:'موقع Tech Solutions KSA', d_prj2_name:'حملة Meta Ads — مايو',
         d_exp1:'إيجار المكتب', d_exp2:'اشتراك Adobe CC', d_exp3:'شراء كاميرا',
         d_inv_item1:'تصميم وتطوير الموقع', d_inv_item2:'شهر استضافة مجاناً',
@@ -1326,7 +1326,7 @@
         tm_edit_info:'Edit Info', tm_add_client:'Add Client',
         tm_add_member:'Add Member', tm_name:'Name *',
         tm_name_ph:'Full name', tm_email_req:'Email *',
-        tm_rank_lbl:'Role', tm_no_roles:'— No roles available —',
+        tm_rank_lbl:'Role', tm_no_roles:'— No roles available —', tm_optional:'optional',
         tm_salary_lbl:'Salary ($)', tm_join_date:'Join Date',
         tm_client_perms:'Permissions — Allowed departments',
         tm_save_changes:'Save Changes',
@@ -1482,7 +1482,7 @@
         d_lead6_notes:'Waiting for management approval on budget',
         d_lead7_name:'Al-Shifa Clinic',
         d_lead7_notes:'Wants website + SEO — meeting next week',
-        d_team1_name:'Ahmed (Admin)', d_team2_name:'Sara (Designer)', d_team3_name:'Mohammed (Dev)',
+        d_team1_name:'Owner', d_team2_name:'Sara (Designer)', d_team3_name:'Mohammed (Dev)',
         d_prj1_name:'Tech Solutions KSA Website', d_prj2_name:'Meta Ads Campaign — May',
         d_exp1:'Office Rent', d_exp2:'Adobe CC Subscription', d_exp3:'Camera Purchase',
         d_inv_item1:'Website Design & Development', d_inv_item2:'Free 1-Month Hosting',
@@ -1925,7 +1925,7 @@
     ];
 
     const getInitialTeam = T => [
-      { id:1, name:T.d_team1_name, email:'admin@magnetlink.com',    role:'super_admin', salary:2500, join_date:'2025-01-01', permissions:{}, status:'active', timeout_until:null },
+      { id:1, name:T.d_team1_name, email:'owner@magnetlink.com',    role:'super_admin', salary:0,    join_date:'2025-01-01', permissions:{}, status:'active', timeout_until:null },
       { id:2, name:T.d_team2_name, email:'sara@magnetlink.com',     role:'cr_1',        salary:800,  join_date:'2025-03-01', permissions:{}, status:'active', timeout_until:null },
       { id:3, name:T.d_team3_name, email:'mohammed@magnetlink.com', role:'admin',       salary:1200, join_date:'2025-02-15', permissions:{}, status:'active', timeout_until:null },
     ];
@@ -2031,6 +2031,7 @@
       tasks:      ['M9 11l3 3L22 4','M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
       plus:       ['M12 5v14','M5 12h14'],
       eye:        ['M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z','M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z'],
+      eye_off:    ['M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94','M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19','M1 1l22 22'],
       trash:      ['M3 6h18','M8 6V4h8v2','M19 6l-1 14H6L5 6'],
       x:          ['M18 6L6 18','M6 6l12 12'],
       check:      ['M20 6L9 17l-5-5'],
@@ -2187,43 +2188,53 @@
     /* ── Login Screen ── */
     const LoginScreen = ({ teamMembers, teamClients, customRoles, onLogin }) => {
       const { t, lang } = useLang();
+      const [email,    setEmail]    = useState('');
+      const [password, setPassword] = useState('');
+      const [showPass, setShowPass] = useState(false);
+      const [error,    setError]    = useState('');
       const allUsers = [
         ...teamMembers.map(m => ({ ...m, _type: 'member' })),
         ...teamClients.map(c => ({ ...c, _type: 'client', role: 'client' })),
       ];
+      const handleSubmit = () => {
+        const user = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase().trim());
+        if (!user || user.status !== 'active') { setError(t('login_wrong')); return; }
+        const passwords = JSON.parse(localStorage.getItem('bms_passwords') || '{}');
+        if (passwords[user.email.toLowerCase()] !== password) { setError(t('login_wrong')); return; }
+        onLogin(user);
+      };
+      const inp = "w-full bg-slate-800/80 border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white outline-none placeholder-slate-500 transition-colors";
       return (
         <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-8" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
           <div className="mb-10 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-600 flex items-center justify-center text-white font-black text-2xl shadow-2xl shadow-blue-500/30 mx-auto mb-4">M</div>
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white font-black text-2xl shadow-2xl shadow-blue-500/30 mx-auto mb-4">M</div>
             <h1 className="text-2xl font-bold text-white">Magnet Link</h1>
-            <p className="text-slate-500 text-sm mt-1">BMS — {t('login_sub')}</p>
+            <p className="text-slate-500 text-sm mt-1">BMS — {t('login_title')}</p>
           </div>
-          <div className="grid grid-cols-2 gap-4 max-w-lg w-full">
-            {allUsers.map(user => {
-              const canLogin = user.status === 'active';
-              const ri = getRoleInfo(user.role, customRoles);
-              return (
-                <button key={user.id} onClick={() => canLogin && onLogin(user)} disabled={!canLogin}
-                  className={`flex flex-col items-center p-5 rounded-2xl border transition-all text-center
-                    ${canLogin
-                      ? 'bg-slate-900 border-slate-800 hover:border-blue-500/50 hover:bg-slate-800 hover:shadow-xl hover:shadow-blue-500/10 cursor-pointer'
-                      : 'bg-slate-900/30 border-slate-800/50 opacity-40 cursor-not-allowed'}`}>
-                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${ri.grad} flex items-center justify-center text-2xl font-bold text-white mb-3 shadow-lg`}>
-                    {user.name.charAt(0)}
-                  </div>
-                  <div className="text-white font-semibold text-sm mb-0.5">{user.name}</div>
-                  <div className="text-slate-500 text-[10px] truncate w-full text-center mb-2">{user.email}</div>
-                  <span className={`text-[10px] px-2.5 py-0.5 rounded-full border ${ri.badge}`}>
-                    {ri.label}
-                  </span>
-                  {!canLogin && (
-                    <div className="mt-1.5 text-[10px] text-orange-400 flex items-center gap-1">
-                      <Ic name="pause" size={9}/> {user.status === 'paused' ? t('s_paused') : t('s_timeout')}
-                    </div>
-                  )}
+          <div className="w-full max-w-sm space-y-4">
+            <div>
+              <label className="text-xs text-slate-400 block mb-1.5">{t('tm_email_req')}</label>
+              <input type="email" value={email} onChange={e=>{setEmail(e.target.value);setError('');}}
+                onKeyDown={e=>e.key==='Enter'&&handleSubmit()} placeholder="email@example.com" className={inp}/>
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 block mb-1.5">{t('login_pass')}</label>
+              <div className="relative">
+                <input type={showPass?'text':'password'} value={password}
+                  onChange={e=>{setPassword(e.target.value);setError('');}}
+                  onKeyDown={e=>e.key==='Enter'&&handleSubmit()}
+                  placeholder={t('login_pass_ph')} className={inp+' pr-10'}/>
+                <button type="button" onClick={()=>setShowPass(p=>!p)}
+                  className="absolute top-1/2 -translate-y-1/2 right-3 text-slate-500 hover:text-slate-300 transition-colors">
+                  <Ic name={showPass?'eye_off':'eye'} size={14}/>
                 </button>
-              );
-            })}
+              </div>
+            </div>
+            {error&&<p className="text-red-400 text-xs text-center">{error}</p>}
+            <button onClick={handleSubmit}
+              className="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-3 text-sm font-semibold transition-colors shadow-lg shadow-blue-500/20 mt-2">
+              {t('login_btn')}
+            </button>
           </div>
         </div>
       );
@@ -5491,23 +5502,26 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
 
     const TeamMemberForm = ({ member, isClient, customRoles, currentUser, onSave, onClose }) => {
       const { t } = useLang();
-      const isEdit=!!member;
-      const defaultRole = isClient ? 'client' : (customRoles&&customRoles.length>0 ? customRoles.slice().sort((a,b)=>b.rank-a.rank)[0].id : 'admin');
-      const [f,setF]=useState(member?{...member}:{
-        name:'',email:'',role:defaultRole,salary:'',join_date:new Date().toISOString().split('T')[0],
-        permissions:isClient?{...DEFAULT_CLIENT_PERMS}:{},status:'active',timeout_until:null,
+      const isEdit = !!member;
+      const isOwner = member?.role === 'super_admin';
+      const defaultCustomRole = customRoles&&customRoles.length>0 ? customRoles.slice().sort((a,b)=>b.rank-a.rank)[0].id : '';
+      const [f,setF] = useState(member ? {...member} : {
+        name:'', email:'', role: isClient ? 'client' : defaultCustomRole,
+        salary:'', join_date:new Date().toISOString().split('T')[0],
+        permissions: isClient ? {...DEFAULT_CLIENT_PERMS} : {}, status:'active', timeout_until:null,
       });
-      const inputCls="w-full bg-slate-700 border border-slate-600 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-white outline-none placeholder-slate-500";
-      const togglePerm=dept=>setF(p=>({...p,permissions:{...p.permissions,[dept]:{...(p.permissions[dept]||{}),access:!(p.permissions[dept]?.access)}}}));
+      const [isAdmin,    setIsAdmin]    = useState(!isClient && !isOwner && (member?.role==='admin' || (!isEdit && false)));
+      const [password,   setPassword]   = useState('');
+      const [showPass,   setShowPass]   = useState(false);
+      const inputCls = "w-full bg-slate-700 border border-slate-600 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-white outline-none placeholder-slate-500";
+      const togglePerm = dept => setF(p=>({...p,permissions:{...p.permissions,[dept]:{...(p.permissions[dept]||{}),access:!(p.permissions[dept]?.access)}}}));
       const showPerms = f.role === 'client';
-      const actorRank = getRank(currentUser?.role, customRoles);
-      const availableRoles = isClient ? [] : [
-        ...SYSTEM_ROLES.filter(r => !r.isClient && getRank(r.id, customRoles) < actorRank),
-        ...(customRoles||[]).filter(r => r.rank < actorRank).sort((a,b)=>b.rank-a.rank),
-      ];
-      const save=()=>{
-        if(!f.name.trim()||!f.email.trim())return;
-        onSave({...f,id:member?.id||Date.now(),salary:Number(f.salary)||0});
+      const customRolesSorted = (customRoles||[]).filter(r=>r.rank<90).sort((a,b)=>b.rank-a.rank);
+      const effectiveRole = isOwner ? 'super_admin' : isAdmin ? 'admin' : (f.role || (customRolesSorted[0]?.id||''));
+      const save = () => {
+        if (!f.name.trim() || !f.email.trim()) return;
+        if (!isEdit && !isClient && !password.trim()) return;
+        onSave({ ...f, role: effectiveRole, id: member?.id||Date.now(), salary: Number(f.salary)||0, _password: password||null });
         onClose();
       };
       return (
@@ -5523,19 +5537,45 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                   <input value={f.name} onChange={e=>setF(p=>({...p,name:e.target.value}))} placeholder={t('tm_name_ph')} className={inputCls}/></div>
                 <div><label className="text-xs text-slate-400 block mb-1">{t('tm_email_req')}</label>
                   <input value={f.email} onChange={e=>setF(p=>({...p,email:e.target.value}))} placeholder="email@example.com" className={inputCls}/></div>
-                {!isClient&&<>
-                  <div><label className="text-xs text-slate-400 block mb-1">{t('tm_rank_lbl')}</label>
-                    <select value={f.role} onChange={e=>setF(p=>({...p,role:e.target.value}))} className={inputCls}>
-                      {availableRoles.length===0&&<option value="">{t('tm_no_roles')}</option>}
-                      {availableRoles.map(r=>(
-                        <option key={r.id} value={r.id}>{r.label||r.name}</option>
-                      ))}
-                    </select></div>
-                  <div><label className="text-xs text-slate-400 block mb-1">{t('tm_salary_lbl')}</label>
-                    <input type="number" value={f.salary} onChange={e=>setF(p=>({...p,salary:e.target.value}))} placeholder="0" className={inputCls}/></div>
-                </>}
+
+                {!isClient && !isOwner && (
+                  <div className="col-span-2">
+                    <label className="text-xs text-slate-400 block mb-2">{t('tm_rank_lbl')}</label>
+                    <button type="button" onClick={()=>setIsAdmin(p=>!p)}
+                      className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-xl border transition-all text-sm ${isAdmin?'bg-blue-500/15 border-blue-500/50 text-blue-300':'bg-slate-700/40 border-slate-600/50 text-slate-400 hover:border-slate-500'}`}>
+                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${isAdmin?'bg-blue-500 border-blue-500':'border-slate-500'}`}>
+                        {isAdmin&&<Ic name="check" size={11}/>}
+                      </div>
+                      <span>{t('tm_rank_lbl')} Admin</span>
+                    </button>
+                    {!isAdmin && customRolesSorted.length > 0 && (
+                      <select value={f.role} onChange={e=>setF(p=>({...p,role:e.target.value}))} className={inputCls+' mt-2'}>
+                        {customRolesSorted.map(r=>(<option key={r.id} value={r.id}>{r.name}</option>))}
+                      </select>
+                    )}
+                  </div>
+                )}
+
+                {!isClient && <><div><label className="text-xs text-slate-400 block mb-1">{t('tm_salary_lbl')}</label>
+                  <input type="number" value={f.salary} onChange={e=>setF(p=>({...p,salary:e.target.value}))} placeholder="0" className={inputCls}/></div></>}
+
                 <div className={isClient?'col-span-2':''}><label className="text-xs text-slate-400 block mb-1">{t('tm_join_date')}</label>
                   <input type="date" value={f.join_date} onChange={e=>setF(p=>({...p,join_date:e.target.value}))} className={inputCls}/></div>
+
+                {!isClient && (
+                  <div className="col-span-2">
+                    <label className="text-xs text-slate-400 block mb-1">{isEdit ? t('login_pass')+' ('+t('tm_optional')+')' : t('login_pass')+' *'}</label>
+                    <div className="relative">
+                      <input type={showPass?'text':'password'} value={password}
+                        onChange={e=>setPassword(e.target.value)} placeholder={t('login_pass_ph')}
+                        className={inputCls+' pr-9'}/>
+                      <button type="button" onClick={()=>setShowPass(p=>!p)}
+                        className="absolute top-1/2 -translate-y-1/2 right-2.5 text-slate-500 hover:text-slate-300">
+                        <Ic name={showPass?'eye_off':'eye'} size={13}/>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
               {showPerms&&(
                 <div>
@@ -5605,6 +5645,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
         return !q||m.name.toLowerCase().includes(q)||m.email.toLowerCase().includes(q);
       });
       const handlePause=m=>{
+        if(m.role==='super_admin')return;
         const u={...m,status:m.status==='paused'?'active':'paused',timeout_until:null};
         isTeam?onUpdateMember(u):onUpdateClient(u);
         showToast(u.status==='paused'
@@ -5612,18 +5653,26 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
           :t('tm_toast_activated').replace('{{name}}',m.name));
       };
       const handleTimeout=(m,days)=>{
+        if(m.role==='super_admin')return;
         const d=new Date();d.setDate(d.getDate()+days);
         const u={...m,status:'timeout',timeout_until:d.toISOString().split('T')[0]};
         isTeam?onUpdateMember(u):onUpdateClient(u);
         showToast(t('tm_toast_timeout').replace('{{name}}',m.name).replace('{{n}}',days).replace('{{unit}}',days===1?t('tm_day'):t('tm_days')));
       };
       const handleDelete=m=>{
+        if(m.role==='super_admin')return;
         if(!confirm(t('tm_confirm_delete').replace('{{name}}',m.name)))return;
         if(isTeam)onDeleteMember(m.id);else onDeleteClient(m.id);
         showToast(t('tm_toast_deleted').replace('{{name}}',m.name));
       };
       const handleSaveMember=m=>{
-        if(editMember)onUpdateMember(m);else onAddMember(m);
+        if(m._password){
+          const p=JSON.parse(localStorage.getItem('bms_passwords')||'{}');
+          p[m.email.toLowerCase()]=m._password;
+          localStorage.setItem('bms_passwords',JSON.stringify(p));
+        }
+        const {_password,...memberData}=m;
+        if(editMember)onUpdateMember(memberData);else onAddMember(memberData);
         showToast((editMember?t('tm_toast_updated'):t('tm_toast_added')).replace('{{name}}',m.name));
         setEditMember(null);setFormOpen(false);
       };
@@ -5818,13 +5867,15 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                                 <>
                                   <button onClick={()=>{if(isTeam)setEditMember(member);else setEditClient(member);setFormOpen(true);}}
                                     className="p-1.5 rounded-lg text-slate-600 hover:text-blue-400 hover:bg-blue-500/10 transition-all" title={t('edit')}><Ic name="edit2" size={13}/></button>
-                                  <button onClick={()=>handlePause(member)}
-                                    className={`p-1.5 rounded-lg transition-all text-sm ${member.status==='paused'?'text-amber-400 bg-amber-500/10':'text-slate-600 hover:text-amber-400 hover:bg-amber-500/10'}`}
-                                    title={member.status==='paused'?t('tm_reactivate'):t('tm_pause_btn')}>⏸</button>
-                                  <button onClick={()=>setTimeoutTarget(member)}
-                                    className="p-1.5 rounded-lg text-slate-600 hover:text-orange-400 hover:bg-orange-500/10 transition-all text-sm" title={t('tm_timeout_btn')}>⏱</button>
-                                  <button onClick={()=>handleDelete(member)}
-                                    className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all" title={t('tm_del_perm')}><Ic name="trash" size={13}/></button>
+                                  {member.role!=='super_admin'&&<>
+                                    <button onClick={()=>handlePause(member)}
+                                      className={`p-1.5 rounded-lg transition-all text-sm ${member.status==='paused'?'text-amber-400 bg-amber-500/10':'text-slate-600 hover:text-amber-400 hover:bg-amber-500/10'}`}
+                                      title={member.status==='paused'?t('tm_reactivate'):t('tm_pause_btn')}>⏸</button>
+                                    <button onClick={()=>setTimeoutTarget(member)}
+                                      className="p-1.5 rounded-lg text-slate-600 hover:text-orange-400 hover:bg-orange-500/10 transition-all text-sm" title={t('tm_timeout_btn')}>⏱</button>
+                                    <button onClick={()=>handleDelete(member)}
+                                      className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all" title={t('tm_del_perm')}><Ic name="trash" size={13}/></button>
+                                  </>}
                                 </>
                               ):(
                                 <span className="p-1.5 text-slate-700 cursor-not-allowed" title={t('tm_perm_deny')}>
@@ -11446,6 +11497,14 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       const [lang,         setLang]          = useState('ar');
 
       useEffect(() => {
+        const p = JSON.parse(localStorage.getItem('bms_passwords') || '{}');
+        if (!p['owner@magnetlink.com']) {
+          p['owner@magnetlink.com'] = 'owner1234';
+          localStorage.setItem('bms_passwords', JSON.stringify(p));
+        }
+      }, []);
+
+      useEffect(() => {
         document.body.setAttribute('data-theme', theme);
       }, [theme]);
 
@@ -11702,7 +11761,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
           .forEach(x => pushNotif({ userId:x.id, type:'member_added', title:t('app_notif_member_added'), body:m.name||'—', section:'team' }));
       };
       const handleUpdateMember = m   => { setTeamMembers(prev => prev.map(x => x.id === m.id ? m : x)); db.save('team_members', m); };
-      const handleDeleteMember = id  => { setTeamMembers(prev => prev.filter(x => x.id !== id)); db.del('team_members', id); };
+      const handleDeleteMember = id  => { setTeamMembers(prev => { const m=prev.find(x=>x.id===id); if(m?.role==='super_admin')return prev; return prev.filter(x=>x.id!==id); }); db.del('team_members', id); };
       const handleAddClient    = c   => { setTeamClients(prev => [...prev, c]); db.save('team_clients', c); };
       const handleUpdateClient = c   => { setTeamClients(prev => prev.map(x => x.id === c.id ? c : x)); db.save('team_clients', c); };
       const handleDeleteClient = id  => { setTeamClients(prev => prev.filter(x => x.id !== id)); db.del('team_clients', id); };
