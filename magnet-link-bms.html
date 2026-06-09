@@ -1769,33 +1769,12 @@
     const DEFAULT_EMPLOYEE_PERMS = Object.fromEntries(DEPT_KEYS.map(k => [k, { access:true,          fields:{} }]));
     const DEFAULT_CLIENT_PERMS   = Object.fromEntries(DEPT_KEYS.map(k => [k, { access:k==='social',   fields:{} }]));
 
-    const getInitialProjects = T => [
-      { id:1, clientId:3, name:T.d_prj1_name, service_requested:'Websites', price:2500, delivery:'in_progress', start_date:'2026-05-10' },
-      { id:2, clientId:3, name:T.d_prj2_name, service_requested:'Meta Ads', price:600,  delivery:'in_progress', start_date:'2026-05-18' },
-    ];
+    const getInitialProjects = T => [];
     const INITIAL_PROJECTS = getInitialProjects(TRANSLATIONS.ar);
 
-    const INITIAL_INVOICES = [
-      {
-        id:1, projectId:1, inv_no:'INV-001',
-        items:[
-          { id:1, desc:'تصميم وتطوير الموقع', qty:1, unit_price:2200 },
-          { id:2, desc:'شهر استضافة مجاناً',  qty:1, unit_price:0    },
-        ],
-        tax:0, progress:40, due_date:'2026-06-01',
-        payments:[
-          { id:1, pct:40, status:'paid',    paid_date:'2026-05-12' },
-          { id:2, pct:30, status:'pending', paid_date:null         },
-          { id:3, pct:30, status:'pending', paid_date:null         },
-        ],
-      },
-    ];
+    const INITIAL_INVOICES = [];
 
-    const getInitialExpenses = T => [
-      { id:1, desc:T.d_exp1, amount:300, date:'2026-01-01', recurrence:'monthly',  recurrence_x:null, start_date:'2026-01-01', paused:false, paid_months:[] },
-      { id:2, desc:T.d_exp2, amount:55,  date:'2026-01-01', recurrence:'monthly',  recurrence_x:null, start_date:'2026-01-01', paused:false, paid_months:[] },
-      { id:3, desc:T.d_exp3, amount:450, date:'2026-05-10', recurrence:'one_time', recurrence_x:null, start_date:'2026-05-10', paused:false, paid_months:[] },
-    ];
+    const getInitialExpenses = T => [];
     const INITIAL_EXPENSES = getInitialExpenses(TRANSLATIONS.ar);
 
     const INITIAL_SALARIES = [];
@@ -1810,132 +1789,29 @@
     const INITIAL_CLIENT_ASSETS = [];
     const INITIAL_DOCUMENTS = [];
 
-    const INITIAL_WEB_DATA = [
-      {
-        id:'ws_1', projectId:1,
-        services:['web','seo'],
-        Stage_Web:'Development',
-        webTasks:[
-          { id:'wt_1', Task_t:'تصميم واجهة الصفحة الرئيسية', Task_stage:'Design',       Task_assignee:2, Task_status:'completed'   },
-          { id:'wt_2', Task_t:'برمجة صفحات الموقع الأساسية',  Task_stage:'Development', Task_assignee:3, Task_status:'in_progress'  },
-          { id:'wt_3', Task_t:'ربط نموذج التواصل والـ API',   Task_stage:'Development', Task_assignee:3, Task_status:'not_started'  },
-          { id:'wt_4', Task_t:'اختبار الموقع على الموبايل',  Task_stage:'Review',       Task_assignee:2, Task_status:'not_started'  },
-        ],
-        Type_Web:'WordPress', Domain_Web:'techsol.sa', DomainExp_Web:'2026-12-15',
-        Hosting_Web:'SiteGround — Business', HostingExp_Web:'2026-08-20',
-        Pages_Web:8, Langs_Web:'عربي / English', LaunchDate_Web:'2026-07-10',
-        SSL_Web:true, Maintenance_Web:true, LastBackup_Web:'2026-06-05',
-        Creds_Web:[
-          { id:'crd_1', label:'WordPress Admin', url:'https://techsol.sa/wp-admin'  },
-          { id:'crd_2', label:'Hosting cPanel',  url:'https://cpanel.siteground.com' },
-        ],
-        milestones:[
-          { id:'ms_1', MS_t:'الموافقة على التصميم',    MS_date:'2026-05-28', MS_done:true  },
-          { id:'ms_2', MS_t:'تسليم النسخة التجريبية',   MS_date:'2026-06-25', MS_done:false },
-          { id:'ms_3', MS_t:'الإطلاق الرسمي',           MS_date:'2026-07-10', MS_done:false },
-        ],
-        Organic_SEO:3200, OrganicPrev_SEO:2750,
-        Backlinks_SEO:84, DA_SEO:28, Speed_SEO:76, Indexed_SEO:12, Errors_SEO:3,
-        Monthly_SEO:250, Since_SEO:'2026-03-01',
-        keywords:[
-          { id:'kw_1', KW_kw:'وكالة إعلانية عمّان',    KW_pos:4,  KW_prev:7,  KW_vol:'high',   KW_diff_level:'hard'   },
-          { id:'kw_2', KW_kw:'تصميم مواقع الأردن',     KW_pos:6,  KW_prev:9,  KW_vol:'medium', KW_diff_level:'medium' },
-          { id:'kw_3', KW_kw:'شركة سوشيال ميديا',      KW_pos:11, KW_prev:15, KW_vol:'high',   KW_diff_level:'hard'   },
-          { id:'kw_4', KW_kw:'خدمات SEO احترافية',    KW_pos:18, KW_prev:18, KW_vol:'medium', KW_diff_level:'medium' },
-        ],
-        seoTasks:[
-          { id:'st_1', STask_t:'كتابة مقالة SEO — خدمات التصميم',       STask_cat:'content',  STask_assignee:2, STask_status:'in_progress' },
-          { id:'st_2', STask_t:'بناء روابط خلفية من مواقع موثوقة',       STask_cat:'off_page', STask_assignee:3, STask_status:'not_started' },
-          { id:'st_3', STask_t:'تحسين سرعة الموقع — Core Web Vitals',   STask_cat:'tech',     STask_assignee:3, STask_status:'not_started' },
-        ],
-      },
-    ];
+    const INITIAL_WEB_DATA = [];
 
     /* ── Social Media initial data ── */
     const gen30 = (base, spread) => Array.from({length:30},(_,i)=>Math.max(0,base+Math.round((i/29)*spread*0.6)+Math.round((Math.random()-0.4)*spread*0.15)));
 
-    const INITIAL_SM_STATS = [
-      {
-        id:1, projectId:1,
-        facebook:  { followers:12400, likes:3200, comments:847, shares:412, reach:28000 },
-        instagram: { followers:8900,  likes:3200, saves:1200,  shares:623, reach:15000 },
-        tiktok:    { followers:25700, views:45000, likes:2100, shares:340, reach:89000 },
-        unique_views: 18600,
-        audience: {
-          gender: { male:58, female:42 },
-          age:    [{ label:'18-24', pct:35 },{ label:'25-34', pct:42 },{ label:'35-44', pct:18 },{ label:'+45', pct:5 }],
-          cities: [{ name:'عمّان', pct:68 },{ name:'الزرقاء', pct:15 },{ name:'إربد', pct:12 },{ name:'أخرى', pct:5 }],
-        },
-        growth_30d: {
-          facebook:  gen30(11800, 600),
-          instagram: gen30(8400,  500),
-          tiktok:    gen30(24000, 1700),
-        },
-      },
-    ];
+    const INITIAL_SM_STATS = [];
 
-    const getInitialSMPosts = T => [
-      { id:1, projectId:1, title:T.d_post1, platforms:['instagram'],           content_type:'Reels',    status:'published',  scheduled_date:'2026-05-08', scheduled_time:'18:00', content:T.d_post1_content, engagement_rate:12.8, views_reach:45200, views_type:'مشاهدة', reach:32000, impressions:48000, likes:3800, comments:290, saves:820 },
-      { id:2, projectId:1, title:T.d_post2, platforms:['facebook'],            content_type:'Post',     status:'published',  scheduled_date:'2026-05-12', scheduled_time:'10:00', content:T.d_post2_content, engagement_rate:8.4,  views_reach:28500, views_type:'وصول',  reach:28500, impressions:35000, likes:2200, comments:415, saves:0   },
-      { id:3, projectId:1, title:T.d_post3, platforms:['instagram','facebook'],content_type:'Video',    status:'published',  scheduled_date:'2026-05-15', scheduled_time:'20:00', content:'',                engagement_rate:6.1,  views_reach:12000, views_type:'مشاهدة', reach:10200, impressions:18000, likes:680,  comments:95,  saves:230 },
-      { id:4, projectId:1, title:T.d_post4, platforms:['instagram','facebook'],content_type:'Post',     status:'scheduled',  scheduled_date:'2026-05-23', scheduled_time:'14:00', content:T.d_post4_content, engagement_rate:null, views_reach:null,  views_type:null },
-      { id:5, projectId:1, title:T.d_post5, platforms:['instagram'],           content_type:'Carousel', status:'reviewing',  scheduled_date:'2026-05-24', scheduled_time:'10:30', content:'',                engagement_rate:null, views_reach:null,  views_type:null },
-      { id:6, projectId:1, title:T.d_post6, platforms:['tiktok','instagram'],  content_type:'Video',    status:'scheduled',  scheduled_date:'2026-05-25', scheduled_time:'19:00', content:'',                engagement_rate:null, views_reach:null,  views_type:null },
-      { id:7, projectId:1, title:T.d_post7, platforms:['facebook'],            content_type:'Post',     status:'draft',      scheduled_date:'2026-05-26', scheduled_time:'09:00', content:'',                engagement_rate:null, views_reach:null,  views_type:null },
-    ];
+    const getInitialSMPosts = T => [];
     const INITIAL_SM_POSTS = getInitialSMPosts(TRANSLATIONS.ar);
 
-    const getInitialSMMessages = T => [
-      { id:1, projectId:1, platform:'instagram', sender:'user_coffee_fan', content:T.d_msg1, read:false, date:'2026-05-21' },
-      { id:2, projectId:1, platform:'facebook',  sender:'Ahmad Khalil',    content:T.d_msg2, read:false, date:'2026-05-21' },
-      { id:3, projectId:1, platform:'instagram', sender:'design_lover99',  content:T.d_msg3, read:false, date:'2026-05-20' },
-      { id:4, projectId:1, platform:'tiktok',    sender:'tiktok_user88',   content:T.d_msg4, read:true,  date:'2026-05-19' },
-      { id:5, projectId:1, platform:'facebook',  sender:'Sara Al-Nour',    content:T.d_msg5, read:true,  date:'2026-05-18' },
-    ];
+    const getInitialSMMessages = T => [];
     const INITIAL_SM_MESSAGES = getInitialSMMessages(TRANSLATIONS.ar);
 
-    const INITIAL_SM_ACCOUNTS = [
-      { id:1, projectId:1,
-        facebook:  { connected:true,  username:'Tech Solutions KSA', page_id:'', page_token:'' },
-        instagram: { connected:true,  username:'@techsol_ksa', ig_account_id:'' },
-        tiktok:    { connected:false, username:'' },
-      },
-    ];
+    const INITIAL_SM_ACCOUNTS = [];
 
-    const INITIAL_ADS_DATA = [
-      {
-        id:1, projectId:1,
-        meta: {
-          spend:1250, active_campaigns:3, cpm:12.4, cpc:0.85, ctr:1.46, roas:3.2,
-          campaigns:[
-            { id:'a1', name:'حملة رمضان',    objective:'messages',   results:142,   spend:450 },
-            { id:'a2', name:'حملة المبيعات',  objective:'sales',      results:38,    spend:550 },
-            { id:'a3', name:'تفاعل الصفحة',  objective:'engagement', results:2800,  spend:250 },
-          ]
-        },
-        tiktok: {
-          spend:380, active_campaigns:1, cpm:8.2, cpc:0.42, ctr:1.95, roas:2.1,
-          campaigns:[
-            { id:'a4', name:'تيك توك إبداعي', objective:'reach', results:45000, spend:380 },
-          ]
-        },
-        snapchat: { spend:0, active_campaigns:0, cpm:0, cpc:0, ctr:0, roas:0, campaigns:[] },
-        linkedin: { spend:0, active_campaigns:0, cpm:0, cpc:0, ctr:0, roas:0, campaigns:[] },
-      },
-    ];
+    const INITIAL_ADS_DATA = [];
 
     const getInitialTeam = T => [
-      { id:1, name:T.d_team1_name, email:'owner@magnetlink.com',    role:'super_admin', salary:0,    join_date:'2025-01-01', permissions:{}, status:'active', timeout_until:null },
-      { id:2, name:T.d_team2_name, email:'sara@magnetlink.com',     role:'cr_1',        salary:800,  join_date:'2025-03-01', permissions:{}, status:'active', timeout_until:null },
-      { id:3, name:T.d_team3_name, email:'mohammed@magnetlink.com', role:'admin',       salary:1200, join_date:'2025-02-15', permissions:{}, status:'active', timeout_until:null },
+      { id:1, name:T.d_team1_name, email:'owner@magnetlink.com', role:'super_admin', salary:0, join_date:'2025-01-01', permissions:{}, status:'active', timeout_until:null },
     ];
     const INITIAL_TEAM = getInitialTeam(TRANSLATIONS.ar);
 
-    const INITIAL_TEAM_CLIENTS = [
-      { id:101, name:'Tech Solutions KSA', email:'hi@techsol.sa', role:'client',
-        permissions: Object.fromEntries(DEPT_KEYS.map(k=>[k,{access:['social','web'].includes(k),fields:{}}])),
-        status:'active', timeout_until:null },
-    ];
+    const INITIAL_TEAM_CLIENTS = [];
 
     const getInitialCustomRoles = T => [
       {
@@ -1958,58 +1834,18 @@
     const INITIAL_CUSTOM_ROLES = getInitialCustomRoles(TRANSLATIONS.ar);
 
     /* ── Tasks initial data ── */
-    const INITIAL_TASK_DEPTS = [
-      { id:'dep_1', project_id:1, name:'Design',       order:1 },
-      { id:'dep_2', project_id:1, name:'Social Media', order:2 },
-      { id:'dep_3', project_id:1, name:'Website',      order:3 },
-    ];
-
-    const INITIAL_TASK_BUCKETS = [
-      { id:'bk1', department_id:'dep_1', name:'Stage 1', order:1 },
-      { id:'bk2', department_id:'dep_1', name:'Stage 2', order:2 },
-      { id:'bk3', department_id:'dep_1', name:'Stage 3', order:3 },
-      { id:'bk4', department_id:'dep_2', name:'Stage 1', order:1 },
-      { id:'bk5', department_id:'dep_2', name:'Stage 2', order:2 },
-      { id:'bk6', department_id:'dep_2', name:'Stage 3', order:3 },
-      { id:'bk7', department_id:'dep_3', name:'Stage 1', order:1 },
-      { id:'bk8', department_id:'dep_3', name:'Stage 2', order:2 },
-      { id:'bk9', department_id:'dep_3', name:'Stage 3', order:3 },
-    ];
-
-    const getInitialTaskTasks = T => [
-      {
-        id:'tsk_1', bucket_id:'bk1', project_id:1, department_id:'dep_1',
-        title:T.d_task1_title, status:'in_progress', priority:'urgent',
-        assignees:[2], start_date:'2026-05-10', due_date:'2026-05-20',
-        repeat:'none', parent_task_id:null,
-        checklist:[
-          { id:'c1', text:T.d_task1_c1, done:true  },
-          { id:'c2', text:T.d_task1_c2, done:false },
-        ],
-        show_checklist_in_board:true, notes:'', created_at:'2026-05-08',
-      },
-    ];
+    const INITIAL_TASK_DEPTS   = [];
+    const INITIAL_TASK_BUCKETS = [];
+    const getInitialTaskTasks  = T => [];
     const INITIAL_TASK_TASKS = getInitialTaskTasks(TRANSLATIONS.ar);
 
     /* Lead shape:
        { id, name, phone, email, source, status, probability (0-100),
          service, price_quote, notes, customFields:[{id,name,value}], created }
     */
-    const getInitialLeads = T => [
-      { id:1, name:T.d_lead1_name, phone:'0791234567',   email:'info@alnoor.com', source:'Instagram', status:'hot',     probability:80,  service:'Social Media', price_quote:800,  notes:T.d_lead1_notes, customFields:[],                                              created:'2026-05-15' },
-      { id:2, name:T.d_lead2_name, phone:'0799876543',   email:'',               source:'WhatsApp',  status:'warm',    probability:60,  service:'Social Media', price_quote:500,  notes:T.d_lead2_notes, customFields:[],                                              created:'2026-05-17' },
-      { id:3, name:'Tech Solutions KSA', phone:'+966501234567', email:'hi@techsol.sa', source:'Referral', status:'won', probability:100, service:'Websites',    price_quote:2500, notes:T.d_lead3_notes, customFields:[{id:1,name:'Budget',value:'$3000'},{id:2,name:'Timeline',value:'3 months'}], created:'2026-05-10' },
-      { id:4, name:T.d_lead4_name, phone:'0785432109',   email:'',               source:'Instagram', status:'cold',    probability:20,  service:'Meta Ads',     price_quote:0,    notes:'',              customFields:[],                                              created:'2026-05-20' },
-      { id:5, name:T.d_lead5_name, phone:'0796543210',   email:'info@modern.jo', source:'Website',   status:'lost',    probability:0,   service:'Websites',     price_quote:400,  notes:T.d_lead5_notes, customFields:[],                                              created:'2026-05-08' },
-      { id:6, name:T.d_lead6_name, phone:'0788112233',   email:'cafe@beirut.jo', source:'Facebook',  status:'pending', probability:50,  service:'Social Media', price_quote:350,  notes:T.d_lead6_notes, customFields:[],                                              created:'2026-05-19' },
-      { id:7, name:T.d_lead7_name, phone:'0797654321',   email:'dr@clinic.jo',   source:'Referral',  status:'warm',    probability:70,  service:'Websites',     price_quote:1200, notes:T.d_lead7_notes, customFields:[{id:1,name:'نوع الموقع',value:'WordPress'}],    created:'2026-05-13' },
-    ];
-    const INITIAL_LEADS = getInitialLeads(TRANSLATIONS.ar);
-
-    // pre-populate clients from won leads in initial data
-    const INITIAL_CLIENTS = INITIAL_LEADS
-      .filter(l => l.status === 'won')
-      .map(l => ({
+    const getInitialLeads = T => [];
+    const INITIAL_LEADS   = [];
+    const INITIAL_CLIENTS = [].map(l => ({
         id: l.id, name: l.name, phone: l.phone, email: l.email,
         price_quote: l.price_quote,
         company_name: l.name, field: l.service,
