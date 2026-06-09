@@ -9,6 +9,7 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <script>
     tailwind.config = {
@@ -1671,6 +1672,41 @@
 
     /* sl(status, t) — translates a status item's label */
     const sl = (s, t) => (t && s.tKey) ? (t(s.tKey) ?? s.label) : s.label;
+
+    /* ═══════════════════════════ SUPABASE ═══════════════════════════ */
+    const SUPABASE_URL      = 'https://mvfcgmvtescxszakbbow.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_X8ny-P0SPGRTJFhMbfRuvg_ug_KiM7t';
+    const _sbReady = SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY';
+    const _sb = _sbReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+    const db = {
+      load: async table => {
+        if (!_sb) return [];
+        const { data, error } = await _sb.from(table).select('data');
+        if (error) { console.error('db.load', table, error); return []; }
+        return (data || []).map(r => r.data);
+      },
+      save: (table, record) => {
+        if (!_sb || record == null) return;
+        _sb.from(table).upsert({ id: String(record.id), data: record })
+          .then(({ error }) => { if (error) console.error('db.save', table, error); });
+      },
+      saveMany: (table, records) => {
+        if (!_sb || !records.length) return;
+        _sb.from(table).upsert(records.map(r => ({ id: String(r.id), data: r })))
+          .then(({ error }) => { if (error) console.error('db.saveMany', table, error); });
+      },
+      del: (table, id) => {
+        if (!_sb) return;
+        _sb.from(table).delete().eq('id', String(id))
+          .then(({ error }) => { if (error) console.error('db.del', table, error); });
+      },
+      delMany: (table, ids) => {
+        if (!_sb || !ids.length) return;
+        _sb.from(table).delete().in('id', ids.map(String))
+          .then(({ error }) => { if (error) console.error('db.delMany', table, error); });
+      },
+    };
 
     const LEAD_STATUSES = [
       { id:'hot',     tKey:'s_hot',     label:'Hot',     active:true,  dot:'bg-red-400',     badge:'bg-red-500/15 text-red-300 border-red-500/30' },
@@ -11378,32 +11414,33 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       const [currentUser,  setCurrentUser] = useState(null);
       const [showProfile,  setShowProfile] = useState(false);
       const [page,         setPage]        = useState(() => localStorage.getItem('bms_page') || 'dashboard');
-      const [leads,        setLeads]       = useState(INITIAL_LEADS);
-      const [clients,      setClients]     = useState(INITIAL_CLIENTS);
-      const [projects,     setProjects]    = useState(INITIAL_PROJECTS);
-      const [invoices,     setInvoices]    = useState(INITIAL_INVOICES);
-      const [teamMembers,  setTeamMembers] = useState(INITIAL_TEAM);
-      const [teamClients,  setTeamClients] = useState(INITIAL_TEAM_CLIENTS);
-      const [expenses,     setExpenses]    = useState(INITIAL_EXPENSES);
-      const [salaries,     setSalaries]    = useState(INITIAL_SALARIES);
-      const [designAssets, setDesignAssets]= useState(INITIAL_DESIGN_ASSETS);
-      const [clientAssets, setClientAssets]= useState(INITIAL_CLIENT_ASSETS);
-      const [dcDocuments,  setDcDocuments] = useState(INITIAL_DOCUMENTS);
+      const [leads,        setLeads]       = useState([]);
+      const [clients,      setClients]     = useState([]);
+      const [projects,     setProjects]    = useState([]);
+      const [invoices,     setInvoices]    = useState([]);
+      const [teamMembers,  setTeamMembers] = useState([]);
+      const [teamClients,  setTeamClients] = useState([]);
+      const [expenses,     setExpenses]    = useState([]);
+      const [salaries,     setSalaries]    = useState([]);
+      const [designAssets, setDesignAssets]= useState([]);
+      const [clientAssets, setClientAssets]= useState([]);
+      const [dcDocuments,  setDcDocuments] = useState([]);
       const [smStats,      setSmStats]     = useState(INITIAL_SM_STATS);
       const [smPosts,      setSmPosts]     = useState(INITIAL_SM_POSTS);
       const [smMessages,   setSmMessages]  = useState(INITIAL_SM_MESSAGES);
       const [smAccounts,   setSmAccounts]  = useState(INITIAL_SM_ACCOUNTS);
       const [adsData,      setAdsData]     = useState(INITIAL_ADS_DATA);
-      const [taskDepts,    setTaskDepts]     = useState(INITIAL_TASK_DEPTS);
-      const [taskBuckets,  setTaskBuckets]   = useState(INITIAL_TASK_BUCKETS);
-      const [taskTasks,    setTaskTasks]     = useState(INITIAL_TASK_TASKS);
+      const [taskDepts,    setTaskDepts]     = useState([]);
+      const [taskBuckets,  setTaskBuckets]   = useState([]);
+      const [taskTasks,    setTaskTasks]     = useState([]);
       const [webData,      setWebData]       = useState(INITIAL_WEB_DATA);
-      const [customRoles,  setCustomRoles]   = useState(INITIAL_CUSTOM_ROLES);
+      const [customRoles,  setCustomRoles]   = useState([]);
       const [dashShortcuts, setDashShortcuts] = useState([]);
-      const [attendance,   setAttendance]    = useState(INITIAL_ATTENDANCE);
-      const [offDays,      setOffDays]       = useState(INITIAL_OFF_DAYS);
-      const [deductions,   setDeductions]    = useState(INITIAL_DEDUCTIONS);
-      const [bonuses,      setBonuses]       = useState(INITIAL_BONUSES);
+      const [attendance,   setAttendance]    = useState([]);
+      const [offDays,      setOffDays]       = useState([]);
+      const [deductions,   setDeductions]    = useState([]);
+      const [bonuses,      setBonuses]       = useState([]);
+      const [dbLoaded,     setDbLoaded]      = useState(!_sbReady);
       const [toast,        setToast]         = useState(null);
       const [theme,        setTheme]         = useState('dark');
       const [lang,         setLang]          = useState('ar');
@@ -11416,6 +11453,72 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
         document.documentElement.setAttribute('lang', lang);
       }, [lang]);
+
+      /* ── Supabase: load all data on mount ── */
+      useEffect(() => {
+        if (!_sbReady) {
+          setLeads(INITIAL_LEADS);
+          setClients(INITIAL_CLIENTS);
+          setProjects(INITIAL_PROJECTS);
+          setInvoices(INITIAL_INVOICES);
+          setExpenses(INITIAL_EXPENSES);
+          setTeamMembers(INITIAL_TEAM);
+          setTeamClients(INITIAL_TEAM_CLIENTS);
+          setCustomRoles(INITIAL_CUSTOM_ROLES);
+          setTaskDepts(INITIAL_TASK_DEPTS);
+          setTaskBuckets(INITIAL_TASK_BUCKETS);
+          setTaskTasks(INITIAL_TASK_TASKS);
+          setDbLoaded(true);
+          return;
+        }
+        (async () => {
+          try {
+            const [
+              lds, cls, prj, inv, exp, sal, att, ofd, ded, bon,
+              tm,  tc,  cr,  td,  tb,  tt,  da,  ca,  doc
+            ] = await Promise.all([
+              db.load('leads'),        db.load('clients'),       db.load('projects'),
+              db.load('invoices'),     db.load('expenses'),      db.load('salaries'),
+              db.load('attendance'),   db.load('off_days'),      db.load('deductions'),
+              db.load('bonuses'),      db.load('team_members'),  db.load('team_clients'),
+              db.load('custom_roles'), db.load('task_depts'),    db.load('task_buckets'),
+              db.load('task_tasks'),   db.load('design_assets'), db.load('client_assets'),
+              db.load('documents'),
+            ]);
+            setLeads(lds);
+            setClients(cls);
+            setProjects(prj);
+            setInvoices(inv);
+            setExpenses(exp);
+            setSalaries(sal);
+            setAttendance(att);
+            setOffDays(ofd);
+            setDeductions(ded);
+            setBonuses(bon);
+            if (tm.length) { setTeamMembers(tm); } else {
+              setTeamMembers(INITIAL_TEAM);
+              db.saveMany('team_members', INITIAL_TEAM);
+            }
+            setTeamClients(tc);
+            if (cr.length) { setCustomRoles(cr); } else {
+              setCustomRoles(INITIAL_CUSTOM_ROLES);
+              db.saveMany('custom_roles', INITIAL_CUSTOM_ROLES);
+            }
+            setTaskDepts(td);
+            setTaskBuckets(tb);
+            setTaskTasks(tt);
+            setDesignAssets(da);
+            setClientAssets(ca);
+            setDcDocuments(doc);
+          } catch(e) {
+            console.error('Supabase initial load failed:', e);
+            setTeamMembers(INITIAL_TEAM);
+            setCustomRoles(INITIAL_CUSTOM_ROLES);
+          } finally {
+            setDbLoaded(true);
+          }
+        })();
+      }, []);
 
       const t = useCallback(key => TRANSLATIONS[lang]?.[key] ?? TRANSLATIONS.ar?.[key] ?? key, [lang]);
 
@@ -11513,81 +11616,103 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
 
       // Auto-convert Won leads to clients
       useEffect(() => {
+        if (!dbLoaded) return;
         const newWon = leads.filter(l => l.status === 'won' && !clients.find(c => c.id === l.id));
         if (newWon.length > 0) {
-          setClients(prev => [...prev, ...newWon.map(l => ({
+          const newClients = newWon.map(l => ({
             id:l.id, name:l.name, phone:l.phone, email:l.email, price_quote:l.price_quote,
             company_name:'', field:'', status_client:'active', project_client:[],
             created: new Date().toISOString().split('T')[0],
-          }))]);
+          }));
+          setClients(prev => [...prev, ...newClients]);
+          newClients.forEach(c => db.save('clients', c));
           newWon.forEach(l => showToast(t('app_lead_converted').replace('{{name}}', l.name)));
         }
-      }, [leads]);
+      }, [leads, dbLoaded]);
 
       // Auto-resolve timeouts
       useEffect(() => {
+        if (!dbLoaded) return;
         const now = new Date();
         [...teamMembers, ...teamClients].forEach(m => {
           if (m.status === 'timeout' && m.timeout_until && new Date(m.timeout_until) <= now) {
             const updated = { ...m, status: 'active', timeout_until: null };
-            teamMembers.find(x => x.id === m.id)
-              ? setTeamMembers(prev => prev.map(x => x.id === m.id ? updated : x))
-              : setTeamClients(prev => prev.map(x => x.id === m.id ? updated : x));
+            if (teamMembers.find(x => x.id === m.id)) {
+              setTeamMembers(prev => prev.map(x => x.id === m.id ? updated : x));
+              db.save('team_members', updated);
+            } else {
+              setTeamClients(prev => prev.map(x => x.id === m.id ? updated : x));
+              db.save('team_clients', updated);
+            }
           }
         });
-      }, []);
+      }, [dbLoaded]);
 
       const handleLeadUpdate = (id, field, value, newLead) => {
-        if (newLead) { setLeads(prev => [newLead, ...prev]); return; }
+        if (newLead) { setLeads(prev => [newLead, ...prev]); db.save('leads', newLead); return; }
         if (field === '_full') {
           const old = leads.find(l => l.id === id);
           if (old && old.status !== 'won' && value.status === 'won') {
             teamMembers.filter(m => m.id !== currentUser?.id && canSee(m,'crm',customRoles))
               .forEach(m => pushNotif({ userId:m.id, type:'lead_won', title:t('app_notif_lead_won'), body:value.name||'—', section:'clients' }));
           }
-          setLeads(prev => prev.map(l => l.id === id ? value : l)); return;
+          setLeads(prev => prev.map(l => l.id === id ? value : l));
+          db.save('leads', value);
+          return;
         }
         if (field === 'status' && value === 'won') {
           const lead = leads.find(l => l.id === id);
           teamMembers.filter(m => m.id !== currentUser?.id && canSee(m,'crm',customRoles))
             .forEach(m => pushNotif({ userId:m.id, type:'lead_won', title:t('app_notif_lead_won'), body:lead?.name||'—', section:'clients' }));
         }
-        setLeads(prev => prev.map(l => l.id === id ? { ...l, [field]: value } : l));
+        setLeads(prev => {
+          const next = prev.map(l => l.id === id ? { ...l, [field]: value } : l);
+          db.save('leads', next.find(l => l.id === id));
+          return next;
+        });
       };
-      const handleLeadDelete   = id => { if (confirm(t('app_del_lead_confirm'))) setLeads(prev => prev.filter(l => l.id !== id)); };
-      const handleClientUpdate = u  => setClients(prev => prev.map(c => c.id === u.id ? u : c));
-      const handleClientDelete = id => setClients(prev => prev.filter(c => c.id !== id));
+      const handleLeadDelete = id => {
+        if (confirm(t('app_del_lead_confirm'))) { setLeads(prev => prev.filter(l => l.id !== id)); db.del('leads', id); }
+      };
+      const handleClientUpdate = u => { setClients(prev => prev.map(c => c.id === u.id ? u : c)); db.save('clients', u); };
+      const handleClientDelete = id => { setClients(prev => prev.filter(c => c.id !== id)); db.del('clients', id); };
       const handleClientAdd = c => {
         setClients(prev => [c, ...prev]);
+        db.save('clients', c);
         teamMembers.filter(m => m.id !== currentUser?.id && canSee(m,'clients',customRoles))
           .forEach(m => pushNotif({ userId:m.id, type:'client_added', title:t('app_notif_client_added'), body:c.name||'—', section:'clients' }));
       };
 
       const handleAddProject = p => {
         setProjects(prev => [...prev, p]);
+        db.save('projects', p);
         teamMembers.filter(m => m.id !== currentUser?.id && canSee(m,'projects',customRoles))
           .forEach(m => pushNotif({ userId:m.id, type:'project_added', title:t('app_notif_project_added'), body:p.name||'—', section:'projects' }));
       };
-      const handleSaveInvoice   = inv => setInvoices(prev => prev.find(i => i.id === inv.id) ? prev.map(i => i.id === inv.id ? inv : i) : [...prev, inv]);
-      const handleDeleteInvoice = id  => setInvoices(prev => prev.filter(i => i.id !== id));
+      const handleSaveInvoice = inv => {
+        setInvoices(prev => prev.find(i => i.id === inv.id) ? prev.map(i => i.id === inv.id ? inv : i) : [...prev, inv]);
+        db.save('invoices', inv);
+      };
+      const handleDeleteInvoice = id => { setInvoices(prev => prev.filter(i => i.id !== id)); db.del('invoices', id); };
 
       const handleAddMember = m => {
         setTeamMembers(prev => [...prev, m]);
+        db.save('team_members', m);
         teamMembers.filter(x => x.id !== currentUser?.id && ['super_admin','admin'].includes(x.role))
           .forEach(x => pushNotif({ userId:x.id, type:'member_added', title:t('app_notif_member_added'), body:m.name||'—', section:'team' }));
       };
-      const handleUpdateMember = m   => setTeamMembers(prev => prev.map(x => x.id === m.id ? m : x));
-      const handleDeleteMember = id  => setTeamMembers(prev => prev.filter(x => x.id !== id));
-      const handleAddClient    = c   => setTeamClients(prev => [...prev, c]);
-      const handleUpdateClient = c   => setTeamClients(prev => prev.map(x => x.id === c.id ? c : x));
-      const handleDeleteClient = id  => setTeamClients(prev => prev.filter(x => x.id !== id));
+      const handleUpdateMember = m   => { setTeamMembers(prev => prev.map(x => x.id === m.id ? m : x)); db.save('team_members', m); };
+      const handleDeleteMember = id  => { setTeamMembers(prev => prev.filter(x => x.id !== id)); db.del('team_members', id); };
+      const handleAddClient    = c   => { setTeamClients(prev => [...prev, c]); db.save('team_clients', c); };
+      const handleUpdateClient = c   => { setTeamClients(prev => prev.map(x => x.id === c.id ? c : x)); db.save('team_clients', c); };
+      const handleDeleteClient = id  => { setTeamClients(prev => prev.filter(x => x.id !== id)); db.del('team_clients', id); };
 
-      const handleAddExpense    = e  => setExpenses(prev => [...prev, e]);
-      const handleUpdateExpense = e  => setExpenses(prev => prev.map(x => x.id === e.id ? e : x));
-      const handleDeleteExpense = id => setExpenses(prev => prev.filter(x => x.id !== id));
-      const handleAddSalary     = s  => setSalaries(prev => [...prev, s]);
-      const handleUpdateSalary  = s  => setSalaries(prev => prev.map(x => x.id === s.id ? s : x));
-      const handleDeleteSalary  = id => setSalaries(prev => prev.filter(x => x.id !== id));
+      const handleAddExpense    = e  => { setExpenses(prev => [...prev, e]); db.save('expenses', e); };
+      const handleUpdateExpense = e  => { setExpenses(prev => prev.map(x => x.id === e.id ? e : x)); db.save('expenses', e); };
+      const handleDeleteExpense = id => { setExpenses(prev => prev.filter(x => x.id !== id)); db.del('expenses', id); };
+      const handleAddSalary     = s  => { setSalaries(prev => [...prev, s]); db.save('salaries', s); };
+      const handleUpdateSalary  = s  => { setSalaries(prev => prev.map(x => x.id === s.id ? s : x)); db.save('salaries', s); };
+      const handleDeleteSalary  = id => { setSalaries(prev => prev.filter(x => x.id !== id)); db.del('salaries', id); };
 
       const handleSaveAdsData  = d  => setAdsData(prev => prev.find(x=>x.projectId===d.projectId) ? prev.map(x=>x.projectId===d.projectId?d:x) : [...prev,d]);
       const handleSavePost     = p  => setSmPosts(prev => prev.find(x=>x.id===p.id) ? prev.map(x=>x.id===p.id?p:x) : [...prev,p]);
@@ -11600,12 +11725,12 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         return existing ? prev.map(s=>s.projectId===partial.projectId?merged:s) : [...prev,merged];
       });
 
-      const handleSaveDesignAsset  = a  => setDesignAssets(prev => prev.find(x=>x.id===a.id) ? prev.map(x=>x.id===a.id?a:x) : [...prev,a]);
-      const handleDeleteDesignAsset= id => setDesignAssets(prev => prev.filter(x=>x.id!==id));
-      const handleSaveClientAsset  = a  => setClientAssets(prev => prev.find(x=>x.id===a.id) ? prev.map(x=>x.id===a.id?a:x) : [...prev,a]);
-      const handleDeleteClientAsset= id => setClientAssets(prev => prev.filter(x=>x.id!==id));
-      const handleSaveDocument     = d  => setDcDocuments(prev => prev.find(x=>x.id===d.id) ? prev.map(x=>x.id===d.id?d:x) : [...prev,d]);
-      const handleDeleteDocument   = id => setDcDocuments(prev => prev.filter(x=>x.id!==id));
+      const handleSaveDesignAsset  = a  => { setDesignAssets(prev => prev.find(x=>x.id===a.id) ? prev.map(x=>x.id===a.id?a:x) : [...prev,a]); db.save('design_assets', a); };
+      const handleDeleteDesignAsset= id => { setDesignAssets(prev => prev.filter(x=>x.id!==id)); db.del('design_assets', id); };
+      const handleSaveClientAsset  = a  => { setClientAssets(prev => prev.find(x=>x.id===a.id) ? prev.map(x=>x.id===a.id?a:x) : [...prev,a]); db.save('client_assets', a); };
+      const handleDeleteClientAsset= id => { setClientAssets(prev => prev.filter(x=>x.id!==id)); db.del('client_assets', id); };
+      const handleSaveDocument     = d  => { setDcDocuments(prev => prev.find(x=>x.id===d.id) ? prev.map(x=>x.id===d.id?d:x) : [...prev,d]); db.save('documents', d); };
+      const handleDeleteDocument   = id => { setDcDocuments(prev => prev.filter(x=>x.id!==id)); db.del('documents', id); };
 
       const handleSaveShortcuts = ids => {
         setDashShortcuts(ids);
@@ -11632,7 +11757,9 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         const today = todayStr();
         setAttendance(prev => {
           if (prev.find(r => r.userId === currentUser.id && r.date === today)) return prev;
-          return [...prev, { id: Date.now(), userId: currentUser.id, date: today, clockIn: new Date().toISOString(), clockOut: null, pauses: [] }];
+          const rec = { id: Date.now(), userId: currentUser.id, date: today, clockIn: new Date().toISOString(), clockOut: null, pauses: [] };
+          db.save('attendance', rec);
+          return [...prev, rec];
         });
       };
 
@@ -11642,7 +11769,9 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         setAttendance(prev => prev.map(r => {
           if (r.userId === currentUser.id && r.date === today && !r.clockOut) {
             const pauses = (r.pauses||[]).map(p => p.end ? p : { ...p, end: new Date().toISOString() });
-            return { ...r, clockOut: new Date().toISOString(), pauses };
+            const updated = { ...r, clockOut: new Date().toISOString(), pauses };
+            db.save('attendance', updated);
+            return updated;
           }
           return r;
         }));
@@ -11653,7 +11782,9 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
           setAttendance(prev => prev.map(r => {
             if (r.userId === currentUser.id && r.date === today && !r.clockOut) {
               const pauses = (r.pauses||[]).map(p => p.end ? p : { ...p, end: new Date().toISOString() });
-              return { ...r, clockOut: new Date().toISOString(), pauses };
+              const updated = { ...r, clockOut: new Date().toISOString(), pauses };
+              db.save('attendance', updated);
+              return updated;
             }
             return r;
           }));
@@ -11668,7 +11799,9 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
           if (r.userId === currentUser.id && r.date === today && !r.clockOut) {
             const pauses = r.pauses||[];
             if (pauses.length > 0 && !pauses[pauses.length-1].end) return r;
-            return { ...r, pauses: [...pauses, { start: new Date().toISOString(), end: null }] };
+            const updated = { ...r, pauses: [...pauses, { start: new Date().toISOString(), end: null }] };
+            db.save('attendance', updated);
+            return updated;
           }
           return r;
         }));
@@ -11683,40 +11816,64 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
             if (pauses.length > 0 && !pauses[pauses.length-1].end) {
               pauses[pauses.length-1] = { ...pauses[pauses.length-1], end: new Date().toISOString() };
             }
-            return { ...r, pauses };
+            const updated = { ...r, pauses };
+            db.save('attendance', updated);
+            return updated;
           }
           return r;
         }));
         showToast('استأنفت العمل ✓');
       };
 
-      const handleAddDeduction = d  => setDeductions(prev => [...prev, d]);
-      const handleAddOffDay    = d  => setOffDays(prev => [...prev, d]);
-      const handleAddBonus     = b  => setBonuses(prev => [...prev, b]);
+      const handleAddDeduction = d  => { setDeductions(prev => [...prev, d]); db.save('deductions', d); };
+      const handleAddOffDay    = d  => { setOffDays(prev => [...prev, d]); db.save('off_days', d); };
+      const handleAddBonus     = b  => { setBonuses(prev => [...prev, b]); db.save('bonuses', b); };
       const handleSaveProfile = updated => {
         if (updated.role === 'client') {
           setTeamClients(prev => prev.map(c => c.id === updated.id ? updated : c));
+          db.save('team_clients', updated);
         } else {
           setTeamMembers(prev => prev.map(m => m.id === updated.id ? updated : m));
+          db.save('team_members', updated);
         }
         setCurrentUser(updated);
         showToast('تم حفظ التغييرات ✓');
       };
 
-      const handleAddTaskDept      = d  => setTaskDepts(prev => [...prev, d]);
-      const handleDeleteTaskDept   = id => {
+      const handleAddTaskDept = d => { setTaskDepts(prev => [...prev, d]); db.save('task_depts', d); };
+      const handleDeleteTaskDept = id => {
         const bucketIds = taskBuckets.filter(b => b.department_id === id).map(b => b.id);
+        const taskIds   = taskTasks.filter(t => bucketIds.includes(t.bucket_id)).map(t => t.id);
         setTaskTasks(prev => prev.filter(t => !bucketIds.includes(t.bucket_id)));
         setTaskBuckets(prev => prev.filter(b => b.department_id !== id));
         setTaskDepts(prev => prev.filter(d => d.id !== id));
+        if (taskIds.length) db.delMany('task_tasks', taskIds);
+        if (bucketIds.length) db.delMany('task_buckets', bucketIds);
+        db.del('task_depts', id);
       };
-      const handleReorderTaskDepts = orderedIds => setTaskDepts(prev => prev.map(d => ({ ...d, order: orderedIds.indexOf(d.id) + 1 })));
-      const handleAddTaskBucket    = b  => setTaskBuckets(prev => [...prev, b]);
+      const handleReorderTaskDepts = orderedIds => {
+        setTaskDepts(prev => {
+          const next = prev.map(d => ({ ...d, order: orderedIds.indexOf(d.id) + 1 }));
+          db.saveMany('task_depts', next);
+          return next;
+        });
+      };
+      const handleAddTaskBucket = b => { setTaskBuckets(prev => [...prev, b]); db.save('task_buckets', b); };
       const handleDeleteTaskBucket = id => {
+        const taskIds = taskTasks.filter(t => t.bucket_id === id).map(t => t.id);
         setTaskTasks(prev => prev.filter(tk => tk.bucket_id !== id));
         setTaskBuckets(prev => prev.filter(b => b.id !== id));
+        if (taskIds.length) db.delMany('task_tasks', taskIds);
+        db.del('task_buckets', id);
       };
-      const handleRenameTaskBucket = (id, name) => setTaskBuckets(prev => prev.map(b => b.id === id ? { ...b, name } : b));
+      const handleRenameTaskBucket = (id, name) => {
+        setTaskBuckets(prev => {
+          const next = prev.map(b => b.id === id ? { ...b, name } : b);
+          const updated = next.find(b => b.id === id);
+          if (updated) db.save('task_buckets', updated);
+          return next;
+        });
+      };
       const handleSaveTaskTask = task => {
         const existing = taskTasks.find(x => x.id === task.id);
         if (!existing) {
@@ -11730,17 +11887,18 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
           );
         }
         setTaskTasks(prev => prev.find(x=>x.id===task.id) ? prev.map(x=>x.id===task.id?task:x) : [...prev,task]);
+        db.save('task_tasks', task);
       };
-      const handleDeleteTaskTask   = id => setTaskTasks(prev => prev.filter(x=>x.id!==id));
+      const handleDeleteTaskTask = id => { setTaskTasks(prev => prev.filter(x=>x.id!==id)); db.del('task_tasks', id); };
       const handleSaveWebData = record => setWebData(prev => {
         const exists = prev.find(x => x.id === record.id || x.projectId === record.projectId);
         return exists
           ? prev.map(x => (x.id === record.id || x.projectId === record.projectId) ? { ...x, ...record } : x)
           : [...prev, record];
       });
-      const handleAddCustomRole    = r  => setCustomRoles(prev => [...prev, r]);
-      const handleUpdateCustomRole = r  => setCustomRoles(prev => prev.map(x => x.id===r.id ? r : x));
-      const handleDeleteCustomRole = id => setCustomRoles(prev => prev.filter(x => x.id!==id));
+      const handleAddCustomRole    = r  => { setCustomRoles(prev => [...prev, r]); db.save('custom_roles', r); };
+      const handleUpdateCustomRole = r  => { setCustomRoles(prev => prev.map(x => x.id===r.id ? r : x)); db.save('custom_roles', r); };
+      const handleDeleteCustomRole = id => { setCustomRoles(prev => prev.filter(x => x.id!==id)); db.del('custom_roles', id); };
 
       const render = () => {
         switch (page) {
@@ -11826,6 +11984,20 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       };
 
       const langCtxVal = useMemo(() => ({ lang, t }), [lang, t]);
+
+      if (!dbLoaded) {
+        return (
+          <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center text-white font-black text-2xl shadow-2xl shadow-blue-500/30">M</div>
+            <div className="flex gap-1.5">
+              {[0,1,2].map(i => (
+                <div key={i} className="w-2 h-2 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }}/>
+              ))}
+            </div>
+            <p className="text-slate-500 text-sm">جاري تحميل البيانات…</p>
+          </div>
+        );
+      }
 
       if (!currentUser) {
         return (

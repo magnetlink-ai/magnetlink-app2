@@ -2,7 +2,7 @@ const http = require('http');
 const fs   = require('fs');
 const path = require('path');
 
-const ROOT = 'C:\\div3';
+const ROOT = 'C:\\div4';
 
 const server = http.createServer((req, res) => {
   const urlPath = req.url === '/' ? '/magnet-link-bms.html' : req.url.split('?')[0];
