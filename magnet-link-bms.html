@@ -4657,11 +4657,14 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
 
     /* ═══════════════════════════ PROJECT DETAIL ═══════════════════════════ */
 
-    const ProjectDetailPage = ({ project, client, invoices, onBack, onSaveInvoice, onDeleteInvoice, showToast }) => {
+    const ProjectDetailPage = ({ project, client, invoices, clients, onBack, onSaveInvoice, onDeleteInvoice, onSaveProject, showToast }) => {
       const { t } = useLang();
       const [tab, setTab]           = useState('overview');
       const [invFormOpen, setForm]  = useState(false);
       const [editInv, setEditInv]   = useState(null);
+      const [editOpen, setEditOpen] = useState(false);
+      const [ef, setEf]             = useState({});
+      const inputCls = "w-full bg-slate-700 border border-slate-600 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-white outline-none";
       const dl = DELIVERY_STATUSES.find(s=>s.id===project.delivery);
       const projInvs = invoices.filter(i=>i.projectId===project.id);
       const totalPaid = projInvs.reduce((sum,inv)=>{
@@ -4682,6 +4685,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl font-bold text-white">{project.name}</h1>
                 {dl&&<span className={`text-xs px-2.5 py-1 rounded-full border flex items-center gap-1.5 ${dl.badge}`}><span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dl.dot}`}/>{sl(dl,t)}</span>}
+                <button onClick={()=>{setEf({name:project.name,clientId:project.clientId,service_requested:project.service_requested,start_date:project.start_date,delivery:project.delivery});setEditOpen(true);}} className="text-xs px-3 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg border border-slate-600">{t('edit')||'تعديل'}</button>
               </div>
               <div className="text-slate-500 text-sm mt-1">{client?.name||'—'} · {project.service_requested} · {t('proj_started')} {project.start_date}</div>
             </div>
@@ -4816,6 +4820,38 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
               onClose={()=>{setEditInv(null);setForm(false);}}
             />
           )}
+          {editOpen&&(
+            <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
+                  <h3 className="font-semibold text-white">{t('edit')||'تعديل'} {t('proj_name_lbl')||'المشروع'}</h3>
+                  <button onClick={()=>setEditOpen(false)} className="text-slate-500 hover:text-white"><Ic name="x"/></button>
+                </div>
+                <div className="p-5 space-y-4">
+                  <div><label className="text-xs text-slate-400 block mb-1">{t('proj_name_lbl')} *</label>
+                    <input value={ef.name||''} onChange={e=>setEf(p=>({...p,name:e.target.value}))} className={inputCls}/></div>
+                  <div><label className="text-xs text-slate-400 block mb-1">{t('proj_client_lbl')}</label>
+                    <select value={ef.clientId||''} onChange={e=>setEf(p=>({...p,clientId:Number(e.target.value)}))} className={inputCls}>
+                      {(clients||[]).map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select></div>
+                  <div><label className="text-xs text-slate-400 block mb-1">{t('proj_service_lbl')}</label>
+                    <select value={ef.service_requested||''} onChange={e=>setEf(p=>({...p,service_requested:e.target.value}))} className={inputCls}>
+                      {SERVICES.map(s=><option key={s}>{s}</option>)}
+                    </select></div>
+                  <div><label className="text-xs text-slate-400 block mb-1">{t('proj_start_lbl')}</label>
+                    <input type="date" value={ef.start_date||''} onChange={e=>setEf(p=>({...p,start_date:e.target.value}))} className={inputCls}/></div>
+                  <div><label className="text-xs text-slate-400 block mb-1">{t('proj_delivery_lbl')}</label>
+                    <select value={ef.delivery||''} onChange={e=>setEf(p=>({...p,delivery:e.target.value}))} className={inputCls}>
+                      {DELIVERY_STATUSES.map(s=><option key={s.id} value={s.id}>{sl(s,t)}</option>)}
+                    </select></div>
+                </div>
+                <div className="flex gap-3 px-5 pb-5">
+                  <button onClick={()=>{if(!ef.name?.trim())return;onSaveProject({...project,...ef});setEditOpen(false);showToast('تم الحفظ ✓');}} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-2.5 text-sm font-medium">{t('save')||'حفظ'}</button>
+                  <button onClick={()=>setEditOpen(false)} className="px-5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl py-2.5 text-sm">{t('cancel')||'إلغاء'}</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     };
@@ -4869,7 +4905,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
 
     /* ═══════════════════════════ PROJECTS MODULE ═══════════════════════════ */
 
-    const ProjectsModule = ({ projects, clients, invoices, onAddProject, onSaveInvoice, onDeleteInvoice, showToast }) => {
+    const ProjectsModule = ({ projects, clients, invoices, onAddProject, onSaveProject, onSaveInvoice, onDeleteInvoice, showToast }) => {
       const { t } = useLang();
       const [viewId,setViewId]=useState(null);
       const [newModal,setNewModal]=useState(false);
@@ -4881,8 +4917,8 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
         return !q||p.name.toLowerCase().includes(q)||(clients.find(c=>c.id===p.clientId)?.name||'').toLowerCase().includes(q);
       });
       if(viewProject) return (
-        <ProjectDetailPage project={viewProject} client={viewClient} invoices={invoices}
-          onBack={()=>setViewId(null)} onSaveInvoice={onSaveInvoice} onDeleteInvoice={onDeleteInvoice} showToast={showToast}/>
+        <ProjectDetailPage project={viewProject} client={viewClient} invoices={invoices} clients={clients}
+          onBack={()=>setViewId(null)} onSaveInvoice={onSaveInvoice} onDeleteInvoice={onDeleteInvoice} onSaveProject={onSaveProject} showToast={showToast}/>
       );
       return (
         <div className="space-y-5">
@@ -11892,6 +11928,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
           .forEach(m => pushNotif({ userId:m.id, type:'client_added', title:t('app_notif_client_added'), body:c.name||'—', section:'clients' }));
       };
 
+      const handleSaveProject = p => { setProjects(prev => prev.map(x => x.id === p.id ? p : x)); db.save('projects', p); };
       const handleAddProject = p => {
         setProjects(prev => [...prev, p]);
         db.save('projects', p);
@@ -12124,7 +12161,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
           case 'clients': return <Clients clients={clients} onUpdate={handleClientUpdate} onDelete={handleClientDelete} onAdd={handleClientAdd} showToast={showToast}/>;
           case 'projects': return (
             <ProjectsModule projects={projects} clients={clients} invoices={invoices}
-              onAddProject={handleAddProject} onSaveInvoice={handleSaveInvoice} onDeleteInvoice={handleDeleteInvoice} showToast={showToast}/>
+              onAddProject={handleAddProject} onSaveProject={handleSaveProject} onSaveInvoice={handleSaveInvoice} onDeleteInvoice={handleDeleteInvoice} showToast={showToast}/>
           );
           case 'team': return (
             <TeamModule teamMembers={teamMembers} teamClients={teamClients} customRoles={customRoles} currentUser={currentUser}
