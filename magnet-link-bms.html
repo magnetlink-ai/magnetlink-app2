@@ -1535,11 +1535,13 @@
       const m = JSON.parse(localStorage.getItem('bms_ms_accounts') || '{}');
       m[String(userId)] = account.homeAccountId;
       localStorage.setItem('bms_ms_accounts', JSON.stringify(m));
+      saveMsEmailCloud(userId, account.username);
     };
     const removeMsAccountLink = (userId) => {
       const m = JSON.parse(localStorage.getItem('bms_ms_accounts') || '{}');
       delete m[String(userId)];
       localStorage.setItem('bms_ms_accounts', JSON.stringify(m));
+      removeMsEmailCloud(userId);
     };
     const getMsal = () => {
       if (!_msalInstance) {
@@ -1557,16 +1559,38 @@
 
     const SP_SCOPES = ['https://graph.microsoft.com/Sites.ReadWrite.All','https://graph.microsoft.com/Files.ReadWrite'];
 
+    const _clearMsalInteraction = () => {
+      Object.keys(sessionStorage).forEach(k => {
+        if (k.includes('interaction.status') || k.includes('interaction_status')) sessionStorage.removeItem(k);
+      });
+    };
+    const msalLoginPopup = async (opts) => {
+      const msal = getMsal();
+      try { return await msal.loginPopup(opts); }
+      catch (e) {
+        if (e.errorCode === 'interaction_in_progress') { _clearMsalInteraction(); return await msal.loginPopup(opts); }
+        throw e;
+      }
+    };
+    const msalAcquireTokenPopup = async (opts) => {
+      const msal = getMsal();
+      try { return await msal.acquireTokenPopup(opts); }
+      catch (e) {
+        if (e.errorCode === 'interaction_in_progress') { _clearMsalInteraction(); return await msal.acquireTokenPopup(opts); }
+        throw e;
+      }
+    };
+
     const getToken = async () => {
       const msal = getMsal();
       let account = getMsAccountForUser(_currentBmsUserId);
       if (!account) {
-        const res = await msal.loginPopup({ scopes: SP_SCOPES });
+        const res = await msalLoginPopup({ scopes: SP_SCOPES });
         saveMsAccountLink(_currentBmsUserId, res.account);
         account = res.account;
       }
       const res = await msal.acquireTokenSilent({ scopes: SP_SCOPES, account }).catch(async () =>
-        msal.acquireTokenPopup({ scopes: SP_SCOPES, account })
+        msalAcquireTokenPopup({ scopes: SP_SCOPES, account })
       );
       return res.accessToken;
     };
@@ -1726,6 +1750,25 @@
         _sb.from(table).delete().in('id', ids.map(String))
           .then(({ error }) => { if (error) console.error('db.delMany', table, error); });
       },
+      loadOne: async (table, id) => {
+        if (!_sb) return null;
+        const { data, error } = await _sb.from(table).select('data').eq('id', String(id)).single();
+        if (error || !data) return null;
+        return data.data;
+      },
+    };
+
+    const saveMsEmailCloud   = (userId, msEmail) => db.save('ms_links', { id: String(userId), ms_email: msEmail });
+    const removeMsEmailCloud = (userId)          => db.del('ms_links', String(userId));
+    const tryAutoLinkMicrosoft = async (userId) => {
+      if (!userId) return;
+      try {
+        const record = await db.loadOne('ms_links', userId);
+        if (!record?.ms_email) return;
+        const msal = getMsal();
+        const res  = await msal.ssoSilent({ loginHint: record.ms_email, scopes: ['openid','profile','email','offline_access'] });
+        saveMsAccountLink(userId, res.account);
+      } catch (_) { /* silent — Connect button still shows if needed */ }
     };
 
     const LEAD_STATUSES = [
@@ -2150,11 +2193,12 @@
       const joinDate      = user.join_date ? new Date(user.join_date) : null;
       const daysWithUs    = joinDate ? Math.floor((now - joinDate) / 86400000) : null;
 
+      const isOwnProfile = user.id === _currentBmsUserId;
       const TABS = [
         { id:'info',      label:t('prf_info'),        icon:'client'  },
         { id:'stats',     label:t('prf_att_salary'),  icon:'clock2'  },
         { id:'perms',     label:t('prf_perms'),       icon:'shield2' },
-        { id:'microsoft', label:'Microsoft',           icon:'web'     },
+        ...(isOwnProfile ? [{ id:'microsoft', label:'Microsoft', icon:'web' }] : []),
       ];
 
       const StatCard = ({ label, value, sub, color='text-white', icon }) => (
@@ -2401,7 +2445,7 @@
                   try {
                     const msal = getMsal();
                     const scopes = [...SP_SCOPES, ...MAIL_SCOPES, ...CHAT_SCOPES];
-                    const res = await msal.loginPopup({ scopes });
+                    const res = await msalLoginPopup({ scopes });
                     saveMsAccountLink(user.id, res.account);
                     if (user.id === _currentBmsUserId) _currentBmsUserId = user.id;
                     setMsAcc(res.account);
@@ -6959,7 +7003,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
         setSpLoading(true);
         try {
           const msal = getMsal();
-          const res = await msal.loginPopup({ scopes: SP_SCOPES });
+          const res = await msalLoginPopup({ scopes: SP_SCOPES });
           saveMsAccountLink(_currentBmsUserId, res.account);
           setSpUser(res.account);
           showToast(t('des_sp_connected'));
@@ -10175,12 +10219,12 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       const msal = getMsal();
       let account = getMsAccountForUser(_currentBmsUserId);
       if (!account) {
-        const res = await msal.loginPopup({ scopes: MAIL_SCOPES });
+        const res = await msalLoginPopup({ scopes: MAIL_SCOPES });
         saveMsAccountLink(_currentBmsUserId, res.account);
         account = res.account;
       }
       const res = await msal.acquireTokenSilent({ scopes: MAIL_SCOPES, account }).catch(async () =>
-        msal.acquireTokenPopup({ scopes: MAIL_SCOPES, account })
+        msalAcquireTokenPopup({ scopes: MAIL_SCOPES, account })
       );
       return res.accessToken;
     };
@@ -10600,12 +10644,12 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       const msal = getMsal();
       let account = getMsAccountForUser(_currentBmsUserId);
       if (!account) {
-        const res = await msal.loginPopup({ scopes: CHAT_SCOPES });
+        const res = await msalLoginPopup({ scopes: CHAT_SCOPES });
         saveMsAccountLink(_currentBmsUserId, res.account);
         account = res.account;
       }
       const res = await msal.acquireTokenSilent({ scopes: CHAT_SCOPES, account }).catch(async () =>
-        msal.acquireTokenPopup({ scopes: CHAT_SCOPES, account })
+        msalAcquireTokenPopup({ scopes: CHAT_SCOPES, account })
       );
       return res.accessToken;
     };
@@ -11719,6 +11763,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       const handleLogin = user => {
         _currentBmsUserId = user.id;
         setCurrentUser(user);
+        tryAutoLinkMicrosoft(user.id);
         const savedTheme = localStorage.getItem(`bms_theme_${user.id}`) || 'dark';
         const savedLang  = localStorage.getItem(`bms_lang_${user.id}`)  || 'ar';
         const savedShortcuts = (() => {
