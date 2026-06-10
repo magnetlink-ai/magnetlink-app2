@@ -2098,19 +2098,25 @@
         ...teamClients.map(c => ({ ...c, _type: 'client', role: 'client' })),
       ];
       const handleSubmit = async () => {
-        const user = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase().trim());
+        const inputEmail = email.toLowerCase().trim();
+        const user = allUsers.find(u => u.email.toLowerCase() === inputEmail);
+        console.log('[LOGIN] users available:', allUsers.length);
+        console.log('[LOGIN] user found:', !!user, '| status:', user?.status, '| email match:', inputEmail);
         if (!user || user.status !== 'active') { setError(t('login_wrong')); return; }
         const key = user.email.toLowerCase();
         const ps  = JSON.parse(localStorage.getItem('bms_passwords') || '{}');
         let storedPass = ps[key];
+        console.log('[LOGIN] localStorage pass exists:', storedPass !== undefined);
         if (storedPass === undefined) {
           const rec = await db.loadOne('user_passwords', key);
+          console.log('[LOGIN] Supabase rec:', rec);
           if (rec?.password) {
             storedPass = rec.password;
             ps[key] = storedPass;
             localStorage.setItem('bms_passwords', JSON.stringify(ps));
           }
         }
+        console.log('[LOGIN] storedPass:', storedPass, '| input:', password.trim(), '| match:', storedPass === password.trim());
         if (storedPass !== password.trim()) { setError(t('login_wrong')); return; }
         onLogin(user);
       };
