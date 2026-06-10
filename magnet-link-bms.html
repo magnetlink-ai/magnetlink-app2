@@ -1732,8 +1732,8 @@
         return (data || []).map(r => r.data);
       },
       save: (table, record) => {
-        if (!_sb || record == null) return;
-        _sb.from(table).upsert({ id: String(record.id), data: record })
+        if (!_sb || record == null) return Promise.resolve();
+        return _sb.from(table).upsert({ id: String(record.id), data: record })
           .then(({ error }) => { if (error) console.error('db.save', table, error); });
       },
       saveMany: (table, records) => {
