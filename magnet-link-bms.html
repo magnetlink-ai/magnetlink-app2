@@ -2221,6 +2221,22 @@
       const [cpErr,  setCpErr]  = useState('');
       const [cpShow, setCpShow] = useState(false);
 
+      /* ── microsoft tab state ── */
+      const [msAcc, setMsAcc] = useState(() => getMsAccountForUser(user.id));
+      const [msLoading, setMsLoading] = useState(false);
+      const msConnect = async () => {
+        setMsLoading(true);
+        try {
+          const scopes = [...SP_SCOPES, ...MAIL_SCOPES, ...CHAT_SCOPES];
+          const res = await msalLoginPopup({ scopes });
+          saveMsAccountLink(user.id, res.account);
+          if (user.id === _currentBmsUserId) _currentBmsUserId = user.id;
+          setMsAcc(res.account);
+        } catch(e) { console.error(e); }
+        setMsLoading(false);
+      };
+      const msDisconnect = () => { removeMsAccountLink(user.id); setMsAcc(null); };
+
       const savePass = () => {
         const key = user.email.toLowerCase();
         const ps = JSON.parse(localStorage.getItem('bms_passwords')||'{}');
@@ -2505,63 +2521,43 @@
               )}
 
               {/* ── Microsoft Account Tab ── */}
-              {tab === 'microsoft' && (() => {
-                const [msAcc, setMsAcc] = React.useState(() => getMsAccountForUser(user.id));
-                const [msLoading, setMsLoading] = React.useState(false);
-                const connect = async () => {
-                  setMsLoading(true);
-                  try {
-                    const msal = getMsal();
-                    const scopes = [...SP_SCOPES, ...MAIL_SCOPES, ...CHAT_SCOPES];
-                    const res = await msalLoginPopup({ scopes });
-                    saveMsAccountLink(user.id, res.account);
-                    if (user.id === _currentBmsUserId) _currentBmsUserId = user.id;
-                    setMsAcc(res.account);
-                  } catch(e) { console.error(e); }
-                  setMsLoading(false);
-                };
-                const disconnect = () => {
-                  removeMsAccountLink(user.id);
-                  setMsAcc(null);
-                };
-                return (
-                  <div className="px-6 py-5 space-y-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                        <svg viewBox="0 0 23 23" width="16" height="16"><rect x="1" y="1" width="10" height="10" fill="#f25022"/><rect x="12" y="1" width="10" height="10" fill="#7fba00"/><rect x="1" y="12" width="10" height="10" fill="#00a4ef"/><rect x="12" y="12" width="10" height="10" fill="#ffb900"/></svg>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-white">Microsoft Account</div>
-                        <div className="text-xs text-slate-500">Outlook · SharePoint · Teams</div>
-                      </div>
+              {tab === 'microsoft' && (
+                <div className="px-6 py-5 space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                      <svg viewBox="0 0 23 23" width="16" height="16"><rect x="1" y="1" width="10" height="10" fill="#f25022"/><rect x="12" y="1" width="10" height="10" fill="#7fba00"/><rect x="1" y="12" width="10" height="10" fill="#00a4ef"/><rect x="12" y="12" width="10" height="10" fill="#ffb900"/></svg>
                     </div>
-                    {msAcc ? (
-                      <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Ic name="check" size={13} className="text-emerald-400"/>
-                          <span className="text-emerald-400 text-sm font-medium">متصل</span>
-                        </div>
-                        <div className="text-slate-300 text-sm">{msAcc.username}</div>
-                        <div className="text-slate-500 text-xs">{msAcc.name || msAcc.displayName || ''}</div>
-                        <button onClick={disconnect}
-                          className="w-full mt-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-lg py-2 text-xs font-medium transition-colors">
-                          قطع الاتصال
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="bg-slate-800/60 border border-slate-700/40 rounded-xl p-4 space-y-3 text-center">
-                        <p className="text-slate-400 text-sm">لم يتم ربط حساب Microsoft بعد</p>
-                        <p className="text-slate-600 text-xs">اربط حسابك للوصول إلى Outlook و SharePoint و Teams</p>
-                        <button onClick={connect} disabled={msLoading}
-                          className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2">
-                          <svg viewBox="0 0 23 23" width="14" height="14"><rect x="1" y="1" width="10" height="10" fill="#fff"/><rect x="12" y="1" width="10" height="10" fill="#fff"/><rect x="1" y="12" width="10" height="10" fill="#fff"/><rect x="12" y="12" width="10" height="10" fill="#fff"/></svg>
-                          {msLoading ? '...' : 'ربط حساب Microsoft'}
-                        </button>
-                      </div>
-                    )}
+                    <div>
+                      <div className="text-sm font-medium text-white">Microsoft Account</div>
+                      <div className="text-xs text-slate-500">Outlook · SharePoint · Teams</div>
+                    </div>
                   </div>
-                );
-              })()}
+                  {msAcc ? (
+                    <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Ic name="check" size={13} className="text-emerald-400"/>
+                        <span className="text-emerald-400 text-sm font-medium">متصل</span>
+                      </div>
+                      <div className="text-slate-300 text-sm">{msAcc.username}</div>
+                      <div className="text-slate-500 text-xs">{msAcc.name || msAcc.displayName || ''}</div>
+                      <button onClick={msDisconnect}
+                        className="w-full mt-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-lg py-2 text-xs font-medium transition-colors">
+                        قطع الاتصال
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bg-slate-800/60 border border-slate-700/40 rounded-xl p-4 space-y-3 text-center">
+                      <p className="text-slate-400 text-sm">لم يتم ربط حساب Microsoft بعد</p>
+                      <p className="text-slate-600 text-xs">اربط حسابك للوصول إلى Outlook و SharePoint و Teams</p>
+                      <button onClick={msConnect} disabled={msLoading}
+                        className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                        <svg viewBox="0 0 23 23" width="14" height="14"><rect x="1" y="1" width="10" height="10" fill="#fff"/><rect x="12" y="1" width="10" height="10" fill="#fff"/><rect x="1" y="12" width="10" height="10" fill="#fff"/><rect x="12" y="12" width="10" height="10" fill="#fff"/></svg>
+                        {msLoading ? '...' : 'ربط حساب Microsoft'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Footer save */}
