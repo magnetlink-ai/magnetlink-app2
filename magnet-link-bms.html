@@ -2097,11 +2097,21 @@
         ...teamMembers.map(m => ({ ...m, _type: 'member' })),
         ...teamClients.map(c => ({ ...c, _type: 'client', role: 'client' })),
       ];
-      const handleSubmit = () => {
+      const handleSubmit = async () => {
         const user = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase().trim());
         if (!user || user.status !== 'active') { setError(t('login_wrong')); return; }
-        const passwords = JSON.parse(localStorage.getItem('bms_passwords') || '{}');
-        if (passwords[user.email.toLowerCase()] !== password) { setError(t('login_wrong')); return; }
+        const key = user.email.toLowerCase();
+        const ps  = JSON.parse(localStorage.getItem('bms_passwords') || '{}');
+        let storedPass = ps[key];
+        if (storedPass === undefined) {
+          const rec = await db.loadOne('user_passwords', key);
+          if (rec?.password) {
+            storedPass = rec.password;
+            ps[key] = storedPass;
+            localStorage.setItem('bms_passwords', JSON.stringify(ps));
+          }
+        }
+        if (storedPass !== password.trim()) { setError(t('login_wrong')); return; }
         onLogin(user);
       };
       const inp = "w-full bg-slate-800/80 border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white outline-none placeholder-slate-500 transition-colors";
@@ -5710,14 +5720,14 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
         if(isTeam)onDeleteMember(m.id);else onDeleteClient(m.id);
         showToast(t('tm_toast_deleted').replace('{{name}}',m.name));
       };
-      const handleResetPass=m=>{
+      const handleResetPass=async m=>{
         const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
         const newPass=Array.from({length:10},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
         const key=m.email.toLowerCase();
         const ps=JSON.parse(localStorage.getItem('bms_passwords')||'{}');
         ps[key]=newPass;
         localStorage.setItem('bms_passwords',JSON.stringify(ps));
-        db.save('user_passwords',{id:key,password:newPass});
+        await db.save('user_passwords',{id:key,password:newPass});
         setResetPassInfo({name:m.name,email:m.email,newPass});
       };
       const handleSaveMember=m=>{
@@ -11818,7 +11828,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
             ]);
             if (pwds.length) {
               const ps = JSON.parse(localStorage.getItem('bms_passwords')||'{}');
-              pwds.forEach(p => { if (p.id && p.password) ps[p.id] = p.password; });
+              pwds.forEach(p => { if (p.id && p.password && !(p.id in ps)) ps[p.id] = p.password; });
               localStorage.setItem('bms_passwords', JSON.stringify(ps));
             }
             setLeads(lds);
