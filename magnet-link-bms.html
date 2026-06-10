@@ -6965,9 +6965,12 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
       const [spLoading,    setSpLoading]    = useState(false);
       const [spRootPath,   setSpRootPath]   = useState('');
       const [showPathInput,setShowPathInput]= useState(false);
-      const [dragInfo,     setDragInfo]    = useState(null);
-      const [dragOverTab,  setDragOverTab] = useState(null);
-      const [dragOverCat,  setDragOverCat] = useState(null);
+      const [dragInfo,      setDragInfo]     = useState(null);
+      const [dragOverTab,   setDragOverTab]  = useState(null);
+      const [dragOverCat,   setDragOverCat]  = useState(null);
+      const [spBrowsePath,  setSpBrowsePath] = useState([]);   // breadcrumb stack [{name,id}]
+      const [spBrowseItems, setSpBrowseItems]= useState([]);
+      const [spBrowseLoad,  setSpBrowseLoad] = useState(false);
 
       const project = projects.find(p=>p.id===selProjectId);
       const cats = (type) => [...DC_DEFAULT_CATS, ...(type==='docs'?['Content']:[] ), ...customCats[type]];
@@ -7018,6 +7021,28 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
         removeMsAccountLink(_currentBmsUserId);
         setSpUser(null);
       };
+
+      /* ── SharePoint file browser ── */
+      const spBrowseFetch = async (itemId = null, breadcrumb = []) => {
+        if (!spUser) return;
+        setSpBrowseLoad(true);
+        try {
+          const driveId = await getDriveId();
+          const url = itemId
+            ? `/drives/${driveId}/items/${itemId}/children?$select=id,name,size,webUrl,folder,file,lastModifiedDateTime,createdBy&$orderby=name`
+            : `/drives/${driveId}/root/children?$select=id,name,size,webUrl,folder,file,lastModifiedDateTime,createdBy&$orderby=name`;
+          const data = await graphFetch(url);
+          setSpBrowseItems(data.value || []);
+          setSpBrowsePath(breadcrumb);
+        } catch(e) { showToast('SharePoint error: ' + e.message); }
+        setSpBrowseLoad(false);
+      };
+
+      useEffect(() => {
+        if (activeTab === 'sharepoint' && spUser && spBrowseItems.length === 0 && !spBrowseLoad) {
+          spBrowseFetch(null, []);
+        }
+      }, [activeTab, spUser]);
 
       /* ── Setup: create per-project folder structure in SharePoint ── */
       const handleSetupFolders = async () => {
@@ -7212,26 +7237,28 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
             </div>
           </div>
 
-          {!project ? (
+          {/* Tab Bar — always visible */}
+          <div className="flex gap-1 bg-slate-900/60 border border-slate-800 rounded-xl p-1 mb-6 w-fit">
+            {[['design','🎨 Design'],['from_client','📥 From Client'],['documents','📝 Documents'],['sharepoint','📁 SharePoint']].map(([id,label])=>(
+              <button key={id}
+                onClick={()=>setActiveTab(id)}
+                onDragOver={e=>{ e.preventDefault(); setDragOverTab(id); }}
+                onDragLeave={()=>setDragOverTab(null)}
+                onDrop={e=>{ e.preventDefault(); setDragOverTab(null); if(dragInfo&&dragInfo.fromTab!==id){ handleMoveAsset(dragInfo.asset,dragInfo.fromTab,id); setDragInfo(null); } }}
+                className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
+                  dragOverTab===id&&dragInfo?.fromTab!==id ? 'bg-blue-600/40 text-blue-200 ring-1 ring-blue-500 scale-105' :
+                  activeTab===id ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                }`}>
+                {dragOverTab===id&&dragInfo?.fromTab!==id ? `+ ${label}` : label}
+              </button>
+            ))}
+          </div>
+
+          {activeTab==='sharepoint' ? null : !project ? (
             <div className="text-center text-slate-600 py-20">{t('des_select_project')}</div>
           ) : (
             <>
-              {/* Tab Bar */}
-              <div className="flex gap-1 bg-slate-900/60 border border-slate-800 rounded-xl p-1 mb-6 w-fit">
-                {[['design','🎨 Design'],['from_client','📥 From Client'],['documents','📝 Documents']].map(([id,label])=>(
-                  <button key={id}
-                    onClick={()=>setActiveTab(id)}
-                    onDragOver={e=>{ e.preventDefault(); setDragOverTab(id); }}
-                    onDragLeave={()=>setDragOverTab(null)}
-                    onDrop={e=>{ e.preventDefault(); setDragOverTab(null); if(dragInfo&&dragInfo.fromTab!==id){ handleMoveAsset(dragInfo.asset,dragInfo.fromTab,id); setDragInfo(null); } }}
-                    className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
-                      dragOverTab===id&&dragInfo?.fromTab!==id ? 'bg-blue-600/40 text-blue-200 ring-1 ring-blue-500 scale-105' :
-                      activeTab===id ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
-                    }`}>
-                    {dragOverTab===id&&dragInfo?.fromTab!==id ? `+ ${label}` : label}
-                  </button>
-                ))}
-              </div>
+              {/* Tab Bar placeholder - content below */}
 
               {/* ── Design Tab ── */}
               {activeTab==='design'&&(
@@ -7453,7 +7480,93 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                   {pDocs.length===0&&<div className="text-center text-slate-600 py-16">{t('des_empty_docs')}</div>}
                 </div>
               )}
+
             </>
+          )}
+
+          {/* ── SharePoint File Browser ── */}
+          {activeTab==='sharepoint'&&(
+            <div>
+              {!spUser ? (
+                <div className="flex flex-col items-center justify-center py-24 gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center">
+                    <svg viewBox="0 0 23 23" width="28" height="28"><rect x="1" y="1" width="10" height="10" fill="#f25022"/><rect x="12" y="1" width="10" height="10" fill="#7fba00"/><rect x="1" y="12" width="10" height="10" fill="#00a4ef"/><rect x="12" y="12" width="10" height="10" fill="#ffb900"/></svg>
+                  </div>
+                  <p className="text-slate-400 text-sm">اربط حساب Microsoft أولاً من الزر أعلاه</p>
+                </div>
+              ) : (
+                <div>
+                  {/* Breadcrumb */}
+                  <div className="flex items-center gap-1 mb-4 flex-wrap">
+                    <button onClick={()=>spBrowseFetch(null,[])} className="text-blue-400 hover:text-blue-300 text-sm font-medium">WebApp</button>
+                    {spBrowsePath.map((seg,i)=>(
+                      <React.Fragment key={seg.id}>
+                        <span className="text-slate-600 text-sm">/</span>
+                        <button
+                          onClick={()=>spBrowseFetch(seg.id, spBrowsePath.slice(0,i+1))}
+                          className={`text-sm font-medium ${i===spBrowsePath.length-1?'text-white':'text-blue-400 hover:text-blue-300'}`}>
+                          {seg.name}
+                        </button>
+                      </React.Fragment>
+                    ))}
+                    {spBrowseLoad&&<span className="text-slate-500 text-xs ml-2">جاري التحميل...</span>}
+                  </div>
+                  {/* File list */}
+                  {spBrowseLoad && spBrowseItems.length===0 ? (
+                    <div className="text-center text-slate-600 py-16">جاري تحميل الملفات...</div>
+                  ) : spBrowseItems.length===0 ? (
+                    <div className="text-center text-slate-600 py-16">الفولدر فاضي</div>
+                  ) : (
+                    <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                      <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-slate-800 text-xs text-slate-500 font-medium">
+                        <div className="col-span-6">الاسم</div>
+                        <div className="col-span-2 text-center">النوع</div>
+                        <div className="col-span-2 text-center">الحجم</div>
+                        <div className="col-span-2 text-center">آخر تعديل</div>
+                      </div>
+                      {spBrowseItems.map(item=>{
+                        const isFolder = !!item.folder;
+                        const ext = !isFolder ? (item.name.split('.').pop()||'').toLowerCase() : '';
+                        const fileIcon = isFolder ? '📁'
+                          : ['jpg','jpeg','png','gif','webp','svg'].includes(ext) ? '🖼️'
+                          : ['pdf'].includes(ext) ? '📄'
+                          : ['doc','docx'].includes(ext) ? '📝'
+                          : ['xls','xlsx'].includes(ext) ? '📊'
+                          : ['ppt','pptx'].includes(ext) ? '📑'
+                          : ['mp4','mov','avi','mkv'].includes(ext) ? '🎬'
+                          : ['mp3','wav','aac'].includes(ext) ? '🎵'
+                          : ['zip','rar','7z'].includes(ext) ? '🗜️'
+                          : '📎';
+                        const size = item.size != null ? (item.size < 1024*1024 ? (item.size/1024).toFixed(1)+' KB' : (item.size/1024/1024).toFixed(1)+' MB') : '—';
+                        const modified = item.lastModifiedDateTime ? new Date(item.lastModifiedDateTime).toLocaleDateString('ar-SA',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '—';
+                        return (
+                          <div key={item.id}
+                            className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-slate-800/60 hover:bg-slate-800/40 transition-colors items-center group">
+                            <div className="col-span-6 flex items-center gap-2 min-w-0">
+                              <span className="text-lg flex-shrink-0">{fileIcon}</span>
+                              {isFolder ? (
+                                <button onClick={()=>spBrowseFetch(item.id,[...spBrowsePath,{id:item.id,name:item.name}])}
+                                  className="text-blue-300 hover:text-blue-200 text-sm font-medium truncate text-left" dir="ltr">
+                                  {item.name}
+                                </button>
+                              ) : (
+                                <a href={item.webUrl} target="_blank" rel="noopener noreferrer"
+                                  className="text-slate-200 hover:text-white text-sm truncate group-hover:underline" dir="ltr">
+                                  {item.name}
+                                </a>
+                              )}
+                            </div>
+                            <div className="col-span-2 text-center text-xs text-slate-500 uppercase">{isFolder?'Folder':ext||'—'}</div>
+                            <div className="col-span-2 text-center text-xs text-slate-500">{isFolder?`${item.folder.childCount??''} items`:size}</div>
+                            <div className="col-span-2 text-center text-xs text-slate-500">{modified}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           )}
 
           {/* Detail / Comments Overlay */}
