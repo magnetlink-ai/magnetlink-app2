@@ -2267,12 +2267,14 @@
                     const [cpErr,  setCpErr]      = React.useState('');
                     const [cpShow, setCpShow]     = React.useState(false);
                     const savePass = () => {
+                      const key = user.email.toLowerCase();
                       const ps = JSON.parse(localStorage.getItem('bms_passwords')||'{}');
-                      if (ps[user.email.toLowerCase()] !== cpCur) { setCpErr(t('prf_pass_wrong')); return; }
+                      if (ps[key] !== cpCur) { setCpErr(t('prf_pass_wrong')); return; }
                       if (cpNew.length < 4) { setCpErr('كلمة المرور يجب أن تكون 4 أحرف على الأقل'); return; }
                       if (cpNew !== cpConf) { setCpErr(t('prf_pass_mismatch')); return; }
-                      ps[user.email.toLowerCase()] = cpNew;
+                      ps[key] = cpNew;
                       localStorage.setItem('bms_passwords', JSON.stringify(ps));
+                      db.save('user_passwords', {id: key, password: cpNew});
                       setCpOpen(false); setCpCur(''); setCpNew(''); setCpConf(''); setCpErr('');
                       showToast?.('تم تغيير كلمة المرور ✓');
                     };
@@ -5709,18 +5711,22 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
         showToast(t('tm_toast_deleted').replace('{{name}}',m.name));
       };
       const handleResetPass=m=>{
-        const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#';
+        const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
         const newPass=Array.from({length:10},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+        const key=m.email.toLowerCase();
         const ps=JSON.parse(localStorage.getItem('bms_passwords')||'{}');
-        ps[m.email.toLowerCase()]=newPass;
+        ps[key]=newPass;
         localStorage.setItem('bms_passwords',JSON.stringify(ps));
+        db.save('user_passwords',{id:key,password:newPass});
         setResetPassInfo({name:m.name,email:m.email,newPass});
       };
       const handleSaveMember=m=>{
         if(m._password){
+          const key=m.email.toLowerCase();
           const p=JSON.parse(localStorage.getItem('bms_passwords')||'{}');
-          p[m.email.toLowerCase()]=m._password;
+          p[key]=m._password;
           localStorage.setItem('bms_passwords',JSON.stringify(p));
+          db.save('user_passwords',{id:key,password:m._password});
         }
         const {_password,...memberData}=m;
         if(editMember)onUpdateMember(memberData);else onAddMember(memberData);
@@ -11800,7 +11806,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
           try {
             const [
               lds, cls, prj, inv, exp, sal, att, ofd, ded, bon,
-              tm,  tc,  cr,  td,  tb,  tt,  da,  ca,  doc
+              tm,  tc,  cr,  td,  tb,  tt,  da,  ca,  doc, pwds
             ] = await Promise.all([
               db.load('leads'),        db.load('clients'),       db.load('projects'),
               db.load('invoices'),     db.load('expenses'),      db.load('salaries'),
@@ -11808,8 +11814,13 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
               db.load('bonuses'),      db.load('team_members'),  db.load('team_clients'),
               db.load('custom_roles'), db.load('task_depts'),    db.load('task_buckets'),
               db.load('task_tasks'),   db.load('design_assets'), db.load('client_assets'),
-              db.load('documents'),
+              db.load('documents'),    db.load('user_passwords'),
             ]);
+            if (pwds.length) {
+              const ps = JSON.parse(localStorage.getItem('bms_passwords')||'{}');
+              pwds.forEach(p => { if (p.id && p.password) ps[p.id] = p.password; });
+              localStorage.setItem('bms_passwords', JSON.stringify(ps));
+            }
             setLeads(lds);
             setClients(cls);
             setProjects(prj);
