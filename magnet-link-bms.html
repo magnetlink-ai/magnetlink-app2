@@ -1521,8 +1521,9 @@
       library:   'Shared Documents',
     };
 
-    let _msalInstance    = null;
-    let _currentBmsUserId = null;
+    let _msalInstance      = null;
+    let _currentBmsUserId  = null;
+    let _msAutoLinkPromise = Promise.resolve();
 
     const getMsAccountForUser = (userId) => {
       if (!userId) return null;
@@ -1760,15 +1761,16 @@
 
     const saveMsEmailCloud   = (userId, msEmail) => db.save('ms_links', { id: String(userId), ms_email: msEmail });
     const removeMsEmailCloud = (userId)          => db.del('ms_links', String(userId));
-    const tryAutoLinkMicrosoft = async (userId) => {
-      if (!userId) return;
-      try {
-        const record = await db.loadOne('ms_links', userId);
-        if (!record?.ms_email) return;
-        const msal = getMsal();
-        const res  = await msal.ssoSilent({ loginHint: record.ms_email, scopes: ['openid','profile','email','offline_access'] });
-        saveMsAccountLink(userId, res.account);
-      } catch (_) { /* silent — Connect button still shows if needed */ }
+    const tryAutoLinkMicrosoft = (userId) => {
+      _msAutoLinkPromise = (async () => {
+        if (!userId) return;
+        try {
+          const record = await db.loadOne('ms_links', userId);
+          if (!record?.ms_email) return;
+          const res = await getMsal().ssoSilent({ loginHint: record.ms_email, scopes: ['openid','profile','email','offline_access'] });
+          saveMsAccountLink(userId, res.account);
+        } catch (_) {}
+      })();
     };
 
     const LEAD_STATUSES = [
@@ -10395,16 +10397,18 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       const [forwardOf,   setForwardOf]   = useState(null);
       const [folderCounts, setFolderCounts] = useState({});
 
-      /* Auto-login on mount if MSAL has a cached account */
+      /* Auto-login on mount — wait for background MS auto-link to finish first */
       useEffect(() => {
-        const msal = getMsal();
-        if (msal.getAllAccounts().length > 0) {
-          setLoading(true);
-          getMailToken()
-            .then(() => setAuthed(true))
-            .catch(() => {})
-            .finally(() => setLoading(false));
-        }
+        _msAutoLinkPromise.then(() => {
+          const account = getMsAccountForUser(_currentBmsUserId);
+          if (account || getMsal().getAllAccounts().length > 0) {
+            setLoading(true);
+            getMailToken()
+              .then(() => setAuthed(true))
+              .catch(() => {})
+              .finally(() => setLoading(false));
+          }
+        });
       }, []);
 
       /* Sign in */
@@ -10693,16 +10697,18 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       const pollRef        = useRef(null);
       const textareaRef    = useRef(null);
 
-      /* ── Auto-login on mount if MSAL has a cached account ── */
+      /* ── Auto-login on mount — wait for background MS auto-link first ── */
       useEffect(() => {
-        const msal = getMsal();
-        if (msal.getAllAccounts().length > 0) {
-          setSigningIn(true);
-          chatFetch('/me?$select=id,displayName,mail')
-            .then(me => { setMyProfile(me); setAuthed(true); fetchPhoto(me.id); })
-            .catch(() => {})
-            .finally(() => setSigningIn(false));
-        }
+        _msAutoLinkPromise.then(() => {
+          const account = getMsAccountForUser(_currentBmsUserId);
+          if (account || getMsal().getAllAccounts().length > 0) {
+            setSigningIn(true);
+            chatFetch('/me?$select=id,displayName,mail')
+              .then(me => { setMyProfile(me); setAuthed(true); fetchPhoto(me.id); })
+              .catch(() => {})
+              .finally(() => setSigningIn(false));
+          }
+        });
       }, []);
 
       /* ── Sign in ── */
