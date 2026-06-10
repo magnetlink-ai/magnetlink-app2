@@ -6968,9 +6968,11 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
       const [dragInfo,      setDragInfo]     = useState(null);
       const [dragOverTab,   setDragOverTab]  = useState(null);
       const [dragOverCat,   setDragOverCat]  = useState(null);
-      const [spBrowsePath,  setSpBrowsePath] = useState([]);   // breadcrumb stack [{name,id}]
+      const [spBrowsePath,  setSpBrowsePath] = useState([]);
       const [spBrowseItems, setSpBrowseItems]= useState([]);
       const [spBrowseLoad,  setSpBrowseLoad] = useState(false);
+      const [spLive,        setSpLive]       = useState([]);
+      const [spLiveLoad,    setSpLiveLoad]   = useState(false);
 
       const project = projects.find(p=>p.id===selProjectId);
       const cats = (type) => [...DC_DEFAULT_CATS, ...(type==='docs'?['Content']:[] ), ...customCats[type]];
@@ -6998,10 +7000,8 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
         if (account) setSpUser(account);
       }, []);
 
-      /* ── Auto-sync when spUser + project are ready ── */
-      useEffect(() => {
-        if (spUser && project) handleSpSync();
-      }, [spUser, selProjectId]);
+      /* ── Auto-load live SP files when tab/project/auth changes ── */
+      useEffect(() => { loadCurrentTab(); }, [spUser, selProjectId, activeTab]);
 
       /* ── Login to SharePoint ── */
       const handleSpLogin = async () => {
@@ -7020,6 +7020,48 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
       const handleSpLogout = () => {
         removeMsAccountLink(_currentBmsUserId);
         setSpUser(null);
+      };
+
+      /* ── Live SP loading for Design/From Client/Documents tabs ── */
+      const TAB_SP_FOLDER = { design:'Design', from_client:'From Client', documents:'Documents' };
+
+      const loadCurrentTab = async () => {
+        const folder = TAB_SP_FOLDER[activeTab];
+        if (!spUser || !project || !folder) { setSpLive([]); return; }
+        setSpLiveLoad(true);
+        try {
+          const driveId = await getDriveId();
+          const safe = project.name.replace(/[\?%*:|"<>]/g, '-');
+          const rootData = await graphFetch(
+            `/drives/${driveId}/root:/${safe}/${folder}:/children?$select=id,name,size,webUrl,folder,file,lastModifiedDateTime&$orderby=name`
+          ).catch(() => ({ value: [] }));
+          const items = rootData.value || [];
+          let files = items.filter(i => !i.folder).map(i => ({ ...i, _cat: folder }));
+          for (const sf of items.filter(i => i.folder)) {
+            const sfData = await graphFetch(
+              `/drives/${driveId}/items/${sf.id}/children?$select=id,name,size,webUrl,folder,file,lastModifiedDateTime&$orderby=name`
+            ).catch(() => ({ value: [] }));
+            files = [...files, ...(sfData.value || []).filter(i => !i.folder).map(i => ({ ...i, _cat: sf.name }))];
+          }
+          setSpLive(files);
+        } catch(e) { setSpLive([]); }
+        setSpLiveLoad(false);
+      };
+
+      const getMeta = (spItem, assets) => {
+        const m = assets.find(a => a.sp_item_id === spItem.id);
+        if (m) return m;
+        const sz = spItem.size != null
+          ? spItem.size < 1048576 ? (spItem.size/1024).toFixed(1)+' KB' : (spItem.size/1048576).toFixed(2)+' MB'
+          : '—';
+        return {
+          id: 'sp_'+spItem.id, projectId: selProjectId, sp_item_id: spItem.id,
+          title: spItem.name.replace(/\.[^.]+$/, ''),
+          file_type: (spItem.name.split('.').pop()||'').toUpperCase(),
+          file_size: sz, sp_web_url: spItem.webUrl||'', sharepoint_path: spItem.webUrl||'',
+          status: 'under_modification', designer_id: '', due_date: '', comments: [],
+          created: (spItem.lastModifiedDateTime||'').split('T')[0], category: spItem._cat,
+        };
       };
 
       /* ── SharePoint file browser ── */
@@ -7184,21 +7226,10 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                     <span className="w-2 h-2 rounded-full bg-emerald-400"/>
                     <span className="text-emerald-300 text-xs font-medium">{spUser.username||spUser.name}</span>
                   </div>
-                  {/* path selector */}
-                  {showPathInput ? (
-                    <div className="flex items-center gap-1">
-                      <input className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs w-48 font-mono"
-                        value={spRootPath} onChange={e=>setSpRootPath(e.target.value)}
-                        placeholder={t('des_sp_path_ph')} dir="ltr"
-                        onKeyDown={e=>{if(e.key==='Enter'){setShowPathInput(false);handleSpSync();}if(e.key==='Escape')setShowPathInput(false);}} />
-                      <button onClick={()=>{setShowPathInput(false);handleSpSync();}} className="text-xs px-2 py-1 bg-blue-600 text-white rounded-lg">{t('des_sync_action')}</button>
-                    </div>
-                  ) : (
-                    <button onClick={()=>setShowPathInput(true)} disabled={spLoading}
-                      className="text-xs px-3 py-1.5 bg-blue-600/80 hover:bg-blue-600 text-white rounded-lg disabled:opacity-50">
-                      {spLoading?t('des_sync_loading'):t('des_sync_btn')}
-                    </button>
-                  )}
+                  <button onClick={loadCurrentTab} disabled={spLiveLoad}
+                    className="text-xs px-2 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg disabled:opacity-50" title="Refresh">
+                    {spLiveLoad ? '⟳' : '↺'}
+                  </button>
                   <button onClick={handleSetupFolders} disabled={spLoading}
                     className="text-xs px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg disabled:opacity-50" title={t('des_setup_title')}>
                     {t('des_setup_btn')}
@@ -7263,20 +7294,32 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
               {/* ── Design Tab ── */}
               {activeTab==='design'&&(
                 <div>
+                  {!spUser ? (
+                    <div className="text-center text-slate-500 py-20">اربط حساب Microsoft من الزر أعلاه لعرض الملفات</div>
+                  ) : spLiveLoad ? (
+                    <div className="text-center text-slate-600 py-20">جاري تحميل الملفات من SharePoint...</div>
+                  ) : (
+                  <>
                   <div className="flex items-center justify-between mb-5">
+                    {(() => { const lv = spLive.map(s=>getMeta(s,designAssets)); return (
                     <div className="flex gap-4 text-sm text-slate-500">
-                      <span>{t('des_status_modifying')}: <strong className="text-amber-400">{pDesign.filter(a=>a.status==='under_modification').length}</strong></span>
-                      <span>{t('des_status_ready')}: <strong className="text-blue-400">{pDesign.filter(a=>a.status==='ready').length}</strong></span>
-                      <span>{t('des_status_published')}: <strong className="text-emerald-400">{pDesign.filter(a=>a.status==='published').length}</strong></span>
+                      <span>{t('des_status_modifying')}: <strong className="text-amber-400">{lv.filter(a=>a.status==='under_modification').length}</strong></span>
+                      <span>{t('des_status_ready')}: <strong className="text-blue-400">{lv.filter(a=>a.status==='ready').length}</strong></span>
+                      <span>{t('des_status_published')}: <strong className="text-emerald-400">{lv.filter(a=>a.status==='published').length}</strong></span>
                     </div>
+                    ); })()}
                     <div className="flex gap-2">
                       <button onClick={()=>setAddCatModal({type:'design',name:''})} className="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg border border-slate-700">{t('des_add_cat')}</button>
                       <button onClick={()=>setAddModal('design')} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">{t('des_add_asset')}</button>
                     </div>
                   </div>
 
-                  {allDesignCats.map(cat=>{
-                    const items = pDesign.filter(a=>a.category===cat);
+                  {(() => {
+                    const liveCats = [...new Set(spLive.map(f=>f._cat))];
+                    const allCats  = [...new Set([...DC_DEFAULT_CATS, ...customCats.design, ...liveCats])];
+                    return allCats.map(cat=>{
+                    const spCatItems = spLive.filter(f=>f._cat===cat);
+                    const items = spCatItems.map(sp=>getMeta(sp,designAssets));
                     if (items.length===0) return null;
                     const underMod = items.filter(a=>a.status==='under_modification');
                     const approved  = items.filter(a=>a.status!=='under_modification');
@@ -7354,23 +7397,35 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                         )}
                       </div>
                     );
-                  })}
-                  {pDesign.length===0&&<div className="text-center text-slate-600 py-16">{t('des_empty_design')}</div>}
+                  })})()}
+                  {spLive.length===0&&<div className="text-center text-slate-600 py-16">{t('des_empty_design')}</div>}
+                  </>
+                  )}
                 </div>
               )}
 
               {/* ── From Client Tab ── */}
               {activeTab==='from_client'&&(
                 <div>
+                  {!spUser ? (
+                    <div className="text-center text-slate-500 py-20">اربط حساب Microsoft من الزر أعلاه لعرض الملفات</div>
+                  ) : spLiveLoad ? (
+                    <div className="text-center text-slate-600 py-20">جاري تحميل الملفات من SharePoint...</div>
+                  ) : (
+                  <>
                   <div className="flex items-center justify-between mb-5">
-                    <div className="text-sm text-slate-500">{t('des_client_count').replace('{{n}}', pClient.length)}</div>
+                    <div className="text-sm text-slate-500">{t('des_client_count').replace('{{n}}', spLive.length)}</div>
                     <div className="flex gap-2">
                       <button onClick={()=>setAddCatModal({type:'client',name:''})} className="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg border border-slate-700">{t('des_add_cat')}</button>
                       <button onClick={()=>setAddModal('client')} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">{t('des_add_file')}</button>
                     </div>
                   </div>
-                  {allClientCats.map(cat=>{
-                    const items = pClient.filter(a=>a.category===cat);
+                  {(() => {
+                    const liveCats = [...new Set(spLive.map(f=>f._cat))];
+                    const allCats  = [...new Set([...DC_DEFAULT_CATS, ...customCats.client, ...liveCats])];
+                    return allCats.map(cat=>{
+                    const spCatItems = spLive.filter(f=>f._cat===cat);
+                    const items = spCatItems.map(sp=>getMeta(sp,clientAssets));
                     if (items.length===0) return null;
                     const isDropTarget = dragOverCat===cat && dragInfo?.fromTab==='from_client' && dragInfo?.asset?.category!==cat;
                     return (
@@ -7392,9 +7447,8 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                               <div className="p-3">
                                 <div className="text-white text-sm font-medium truncate mb-0.5">{asset.title}</div>
                                 <div className="text-xs text-slate-500 mb-2">{asset.file_type||'—'} · {asset.file_size||'—'}</div>
-                                <div className="text-xs text-slate-600 mb-2 font-mono truncate" dir="ltr">{asset.sharepoint_path||'—'}</div>
                                 <div className="flex gap-1.5">
-                                  <a href={asset.sharepoint_path||'#'} target="_blank" className="flex-1 bg-blue-600/80 hover:bg-blue-600 text-white text-xs py-1.5 rounded-lg font-medium text-center">{t('des_download')}</a>
+                                  <a href={asset.sp_web_url||'#'} target="_blank" className="flex-1 bg-blue-600/80 hover:bg-blue-600 text-white text-xs py-1.5 rounded-lg font-medium text-center">{t('des_download')}</a>
                                   <MoveMenu asset={asset} fromTab="from_client" onMove={handleMoveAsset}/>
                                   <button onClick={()=>{if(confirm(t('des_confirm_delete')))deleteClient(asset);}} className="px-2 bg-slate-800 hover:bg-red-900/40 text-slate-500 hover:text-red-400 text-xs py-1.5 rounded-lg">×</button>
                                 </div>
@@ -7404,27 +7458,41 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                         </div>
                       </div>
                     );
-                  })}
-                  {pClient.length===0&&<div className="text-center text-slate-600 py-16">{t('des_empty_client')}</div>}
+                  })})()}
+                  {spLive.length===0&&<div className="text-center text-slate-600 py-16">{t('des_empty_client')}</div>}
+                  </>
+                  )}
                 </div>
               )}
 
               {/* ── Documents Tab ── */}
               {activeTab==='documents'&&(
                 <div>
+                  {!spUser ? (
+                    <div className="text-center text-slate-500 py-20">اربط حساب Microsoft من الزر أعلاه لعرض الملفات</div>
+                  ) : spLiveLoad ? (
+                    <div className="text-center text-slate-600 py-20">جاري تحميل الملفات من SharePoint...</div>
+                  ) : (
+                  <>
                   <div className="flex items-center justify-between mb-5">
+                    {(() => { const lv = spLive.map(s=>getMeta(s,documents)); return (
                     <div className="flex gap-4 text-sm text-slate-500">
-                      <span>{t('doc_status_pending')}: <strong className="text-amber-400">{pDocs.filter(d=>d.status==='pending').length}</strong></span>
-                      <span>{t('doc_status_approved')}: <strong className="text-emerald-400">{pDocs.filter(d=>d.status==='approved').length}</strong></span>
-                      <span>{t('doc_status_rejected')}: <strong className="text-red-400">{pDocs.filter(d=>d.status==='rejected').length}</strong></span>
+                      <span>{t('doc_status_pending')}: <strong className="text-amber-400">{lv.filter(d=>d.status==='pending').length}</strong></span>
+                      <span>{t('doc_status_approved')}: <strong className="text-emerald-400">{lv.filter(d=>d.status==='approved').length}</strong></span>
+                      <span>{t('doc_status_rejected')}: <strong className="text-red-400">{lv.filter(d=>d.status==='rejected').length}</strong></span>
                     </div>
+                    ); })()}
                     <div className="flex gap-2">
                       <button onClick={()=>setAddCatModal({type:'docs',name:''})} className="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg border border-slate-700">{t('des_add_cat')}</button>
                       <button onClick={()=>setAddModal('doc')} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">{t('des_add_doc')}</button>
                     </div>
                   </div>
-                  {allDocCats.map(cat=>{
-                    const items = pDocs.filter(d=>d.category===cat);
+                  {(() => {
+                    const liveCats = [...new Set(spLive.map(f=>f._cat))];
+                    const allCats  = [...new Set(['Content',...DC_DEFAULT_CATS,...customCats.docs,...liveCats])];
+                    return allCats.map(cat=>{
+                    const spCatItems = spLive.filter(f=>f._cat===cat);
+                    const items = spCatItems.map(sp=>getMeta(sp,documents));
                     if (items.length===0) return null;
                     const isDropTarget = dragOverCat===cat && dragInfo?.fromTab==='documents' && dragInfo?.asset?.category!==cat;
                     return (
@@ -7441,8 +7509,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {items.map(doc=>{
-                            const creator = teamMembers.find(m=>m.id===doc.created_by_id);
-                            const dcfg    = DOC_STATUS_CFG[doc.status]||DOC_STATUS_CFG.pending;
+                            const dcfg = DOC_STATUS_CFG[doc.status]||DOC_STATUS_CFG.pending;
                             return (
                               <div key={doc.id} draggable onDragStart={()=>setDragInfo({asset:doc,fromTab:'documents'})} onDragEnd={()=>setDragInfo(null)} onClick={()=>setDetailAsset({...doc,_isDoc:true})} className={`bg-slate-900 border border-slate-800 border-r-4 rounded-xl p-4 cursor-grab active:cursor-grabbing active:opacity-60 active:scale-95 hover:border-slate-600 transition-all ${dcfg.borderColor}`}>
                                 <div className="flex items-start justify-between mb-2">
@@ -7450,7 +7517,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                                     <span className="text-2xl flex-shrink-0">{fileTypeIcon(doc.file_type)}</span>
                                     <div className="min-w-0">
                                       <div className="text-white font-medium text-sm truncate">{doc.title}</div>
-                                      <div className="text-xs text-slate-500">{creator?.name||'—'} · {doc.file_type} · {doc.due_date||'—'}</div>
+                                      <div className="text-xs text-slate-500">{doc.file_type} · {doc.due_date||'—'}</div>
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-1.5 flex-shrink-0 mr-2">
@@ -7460,15 +7527,15 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                                 </div>
                                 {(doc.comments||[]).length>0&&(
                                   <div className="bg-slate-800/50 rounded-lg px-3 py-2 mb-2 text-xs text-slate-400">
-                                    💬 "{(doc.comments||[])[doc.comments.length-1]?.text?.slice(0,50)}..."
+                                    💬 "{doc.comments[doc.comments.length-1]?.text?.slice(0,50)}..."
                                   </div>
                                 )}
                                 <div className="flex gap-1.5 mt-2">
-                                  {doc.status!=='approved'&&<button onClick={()=>{onSaveDocument({...doc,status:'approved'});showToast(t('des_toast_approved'));}} className="flex-1 bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs py-1.5 rounded-lg font-medium">{t('des_btn_approve_doc')}</button>}
-                                  {doc.status!=='rejected'&&<button onClick={()=>{onSaveDocument({...doc,status:'rejected'});showToast(t('des_toast_rejected'));}} className="flex-1 bg-red-600/80 hover:bg-red-600 text-white text-xs py-1.5 rounded-lg">{t('des_btn_reject')}</button>}
-                                  {doc.status==='approved'&&<button onClick={()=>onSaveDocument({...doc,status:'pending'})} className="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs py-1.5 rounded-lg">{t('des_btn_revert_doc')}</button>}
-                                  <button onClick={()=>setDetailAsset({...doc,_isDoc:true})} className="px-3 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs py-1.5 rounded-lg">💬</button>
-                                  <button onClick={()=>{if(confirm(t('des_confirm_delete')))deleteDocument(doc);}} className="px-2 bg-slate-800 hover:bg-red-900/40 text-slate-500 hover:text-red-400 text-xs py-1.5 rounded-lg">×</button>
+                                  {doc.status!=='approved'&&<button onClick={e=>{e.stopPropagation();onSaveDocument({...doc,status:'approved'});showToast(t('des_toast_approved'));}} className="flex-1 bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs py-1.5 rounded-lg font-medium">{t('des_btn_approve_doc')}</button>}
+                                  {doc.status!=='rejected'&&<button onClick={e=>{e.stopPropagation();onSaveDocument({...doc,status:'rejected'});showToast(t('des_toast_rejected'));}} className="flex-1 bg-red-600/80 hover:bg-red-600 text-white text-xs py-1.5 rounded-lg">{t('des_btn_reject')}</button>}
+                                  {doc.status==='approved'&&<button onClick={e=>{e.stopPropagation();onSaveDocument({...doc,status:'pending'});}} className="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs py-1.5 rounded-lg">{t('des_btn_revert_doc')}</button>}
+                                  <button onClick={e=>{e.stopPropagation();setDetailAsset({...doc,_isDoc:true});}} className="px-3 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs py-1.5 rounded-lg">💬</button>
+                                  <button onClick={e=>{e.stopPropagation();if(confirm(t('des_confirm_delete')))deleteDocument(doc);}} className="px-2 bg-slate-800 hover:bg-red-900/40 text-slate-500 hover:text-red-400 text-xs py-1.5 rounded-lg">×</button>
                                 </div>
                               </div>
                             );
@@ -7476,8 +7543,10 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                         </div>
                       </div>
                     );
-                  })}
-                  {pDocs.length===0&&<div className="text-center text-slate-600 py-16">{t('des_empty_docs')}</div>}
+                  })})()}
+                  {spLive.length===0&&<div className="text-center text-slate-600 py-16">{t('des_empty_docs')}</div>}
+                  </>
+                  )}
                 </div>
               )}
 
