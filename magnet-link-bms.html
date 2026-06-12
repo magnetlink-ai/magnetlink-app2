@@ -92,6 +92,16 @@
     [data-theme="light"] ::-webkit-scrollbar-thumb { background: #94a3b8; }
     [data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
+    /* ── Presence Strip ── */
+    .presence-strip::-webkit-scrollbar { width: 3px; }
+    .presence-strip::-webkit-scrollbar-track { background: transparent; }
+    .presence-strip::-webkit-scrollbar-thumb { background: rgba(100,116,139,0.15); border-radius: 2px; }
+    @keyframes presencePulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.55); }
+      50%       { box-shadow: 0 0 0 5px rgba(34,197,94,0); }
+    }
+    .presence-online-dot { animation: presencePulse 2.5s ease-in-out infinite; }
+
     /* ── Backgrounds ── */
     [data-theme="light"] .bg-slate-950  { background-color: #dde6f0 !important; }
     /* sidebar / panels */
@@ -11777,6 +11787,98 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       );
     };
 
+    /* ═══════════════════════════ PRESENCE STRIP ═══════════════════════════ */
+
+    const PresenceStrip = ({ teamMembers, teamClients, attendance, customRoles, lang }) => {
+      const [hoveredId, setHoveredId] = useState(null);
+      const today = todayStr();
+
+      const allUsers = [...(teamMembers||[]), ...(teamClients||[])];
+
+      const getStatus = (user) => {
+        if (user.role === 'client') return 'offline';
+        const rec = (attendance||[]).find(r => r.userId === user.id && r.date === today);
+        if (!rec?.clockIn) return 'offline';
+        if (rec.clockOut) return 'offline';
+        if (isOnBreak(rec)) return 'break';
+        return 'online';
+      };
+
+      const sorted = [...allUsers].sort((a, b) => {
+        const o = { online: 0, break: 1, offline: 2 };
+        return o[getStatus(a)] - o[getStatus(b)];
+      });
+
+      const onlineCount = allUsers.filter(u => getStatus(u) === 'online').length;
+
+      const DOT_CLS = {
+        online:  'bg-green-500 presence-online-dot',
+        break:   'bg-orange-400',
+        offline: 'bg-slate-600',
+      };
+      const LABEL_CLR = {
+        online:  'text-green-400',
+        break:   'text-orange-400',
+        offline: 'text-slate-500',
+      };
+      const STATUS_TEXT = {
+        online:  lang === 'ar' ? 'أونلاين'  : 'Online',
+        break:   lang === 'ar' ? 'في برييك' : 'On Break',
+        offline: lang === 'ar' ? 'أوفلاين'  : 'Offline',
+      };
+
+      return (
+        <div className={`presence-strip fixed top-0 h-screen w-14 bg-slate-900 flex flex-col items-center py-3 gap-2.5 z-40 overflow-y-auto
+          ${lang === 'ar' ? 'left-0 border-r border-slate-800' : 'right-0 border-l border-slate-800'}`}>
+
+          {/* Online count header */}
+          <div className="flex flex-col items-center gap-1 mb-1 shrink-0">
+            <div className="relative">
+              <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
+                <Ic name="users" size={14} />
+              </div>
+              {onlineCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                  {onlineCount}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="w-8 border-t border-slate-800 shrink-0" />
+
+          {sorted.map(user => {
+            const status  = getStatus(user);
+            const ri      = getRoleInfo(user.role, customRoles);
+            return (
+              <div key={user.id} className="relative shrink-0"
+                onMouseEnter={() => setHoveredId(user.id)}
+                onMouseLeave={() => setHoveredId(null)}>
+
+                <div className={status === 'offline' ? 'opacity-35 grayscale' : ''}>
+                  <UserAvatar userId={user.id} name={user.name} grad={ri.grad}
+                    size="w-9 h-9" rounded="rounded-full" textCls="text-sm font-bold" />
+                </div>
+
+                {/* Status dot */}
+                <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-slate-900 ${DOT_CLS[status]}`} />
+
+                {/* Tooltip */}
+                {hoveredId === user.id && (
+                  <div className={`absolute top-1/2 -translate-y-1/2 z-[60] pointer-events-none
+                    bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 shadow-2xl whitespace-nowrap
+                    ${lang === 'ar' ? 'left-full ml-3' : 'right-full mr-3'}`}>
+                    <p className="text-white text-xs font-semibold leading-tight">{user.name}</p>
+                    <p className={`text-[11px] mt-0.5 ${LABEL_CLR[status]}`}>{STATUS_TEXT[status]}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      );
+    };
+
     /* ═══════════════════════════ APP ═══════════════════════════ */
 
     const App = () => {
@@ -12402,7 +12504,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
             onProfile={() => setShowProfile(true)} onLogout={handleLogout}
             theme={theme} onToggleTheme={toggleTheme}
             lang={lang} onToggleLang={toggleLang} />
-          <div className={`flex-1 flex flex-col min-h-screen ${lang === 'ar' ? 'mr-56' : 'ml-56'}`}>
+          <div className={`flex-1 flex flex-col min-h-screen ${lang === 'ar' ? 'mr-56 ml-14' : 'ml-56 mr-14'}`}>
             {activeAnn && !annBarDismissed && (
               <AnnouncementBar ann={activeAnn} onDismiss={() => setAnnBarDismissed(true)}/>
             )}
@@ -12429,6 +12531,13 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
               onSave={handleSaveProfile} showToast={showToast}
               onClose={() => setShowProfile(false)} />
           )}
+          <PresenceStrip
+            teamMembers={teamMembers}
+            teamClients={teamClients}
+            attendance={attendance}
+            customRoles={customRoles}
+            lang={lang}
+          />
           {toast && <Toast msg={toast.msg} onUndo={toast.onUndo} undoLabel={toast.undoLabel} onClose={() => setToast(null)}/>}
         </div>
         </LangContext.Provider>
