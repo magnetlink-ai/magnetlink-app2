@@ -12001,6 +12001,18 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         })();
       }, []);
 
+      /* cross-tab sync via localStorage (same device, different tabs) */
+      useEffect(() => {
+        const h = e => {
+          if (e.key === 'bms_live_att' && e.newValue) {
+            try { setAttendance(JSON.parse(e.newValue)); } catch(_) {}
+          }
+        };
+        window.addEventListener('storage', h);
+        return () => window.removeEventListener('storage', h);
+      }, []);
+
+      /* cross-device sync via Supabase polling every 5s */
       useEffect(() => {
         if (!_sbReady) return;
         const id = setInterval(async () => {
@@ -12247,6 +12259,10 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         setPage('dashboard');
       };
 
+      const broadcastAtt = (arr) => {
+        try { localStorage.setItem('bms_live_att', JSON.stringify(arr)); } catch(_) {}
+      };
+
       const handleClockIn = () => {
         if (!currentUser || currentUser.role === 'client') return;
         const today = todayStr();
@@ -12254,27 +12270,17 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
           if (prev.find(r => r.userId === currentUser.id && r.date === today)) return prev;
           const rec = { id: Date.now(), userId: currentUser.id, date: today, clockIn: new Date().toISOString(), clockOut: null, pauses: [] };
           db.save('attendance', rec);
-          return [...prev, rec];
+          const next = [...prev, rec];
+          broadcastAtt(next);
+          return next;
         });
       };
 
       const handleClockOut = () => {
         if (!currentUser || currentUser.role === 'client') return;
         const today = todayStr();
-        setAttendance(prev => prev.map(r => {
-          if (r.userId === currentUser.id && r.date === today && !r.clockOut) {
-            const pauses = (r.pauses||[]).map(p => p.end ? p : { ...p, end: new Date().toISOString() });
-            const updated = { ...r, clockOut: new Date().toISOString(), pauses };
-            db.save('attendance', updated);
-            return updated;
-          }
-          return r;
-        }));
-      };
-      const handleLogout = () => {
-        if (currentUser && currentUser.role !== 'client') {
-          const today = todayStr();
-          setAttendance(prev => prev.map(r => {
+        setAttendance(prev => {
+          const next = prev.map(r => {
             if (r.userId === currentUser.id && r.date === today && !r.clockOut) {
               const pauses = (r.pauses||[]).map(p => p.end ? p : { ...p, end: new Date().toISOString() });
               const updated = { ...r, clockOut: new Date().toISOString(), pauses };
@@ -12282,7 +12288,28 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
               return updated;
             }
             return r;
-          }));
+          });
+          broadcastAtt(next);
+          return next;
+        });
+      };
+
+      const handleLogout = () => {
+        if (currentUser && currentUser.role !== 'client') {
+          const today = todayStr();
+          setAttendance(prev => {
+            const next = prev.map(r => {
+              if (r.userId === currentUser.id && r.date === today && !r.clockOut) {
+                const pauses = (r.pauses||[]).map(p => p.end ? p : { ...p, end: new Date().toISOString() });
+                const updated = { ...r, clockOut: new Date().toISOString(), pauses };
+                db.save('attendance', updated);
+                return updated;
+              }
+              return r;
+            });
+            broadcastAtt(next);
+            return next;
+          });
         }
         setCurrentUser(null);
         setShowProfile(false);
@@ -12290,33 +12317,41 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
 
       const handlePauseAttendance = () => {
         const today = todayStr();
-        setAttendance(prev => prev.map(r => {
-          if (r.userId === currentUser.id && r.date === today && !r.clockOut) {
-            const pauses = r.pauses||[];
-            if (pauses.length > 0 && !pauses[pauses.length-1].end) return r;
-            const updated = { ...r, pauses: [...pauses, { start: new Date().toISOString(), end: null }] };
-            db.save('attendance', updated);
-            return updated;
-          }
-          return r;
-        }));
+        setAttendance(prev => {
+          const next = prev.map(r => {
+            if (r.userId === currentUser.id && r.date === today && !r.clockOut) {
+              const pauses = r.pauses||[];
+              if (pauses.length > 0 && !pauses[pauses.length-1].end) return r;
+              const updated = { ...r, pauses: [...pauses, { start: new Date().toISOString(), end: null }] };
+              db.save('attendance', updated);
+              return updated;
+            }
+            return r;
+          });
+          broadcastAtt(next);
+          return next;
+        });
         showToast('بدأت الاستراحة ⏸');
       };
 
       const handleResumeAttendance = () => {
         const today = todayStr();
-        setAttendance(prev => prev.map(r => {
-          if (r.userId === currentUser.id && r.date === today && !r.clockOut) {
-            const pauses = [...(r.pauses||[])];
-            if (pauses.length > 0 && !pauses[pauses.length-1].end) {
-              pauses[pauses.length-1] = { ...pauses[pauses.length-1], end: new Date().toISOString() };
+        setAttendance(prev => {
+          const next = prev.map(r => {
+            if (r.userId === currentUser.id && r.date === today && !r.clockOut) {
+              const pauses = [...(r.pauses||[])];
+              if (pauses.length > 0 && !pauses[pauses.length-1].end) {
+                pauses[pauses.length-1] = { ...pauses[pauses.length-1], end: new Date().toISOString() };
+              }
+              const updated = { ...r, pauses };
+              db.save('attendance', updated);
+              return updated;
             }
-            const updated = { ...r, pauses };
-            db.save('attendance', updated);
-            return updated;
-          }
-          return r;
-        }));
+            return r;
+          });
+          broadcastAtt(next);
+          return next;
+        });
         showToast('استأنفت العمل ✓');
       };
 
