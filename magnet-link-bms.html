@@ -12245,7 +12245,9 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
 
       const getStatus = (user) => {
         if (user.role === 'client') return 'offline';
-        const rec = (attendance||[]).find(r => r.userId === user.id && r.date === today);
+        // prefer open session — user may have multiple records today (e.g. after admin reset)
+        const rec = (attendance||[]).find(r => r.userId === user.id && r.date === today && !r.clockOut)
+                 || (attendance||[]).find(r => r.userId === user.id && r.date === today);
         if (!rec?.clockIn) return 'offline';
         if (rec.clockOut) return 'offline';
         if (isOnBreak(rec)) return 'break';
