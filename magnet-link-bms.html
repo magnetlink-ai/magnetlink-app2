@@ -5199,7 +5199,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
 
     /* ═══════════════════════════ ATTENDANCE ADMIN VIEW ═══════════════════════════ */
 
-    const AttendanceAdminView = ({ teamMembers, attendanceRecords, offDays, deductions, bonuses, onAddDeduction, onAddOffDay, onAddBonus, showToast, currentUser, customRoles }) => {
+    const AttendanceAdminView = ({ teamMembers, attendanceRecords, offDays, deductions, bonuses, onAddDeduction, onAddOffDay, onAddBonus, onResetSession, showToast, currentUser, customRoles }) => {
       const { t, lang } = useLang();
       const [viewHistory,    setViewHistory]    = useState(null);
       const [deductionForm,  setDeductionForm]  = useState(null);
@@ -5334,6 +5334,13 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                           title={t('att_log_offday')}
                           className="p-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-xs border border-amber-500/15 transition-all">
                           <Ic name="calendar" size={13}/>
+                        </button>
+                      )}
+                      {canAttendance && getTodayRec(m.id) && !getTodayRec(m.id).clockOut && (
+                        <button onClick={() => { if(window.confirm(lang==='ar'?`إعادة ضبط دوام "${m.name}"؟ ستُغلق الجلسة الحالية وتُحفظ ساعاته.`:`Reset "${m.name}"'s session? Current hours will be saved.`)) onResetSession(m.id); }}
+                          title={lang==='ar'?'إعادة الدوام':'Reset Session'}
+                          className="p-1.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 text-xs border border-sky-500/15 transition-all">
+                          <Ic name="repeat2" size={13}/>
                         </button>
                       )}
                       <button onClick={() => setViewHistory(expanded ? null : m.id)}
@@ -5728,7 +5735,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
       );
     };
 
-    const TeamModule = ({ teamMembers, teamClients, customRoles, currentUser, onUpdateMember, onDeleteMember, onAddMember, onUpdateClient, onDeleteClient, onAddClient, onAddCustomRole, onUpdateCustomRole, onDeleteCustomRole, attendanceRecords, offDays, deductions, bonuses, onAddDeduction, onAddOffDay, onAddBonus, showToast }) => {
+    const TeamModule = ({ teamMembers, teamClients, customRoles, currentUser, onUpdateMember, onDeleteMember, onAddMember, onUpdateClient, onDeleteClient, onAddClient, onAddCustomRole, onUpdateCustomRole, onDeleteCustomRole, attendanceRecords, offDays, deductions, bonuses, onAddDeduction, onAddOffDay, onAddBonus, onResetSession, showToast }) => {
       const { t } = useLang();
       const [tab,setTab]=useState('team');
       const [formOpen,setFormOpen]=useState(false);
@@ -5916,6 +5923,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
               onAddDeduction={onAddDeduction}
               onAddOffDay={onAddOffDay}
               onAddBonus={onAddBonus}
+              onResetSession={onResetSession}
               showToast={showToast}
               currentUser={currentUser}
               customRoles={customRoles}
@@ -12267,7 +12275,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         if (!currentUser || currentUser.role === 'client') return;
         const today = todayStr();
         setAttendance(prev => {
-          if (prev.find(r => r.userId === currentUser.id && r.date === today)) return prev;
+          if (prev.find(r => r.userId === currentUser.id && r.date === today && !r.clockOut)) return prev;
           const rec = { id: Date.now(), userId: currentUser.id, date: today, clockIn: new Date().toISOString(), clockOut: null, pauses: [] };
           db.save('attendance', rec);
           const next = [...prev, rec];
@@ -12353,6 +12361,24 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
           return next;
         });
         showToast('استأنفت العمل ✓');
+      };
+
+      const handleResetSession = (userId) => {
+        const today = todayStr();
+        setAttendance(prev => {
+          const next = prev.map(r => {
+            if (r.userId === userId && r.date === today && !r.clockOut) {
+              const pauses = (r.pauses||[]).map(p => p.end ? p : { ...p, end: new Date().toISOString() });
+              const updated = { ...r, clockOut: new Date().toISOString(), pauses, reset: true };
+              db.save('attendance', updated);
+              return updated;
+            }
+            return r;
+          });
+          broadcastAtt(next);
+          return next;
+        });
+        showToast('تم إعادة ضبط الدوام ✓');
       };
 
       const handleAddDeduction = d  => { setDeductions(prev => [...prev, d]); db.save('deductions', d); };
@@ -12452,6 +12478,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
               onAddCustomRole={handleAddCustomRole} onUpdateCustomRole={handleUpdateCustomRole} onDeleteCustomRole={handleDeleteCustomRole}
               attendanceRecords={attendance} offDays={offDays} deductions={deductions} bonuses={bonuses}
               onAddDeduction={handleAddDeduction} onAddOffDay={handleAddOffDay} onAddBonus={handleAddBonus}
+              onResetSession={handleResetSession}
               showToast={showToast}/>
           );
           case 'design': return (
