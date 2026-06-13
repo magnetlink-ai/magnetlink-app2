@@ -2843,12 +2843,10 @@
                   <span className="font-mono text-slate-300 font-semibold">{fmtDuration(mins,lang)}</span>
                   <span>{t('att_work_time')}</span>
                 </div>
-                {todayRec.reset && (
-                  <button onClick={onClockIn}
-                    className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20 transition-all">
-                    <Ic name="play" size={11}/> {t('att_start_work')}
-                  </button>
-                )}
+                <button onClick={onClockIn}
+                  className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20 transition-all">
+                  <Ic name="play" size={11}/> {t('att_start_work')}
+                </button>
               </div>
             ) : (
             <div className="flex items-center gap-4">
@@ -5778,9 +5776,9 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                           <Ic name="calendar" size={13}/>
                         </button>
                       )}
-                      {canAttendance && canManage(currentUser, m, customRoles) && (() => { const rec = attendanceRecords.filter(r => r.userId === m.id && r.date === todayStr()); const openRec = rec.find(r=>!r.clockOut); const lastRec = rec[rec.length-1]; return openRec || (lastRec && !lastRec.reset); })() && (
-                        <button onClick={() => { if(window.confirm(lang==='ar'?`إعادة ضبط دوام "${m.name}"؟ سيُسمح له ببدء دوام جديد.`:`Reset "${m.name}"'s session? They will be able to start work again.`)) onResetSession(m.id); }}
-                          title={lang==='ar'?'إعادة الدوام':'Reset Session'}
+                      {canAttendance && canManage(currentUser, m, customRoles) && attendanceRecords.some(r => r.userId === m.id && r.date === todayStr() && !r.clockOut) && (
+                        <button onClick={() => { if(window.confirm(lang==='ar'?`إغلاق جلسة "${m.name}" الحالية وحفظ ساعاته؟`:`Close "${m.name}"'s current session? Hours will be saved.`)) onResetSession(m.id); }}
+                          title={lang==='ar'?'إغلاق الجلسة':'Close Session'}
                           className="p-1.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 text-xs border border-sky-500/15 transition-all">
                           <Ic name="repeat2" size={13}/>
                         </button>
