@@ -12454,6 +12454,21 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         })();
       }, []);
 
+      /* ── auto-restore session after data loads ── */
+      useEffect(() => {
+        if (currentUser) return;
+        const allUsers = [...teamMembers, ...teamClients];
+        if (!allUsers.length) return;
+        const savedId = localStorage.getItem('bms_session_user');
+        if (!savedId) return;
+        const user = allUsers.find(u => String(u.id) === savedId);
+        if (user && user.status !== 'paused' && user.status !== 'timeout') {
+          handleLogin(user, true);
+        } else {
+          localStorage.removeItem('bms_session_user');
+        }
+      }, [teamMembers, teamClients]);
+
       /* cross-tab sync via localStorage (same device, different tabs) */
       useEffect(() => {
         const h = e => {
@@ -12697,9 +12712,10 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         }
       };
 
-      const handleLogin = user => {
+      const handleLogin = (user, skipPageReset) => {
         _currentBmsUserId = user.id;
         setCurrentUser(user);
+        localStorage.setItem('bms_session_user', user.id);
         tryAutoLinkMicrosoft(user.id);
         const savedTheme = localStorage.getItem(`bms_theme_${user.id}`) || 'dark';
         const savedLang  = localStorage.getItem(`bms_lang_${user.id}`)  || 'ar';
@@ -12709,7 +12725,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         setTheme(savedTheme);
         setLang(savedLang);
         setDashShortcuts(savedShortcuts);
-        setPage('dashboard');
+        if (!skipPageReset) setPage('dashboard');
       };
 
       const broadcastAtt = (arr) => {
@@ -12766,6 +12782,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         }
         setCurrentUser(null);
         setShowProfile(false);
+        localStorage.removeItem('bms_session_user');
       };
 
       const handlePauseAttendance = () => {
