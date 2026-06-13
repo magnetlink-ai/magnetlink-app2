@@ -5197,15 +5197,421 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
       );
     };
 
+    /* ═══════════════════════════ ATTENDANCE DETAIL VIEW ═══════════════════════════ */
+
+    const AttendanceDetailView = ({ member, attendanceRecords, offDays, onBack, onUpdateAttendance, onAddAttendance, onUpdateOffDay, onAddOffDay, showToast, currentUser, customRoles }) => {
+      const { lang } = useLang();
+      const ar = lang === 'ar';
+      const [monthOffset, setMonthOffset] = useState(0);
+      const [expandedDay,  setExpandedDay]  = useState(null);
+      const [editOverlay,  setEditOverlay]  = useState(null);
+
+      const canEdit = ['super_admin','admin'].includes(currentUser?.role) || canDoAction(currentUser, customRoles, 'manage_attendance');
+
+      const pad = n => String(n).padStart(2,'0');
+      const mDate = new Date(); mDate.setMonth(mDate.getMonth() + monthOffset);
+      const monthKey = `${mDate.getFullYear()}-${pad(mDate.getMonth()+1)}`;
+      const year = mDate.getFullYear(), month = mDate.getMonth()+1;
+      const totalDays = new Date(year, month, 0).getDate();
+      const firstDOW  = new Date(year, month-1, 1).getDay();
+
+      const myRecs = attendanceRecords.filter(r => r.userId === member.id && r.date.startsWith(monthKey));
+      const myOff  = offDays.filter(d => d.userId === member.id && d.date.startsWith(monthKey));
+
+      const getDayData = (dayNum) => {
+        const dateStr = `${monthKey}-${pad(dayNum)}`;
+        const rec = myRecs.find(r => r.date === dateStr);
+        const off = myOff.find(o => o.date === dateStr);
+        const workMins = rec ? calcWorkMinutes(rec) : 0;
+        const breakMins = rec ? (rec.pauses||[]).reduce((s,p) => {
+          if (!p.end) return s;
+          return s + Math.round((new Date(p.end) - new Date(p.start)) / 60000);
+        }, 0) : 0;
+        let status = 'empty';
+        if (rec?.clockIn) status = 'worked';
+        else if (off) status = off.type;
+        return { dayNum, dateStr, rec, off, workMins, breakMins, status };
+      };
+
+      const allDays = Array.from({length: totalDays}, (_,i) => getDayData(i+1));
+
+      const workedCount   = allDays.filter(d => d.status === 'worked').length;
+      const absentCount   = allDays.filter(d => d.status === 'absent').length;
+      const vacationCount = allDays.filter(d => d.status === 'vacation').length;
+      const totalMins     = allDays.reduce((s,d) => s + d.workMins, 0);
+      const overtimeMins  = Math.max(0, totalMins - workedCount * 8 * 60);
+
+      const SCL = {
+        worked:'bg-emerald-500/20 text-emerald-300 border-emerald-500/25',
+        absent:'bg-rose-500/20 text-rose-300 border-rose-500/25',
+        vacation:'bg-amber-500/20 text-amber-300 border-amber-500/25',
+        sick:'bg-purple-500/20 text-purple-300 border-purple-500/25',
+        empty:'bg-slate-800/40 text-slate-600 border-slate-700/20',
+      };
+      const PILL = {
+        worked:'bg-emerald-500/15 text-emerald-300 border-emerald-500/20',
+        absent:'bg-rose-500/15 text-rose-300 border-rose-500/20',
+        vacation:'bg-amber-500/15 text-amber-300 border-amber-500/20',
+        sick:'bg-purple-500/15 text-purple-300 border-purple-500/20',
+        empty:'bg-slate-800 text-slate-500 border-slate-700',
+      };
+      const SL = ar
+        ? { worked:'دوام', absent:'غياب', vacation:'إجازة', sick:'مريض', empty:'—' }
+        : { worked:'Worked', absent:'Absent', vacation:'Vacation', sick:'Sick', empty:'—' };
+
+      const WDS = ar ? ['أحد','اثن','ثلا','أرب','خمي','جمع','سبت'] : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      const WDF = ar ? ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'] : ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+      const ri = getRoleInfo(member.role, customRoles||[]);
+      const fmtTime = iso => iso ? new Date(iso).toLocaleTimeString(ar?'ar-SA':'en-US',{hour:'2-digit',minute:'2-digit'}) : '—';
+      const monthLabel = new Date(monthKey+'-01').toLocaleDateString(ar?'ar-SA':'en-US',{year:'numeric',month:'long'});
+
+      const openEdit = (info) => {
+        if (!canEdit) return;
+        if (info.status === 'worked' && info.rec) {
+          const cin = new Date(info.rec.clockIn);
+          const cout = info.rec.clockOut ? new Date(info.rec.clockOut) : null;
+          setEditOverlay({ day:info.dayNum, mode:'work',
+            clockIn:`${pad(cin.getHours())}:${pad(cin.getMinutes())}`,
+            clockOut: cout ? `${pad(cout.getHours())}:${pad(cout.getMinutes())}` : '',
+            breakMins: String(info.breakMins), note: info.rec.note||'',
+            existingRec:info.rec, existingOff:null });
+        } else if (['absent','vacation','sick'].includes(info.status) && info.off) {
+          setEditOverlay({ day:info.dayNum, mode:'off',
+            offType:info.off.type, notes:info.off.notes||'',
+            existingRec:null, existingOff:info.off });
+        } else {
+          setEditOverlay({ day:info.dayNum, mode:'work',
+            clockIn:'09:00', clockOut:'17:00', breakMins:'60', note:'',
+            existingRec:null, existingOff:null });
+        }
+      };
+
+      const saveEdit = () => {
+        const { day, mode, existingRec, existingOff } = editOverlay;
+        const dateStr = `${monthKey}-${pad(day)}`;
+        if (mode === 'work') {
+          const { clockIn, clockOut, breakMins, note } = editOverlay;
+          if (!clockIn) { showToast(ar?'وقت الحضور مطلوب':'Clock-in required'); return; }
+          const cinISO  = new Date(`${dateStr}T${clockIn}:00`).toISOString();
+          const coutISO = clockOut ? new Date(`${dateStr}T${clockOut}:00`).toISOString() : null;
+          const brkMins = Number(breakMins)||0;
+          const pauses  = brkMins > 0
+            ? [{ start:cinISO, end:new Date(new Date(cinISO).getTime()+brkMins*60000).toISOString() }]
+            : (existingRec?.pauses||[]);
+          if (existingRec) onUpdateAttendance({...existingRec, clockIn:cinISO, clockOut:coutISO, pauses, note:note||''});
+          else             onAddAttendance({id:Date.now(), userId:member.id, date:dateStr, clockIn:cinISO, clockOut:coutISO, pauses, note:note||''});
+        } else {
+          const { offType, notes } = editOverlay;
+          if (existingOff) onUpdateOffDay({...existingOff, type:offType, notes});
+          else             onAddOffDay({id:Date.now(), userId:member.id, date:dateStr, type:offType, notes});
+        }
+        setEditOverlay(null);
+        showToast(ar?'تم الحفظ ✓':'Saved ✓');
+      };
+
+      return (
+        <div className="space-y-5">
+          {/* Header */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <button onClick={onBack}
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg transition-all">
+              ← {ar?'رجوع':'Back'}
+            </button>
+            <UserAvatar userId={member.id} name={member.name} grad={ri.grad} size="w-9 h-9" rounded="rounded-xl" textCls="text-sm font-bold"/>
+            <div>
+              <div className="text-sm font-semibold text-white">{member.name}</div>
+              <div className="text-[11px] text-slate-500">{member.email} · {ri.label}</div>
+            </div>
+          </div>
+
+          {/* Month nav + Legend */}
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5">
+              <button onClick={() => setMonthOffset(o => o-1)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-all">
+                <Ic name="chevron_up" size={13}/>
+              </button>
+              <span className="text-sm font-semibold text-white min-w-[140px] text-center">{monthLabel}</span>
+              <button onClick={() => setMonthOffset(o => Math.min(0,o+1))}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-all">
+                <Ic name="chevron_down" size={13}/>
+              </button>
+            </div>
+            <div className="flex items-center gap-4 text-[11px] text-slate-400 flex-wrap">
+              {[['emerald',ar?'دوام':'Worked'],['rose',ar?'غياب':'Absent'],['amber',ar?'إجازة':'Vacation'],['purple',ar?'مريض':'Sick']].map(([c,lbl])=>(
+                <div key={lbl} className="flex items-center gap-1.5">
+                  <div className={`w-2.5 h-2.5 rounded-sm bg-${c}-400`}/>
+                  {lbl}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Summary cards */}
+          <div className="grid grid-cols-5 gap-3">
+            {[
+              [workedCount,   'text-emerald-400', ar?'أيام دوام':'Days Worked'],
+              [absentCount,   'text-rose-400',    ar?'أيام غياب':'Days Absent'],
+              [vacationCount, 'text-amber-400',   ar?'أيام إجازة':'Vacation'],
+              [fmtDuration(totalMins,lang), 'text-blue-400', ar?'إجمالي الساعات':'Total Hours'],
+              [overtimeMins>0 ? '+'+fmtDuration(overtimeMins,lang) : '—', 'text-violet-400', ar?'أوفر تايم':'Overtime'],
+            ].map(([val,cls,lbl],i) => (
+              <div key={i} className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-3 text-center">
+                <div className={`text-xl font-bold font-mono ${cls}`}>{val}</div>
+                <div className="text-[10px] text-slate-500 mt-0.5">{lbl}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar */}
+          <div className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-4">
+            <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-3">{ar?'التقويم':'Calendar'}</div>
+            <div className="grid grid-cols-7 gap-1 mb-1">
+              {WDS.map(d => <div key={d} className="text-center text-[10px] text-slate-600 font-semibold py-1">{d}</div>)}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {Array.from({length:firstDOW},(_,i)=><div key={`e${i}`}/>)}
+              {allDays.map(info => {
+                const isToday = info.dateStr === todayStr();
+                const isExp   = expandedDay === info.dayNum;
+                return (
+                  <button key={info.dayNum}
+                    onClick={() => { setExpandedDay(expandedDay===info.dayNum?null:info.dayNum); setTimeout(()=>document.getElementById(`att-row-${info.dayNum}`)?.scrollIntoView({behavior:'smooth',block:'nearest'}),60); }}
+                    className={`aspect-square rounded-xl border flex flex-col items-center justify-center text-xs font-semibold transition-all
+                      ${SCL[info.status]}
+                      ${isToday  ? 'ring-2 ring-blue-500/60' : ''}
+                      ${isExp    ? 'ring-2 ring-white/30'    : ''}
+                      ${info.status!=='empty' ? 'hover:opacity-75 cursor-pointer' : 'cursor-default'}
+                    `}>
+                    <span>{info.dayNum}</span>
+                    {info.workMins>0 && <span className="text-[8px] opacity-70 leading-none mt-0.5">{Math.floor(info.workMins/60)}h</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Daily table */}
+          <div className="bg-slate-800/60 border border-slate-700/50 rounded-2xl overflow-hidden">
+            <div className="px-4 pt-4 pb-2">
+              <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{ar?'تفاصيل الأيام':'Daily Details'}</div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-slate-700/50">
+                    {(ar?['اليوم','الحضور','الانصراف','الاستراحة','صافي الساعات','الحالة','ملاحظة','']:
+                         ['Day','Clock In','Clock Out','Break','Net Hours','Status','Note','']).map((h,i)=>(
+                      <th key={i} className="py-2.5 px-3 text-slate-500 font-semibold text-right">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {allDays.map(info => {
+                    const dow     = new Date(info.dateStr+'T12:00:00').getDay();
+                    const isExp   = expandedDay === info.dayNum;
+                    const isToday = info.dateStr === todayStr();
+                    const cinStr  = fmtTime(info.rec?.clockIn);
+                    const coutStr = fmtTime(info.rec?.clockOut);
+                    return (
+                      <React.Fragment key={info.dayNum}>
+                        <tr id={`att-row-${info.dayNum}`}
+                          className={`border-b border-slate-700/20 transition-colors ${isExp?'bg-slate-900/50':isToday?'bg-blue-500/5':'hover:bg-slate-800/30'}`}>
+                          <td className="py-2.5 px-3 whitespace-nowrap">
+                            <span className="text-slate-300 font-medium">{WDF[dow]} {info.dayNum}</span>
+                            {isToday && <span className="mr-1.5 text-[9px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded-full border border-blue-500/20">{ar?'اليوم':'Today'}</span>}
+                          </td>
+                          <td className="py-2.5 px-3 font-mono">
+                            <span className={info.rec?.clockIn ? 'text-emerald-400':'text-slate-600'}>{cinStr}</span>
+                          </td>
+                          <td className="py-2.5 px-3 font-mono">
+                            <span className={info.rec?.clockOut ? 'text-rose-400':'text-slate-600'}>{coutStr}</span>
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <span className={info.breakMins>0?'text-amber-400':'text-slate-600'}>
+                              {info.breakMins>0 ? `${info.breakMins}${ar?'د':'m'}` : '—'}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <span className={info.workMins>0?'text-white font-semibold font-mono':'text-slate-600'}>
+                              {info.workMins>0 ? fmtDuration(info.workMins,lang) : '—'}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <span className={`px-2 py-0.5 rounded-full border text-[10px] font-semibold ${PILL[info.status]}`}>
+                              {SL[info.status]}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 max-w-[120px]">
+                            <span className="text-slate-500 truncate block">{info.rec?.note||info.off?.notes||'—'}</span>
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <div className="flex items-center gap-1 justify-end">
+                              <button onClick={()=>setExpandedDay(isExp?null:info.dayNum)}
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-700 transition-all">
+                                <Ic name={isExp?'chevron_up':'chevron_down'} size={11}/>
+                              </button>
+                              {canEdit && (
+                                <button onClick={()=>openEdit(info)}
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 transition-all">
+                                  <Ic name="edit2" size={11}/>
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                        {isExp && (
+                          <tr className="bg-slate-900/60 border-b border-slate-700/30">
+                            <td colSpan={8} className="px-4 py-3">
+                              {info.status==='worked' && info.rec ? (
+                                <div className="space-y-2">
+                                  <div className="grid grid-cols-4 gap-3">
+                                    {[[cinStr,'text-emerald-400',ar?'وقت الحضور':'Clock In'],
+                                      [coutStr,'text-rose-400',ar?'وقت الانصراف':'Clock Out'],
+                                      [info.breakMins>0?`${info.breakMins}${ar?'د':'m'}`:'—','text-amber-400',ar?'الاستراحة':'Break'],
+                                      [info.workMins>0?fmtDuration(info.workMins,lang):'—','text-blue-400',ar?'صافي الدوام':'Net Work'],
+                                    ].map(([v,c,l],i)=>(
+                                      <div key={i} className="bg-slate-800/70 rounded-xl p-3 text-center">
+                                        <div className={`text-base font-bold font-mono ${c}`}>{v}</div>
+                                        <div className="text-[10px] text-slate-500 mt-0.5">{l}</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  {(info.rec.pauses||[]).filter(p=>p.end).length > 0 && (
+                                    <div>
+                                      <div className="text-[10px] text-slate-600 font-semibold uppercase mb-1.5">{ar?'الاستراحات':'Breaks'}</div>
+                                      <div className="flex flex-wrap gap-2">
+                                        {info.rec.pauses.filter(p=>p.end).map((p,i)=>{
+                                          const pm = Math.round((new Date(p.end)-new Date(p.start))/60000);
+                                          return (
+                                            <span key={i} className="text-[11px] bg-amber-500/10 border border-amber-500/15 text-amber-300 px-2.5 py-1 rounded-lg">
+                                              {fmtTime(p.start)} → {fmtTime(p.end)} ({pm}{ar?'د':'m'})
+                                            </span>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : info.off ? (
+                                <div className="flex items-center gap-3 text-xs">
+                                  <span className={`px-2.5 py-1 rounded-lg border ${PILL[info.status]} font-medium`}>{SL[info.status]}</span>
+                                  {info.off.notes && <span className="text-slate-400">{info.off.notes}</span>}
+                                </div>
+                              ) : (
+                                <div className="text-xs text-slate-600 text-center py-2">{ar?'لا يوجد سجل لهذا اليوم':'No record for this day'}</div>
+                              )}
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Edit Overlay */}
+          {editOverlay && (
+            <div className="fixed inset-0 z-[130] flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={()=>setEditOverlay(null)}/>
+              <div className="relative bg-slate-900 border border-slate-700 rounded-2xl p-6 w-[400px] shadow-2xl z-10" dir={ar?'rtl':'ltr'}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <Ic name="edit2" size={14}/>
+                    {ar?'تعديل اليوم':'Edit Day'} {editOverlay.day}/{pad(month)}
+                  </h3>
+                  <button onClick={()=>setEditOverlay(null)} className="text-slate-500 hover:text-white p-1 text-lg leading-none">×</button>
+                </div>
+                <div className="flex gap-2 mb-5 bg-slate-800 rounded-xl p-1">
+                  {[['work',ar?'دوام':'Work'],['off',ar?'غياب / إجازة':'Off / Vacation']].map(([m,lbl])=>(
+                    <button key={m} onClick={()=>setEditOverlay(p=>({...p,mode:m}))}
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${editOverlay.mode===m?'bg-blue-600 text-white':'text-slate-500 hover:text-slate-300'}`}>
+                      {lbl}
+                    </button>
+                  ))}
+                </div>
+                {editOverlay.mode==='work' ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] text-slate-500 mb-1 block">{ar?'وقت الحضور':'Clock In'} *</label>
+                        <input type="time" value={editOverlay.clockIn||''}
+                          onChange={e=>setEditOverlay(p=>({...p,clockIn:e.target.value}))}
+                          className="w-full bg-slate-800 border border-slate-700 focus:border-blue-500 rounded-xl px-3 py-2 text-sm text-white outline-none transition-colors"/>
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-slate-500 mb-1 block">{ar?'وقت الانصراف':'Clock Out'}</label>
+                        <input type="time" value={editOverlay.clockOut||''}
+                          onChange={e=>setEditOverlay(p=>({...p,clockOut:e.target.value}))}
+                          className="w-full bg-slate-800 border border-slate-700 focus:border-blue-500 rounded-xl px-3 py-2 text-sm text-white outline-none transition-colors"/>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-slate-500 mb-1 block">{ar?'وقت الاستراحة (دقيقة)':'Break Time (min)'}</label>
+                      <input type="number" min="0" max="480" value={editOverlay.breakMins||0}
+                        onChange={e=>setEditOverlay(p=>({...p,breakMins:e.target.value}))}
+                        className="w-full bg-slate-800 border border-slate-700 focus:border-blue-500 rounded-xl px-3 py-2 text-sm text-white outline-none transition-colors"/>
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-slate-500 mb-1 block">{ar?'ملاحظة':'Note'}</label>
+                      <input value={editOverlay.note||''} placeholder={ar?'اختياري...':'Optional...'}
+                        onChange={e=>setEditOverlay(p=>({...p,note:e.target.value}))}
+                        className="w-full bg-slate-800 border border-slate-700 focus:border-blue-500 rounded-xl px-3 py-2 text-sm text-white outline-none transition-colors"/>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-[11px] text-slate-500 mb-2 block">{ar?'نوع الغياب':'Type'}</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[['absent',ar?'غياب':'Absent','rose'],['vacation',ar?'إجازة':'Vacation','amber'],['sick',ar?'مريض':'Sick','purple']].map(([k,lbl,c])=>(
+                          <button key={k} onClick={()=>setEditOverlay(p=>({...p,offType:k}))}
+                            className={`py-2 rounded-xl text-xs font-semibold border transition-all ${
+                              editOverlay.offType===k
+                                ? `bg-${c}-500/20 text-${c}-300 border-${c}-500/30`
+                                : 'text-slate-500 border-slate-700 hover:text-slate-300 hover:border-slate-600'
+                            }`}>{lbl}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-slate-500 mb-1 block">{ar?'ملاحظة':'Notes'}</label>
+                      <input value={editOverlay.notes||''} placeholder={ar?'اختياري...':'Optional...'}
+                        onChange={e=>setEditOverlay(p=>({...p,notes:e.target.value}))}
+                        className="w-full bg-slate-800 border border-slate-700 focus:border-blue-500 rounded-xl px-3 py-2 text-sm text-white outline-none transition-colors"/>
+                    </div>
+                  </div>
+                )}
+                <div className="flex gap-2 mt-5">
+                  <button onClick={()=>setEditOverlay(null)}
+                    className="flex-1 py-2 rounded-xl text-slate-400 hover:text-white text-sm border border-slate-700 hover:border-slate-600 transition-all">
+                    {ar?'إلغاء':'Cancel'}
+                  </button>
+                  <button onClick={saveEdit}
+                    className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all">
+                    {ar?'حفظ':'Save'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
     /* ═══════════════════════════ ATTENDANCE ADMIN VIEW ═══════════════════════════ */
 
-    const AttendanceAdminView = ({ teamMembers, attendanceRecords, offDays, deductions, bonuses, onAddDeduction, onAddOffDay, onAddBonus, onResetSession, showToast, currentUser, customRoles }) => {
+    const AttendanceAdminView = ({ teamMembers, attendanceRecords, offDays, deductions, bonuses, onAddDeduction, onAddOffDay, onAddBonus, onResetSession, onUpdateAttendance, onAddAttendance, onUpdateOffDay, showToast, currentUser, customRoles }) => {
       const { t, lang } = useLang();
       const [viewHistory,    setViewHistory]    = useState(null);
       const [deductionForm,  setDeductionForm]  = useState(null);
       const [bonusForm,      setBonusForm]      = useState(null);
       const [offDayForm,     setOffDayForm]     = useState(null);
       const [monthOffset,    setMonthOffset]    = useState(0);
+      const [detailMemberId, setDetailMemberId] = useState(null);
 
       const canAdmin        = ['super_admin','admin'].includes(currentUser?.role);
       const canDeductions   = canDoAction(currentUser, customRoles, 'add_deductions');
@@ -5234,9 +5640,33 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
         };
       };
 
-      const getTodayRec = (userId) => attendanceRecords.find(r => r.userId === userId && r.date === todayStr());
+      const getTodayRec = (userId) => {
+        const today = todayStr();
+        // prefer open session (no clockOut) — handles case where same day has multiple records after a reset
+        return attendanceRecords.find(r => r.userId === userId && r.date === today && !r.clockOut)
+            || attendanceRecords.find(r => r.userId === userId && r.date === today);
+      };
 
       const offTypeLabel = { absent:t('att_off_absent'), vacation:t('att_off_vacation'), sick:t('att_off_sick') };
+
+      if (detailMemberId) {
+        const dm = teamMembers.find(m => m.id === detailMemberId);
+        if (dm) return (
+          <AttendanceDetailView
+            member={dm}
+            attendanceRecords={attendanceRecords}
+            offDays={offDays}
+            onBack={() => setDetailMemberId(null)}
+            onUpdateAttendance={onUpdateAttendance}
+            onAddAttendance={onAddAttendance}
+            onUpdateOffDay={onUpdateOffDay}
+            onAddOffDay={onAddOffDay}
+            showToast={showToast}
+            currentUser={currentUser}
+            customRoles={customRoles}
+          />
+        );
+      }
 
       return (
         <div className="space-y-5">
@@ -5315,6 +5745,11 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                     </div>
                     {/* Actions */}
                     <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <button onClick={() => setDetailMemberId(m.id)}
+                        title={lang==='ar'?'تفاصيل كاملة':'Full Detail'}
+                        className="p-1.5 rounded-lg text-xs border bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border-indigo-500/15 transition-all">
+                        <Ic name="eye" size={13}/>
+                      </button>
                       {canDeductions && (
                         <button onClick={() => setDeductionForm({ userId:m.id, amount:'', reason:'', date:todayStr() })}
                           title={t('att_add_deduction')}
@@ -5735,7 +6170,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
       );
     };
 
-    const TeamModule = ({ teamMembers, teamClients, customRoles, currentUser, onUpdateMember, onDeleteMember, onAddMember, onUpdateClient, onDeleteClient, onAddClient, onAddCustomRole, onUpdateCustomRole, onDeleteCustomRole, attendanceRecords, offDays, deductions, bonuses, onAddDeduction, onAddOffDay, onAddBonus, onResetSession, showToast }) => {
+    const TeamModule = ({ teamMembers, teamClients, customRoles, currentUser, onUpdateMember, onDeleteMember, onAddMember, onUpdateClient, onDeleteClient, onAddClient, onAddCustomRole, onUpdateCustomRole, onDeleteCustomRole, attendanceRecords, offDays, deductions, bonuses, onAddDeduction, onAddOffDay, onUpdateOffDay, onAddBonus, onResetSession, onUpdateAttendance, onAddAttendance, showToast }) => {
       const { t } = useLang();
       const [tab,setTab]=useState('team');
       const [formOpen,setFormOpen]=useState(false);
@@ -5922,8 +6357,11 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
               bonuses={bonuses||[]}
               onAddDeduction={onAddDeduction}
               onAddOffDay={onAddOffDay}
+              onUpdateOffDay={onUpdateOffDay}
               onAddBonus={onAddBonus}
               onResetSession={onResetSession}
+              onUpdateAttendance={onUpdateAttendance}
+              onAddAttendance={onAddAttendance}
               showToast={showToast}
               currentUser={currentUser}
               customRoles={customRoles}
@@ -12381,9 +12819,26 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         showToast('تم إعادة ضبط الدوام ✓');
       };
 
-      const handleAddDeduction = d  => { setDeductions(prev => [...prev, d]); db.save('deductions', d); };
-      const handleAddOffDay    = d  => { setOffDays(prev => [...prev, d]); db.save('off_days', d); };
-      const handleAddBonus     = b  => { setBonuses(prev => [...prev, b]); db.save('bonuses', b); };
+      const handleAddDeduction  = d  => { setDeductions(prev => [...prev, d]); db.save('deductions', d); };
+      const handleAddOffDay     = d  => { setOffDays(prev => [...prev, d]); db.save('off_days', d); };
+      const handleUpdateOffDay  = d  => { setOffDays(prev => prev.map(x => x.id === d.id ? d : x)); db.save('off_days', d); };
+      const handleAddBonus      = b  => { setBonuses(prev => [...prev, b]); db.save('bonuses', b); };
+      const handleUpdateAttendance = rec => {
+        setAttendance(prev => {
+          const next = prev.map(r => r.id === rec.id ? rec : r);
+          broadcastAtt(next);
+          return next;
+        });
+        db.save('attendance', rec);
+      };
+      const handleAddAttendance = rec => {
+        setAttendance(prev => {
+          const next = [...prev, rec];
+          broadcastAtt(next);
+          return next;
+        });
+        db.save('attendance', rec);
+      };
       const handleSaveProfile = updated => {
         if (updated.role === 'client') {
           setTeamClients(prev => prev.map(c => c.id === updated.id ? updated : c));
@@ -12477,8 +12932,9 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
               onAddClient={handleAddClient} onUpdateClient={handleUpdateClient} onDeleteClient={handleDeleteClient}
               onAddCustomRole={handleAddCustomRole} onUpdateCustomRole={handleUpdateCustomRole} onDeleteCustomRole={handleDeleteCustomRole}
               attendanceRecords={attendance} offDays={offDays} deductions={deductions} bonuses={bonuses}
-              onAddDeduction={handleAddDeduction} onAddOffDay={handleAddOffDay} onAddBonus={handleAddBonus}
+              onAddDeduction={handleAddDeduction} onAddOffDay={handleAddOffDay} onUpdateOffDay={handleUpdateOffDay} onAddBonus={handleAddBonus}
               onResetSession={handleResetSession}
+              onUpdateAttendance={handleUpdateAttendance} onAddAttendance={handleAddAttendance}
               showToast={showToast}/>
           );
           case 'design': return (
