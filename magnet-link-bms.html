@@ -12001,6 +12001,17 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         })();
       }, []);
 
+      useEffect(() => {
+        if (!_sbReady) return;
+        const id = setInterval(async () => {
+          try {
+            const att = await db.load('attendance');
+            setAttendance(att);
+          } catch(_) {}
+        }, 5000);
+        return () => clearInterval(id);
+      }, []);
+
       const t = useCallback(key => TRANSLATIONS[lang]?.[key] ?? TRANSLATIONS.ar?.[key] ?? key, [lang]);
 
       const toggleTheme = () => {
