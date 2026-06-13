@@ -2819,7 +2819,8 @@
         return () => clearInterval(id);
       }, []);
 
-      const todayRec   = (attendanceRecords||[]).find(r => r.userId === currentUser?.id && r.date === todayStr());
+      const _todayAll  = (attendanceRecords||[]).filter(r => r.userId === currentUser?.id && r.date === todayStr());
+      const todayRec   = _todayAll.find(r => !r.clockOut) || _todayAll[_todayAll.length - 1] || null;
       const onBreak    = todayRec && isOnBreak(todayRec);
       const mins       = todayRec ? calcWorkMinutes(todayRec) : 0;
       const clockInTime = todayRec ? new Date(todayRec.clockIn).toLocaleTimeString(lang==='ar'?'ar':'en',{hour:'2-digit',minute:'2-digit'}) : null;
@@ -2842,6 +2843,12 @@
                   <span className="font-mono text-slate-300 font-semibold">{fmtDuration(mins,lang)}</span>
                   <span>{t('att_work_time')}</span>
                 </div>
+                {todayRec.reset && (
+                  <button onClick={onClockIn}
+                    className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20 transition-all">
+                    <Ic name="play" size={11}/> {t('att_start_work')}
+                  </button>
+                )}
               </div>
             ) : (
             <div className="flex items-center gap-4">
@@ -5771,8 +5778,8 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                           <Ic name="calendar" size={13}/>
                         </button>
                       )}
-                      {canAttendance && canManage(currentUser, m, customRoles) && attendanceRecords.some(r => r.userId === m.id && !r.clockOut) && (
-                        <button onClick={() => { if(window.confirm(lang==='ar'?`إعادة ضبط دوام "${m.name}"؟ ستُغلق الجلسة الحالية وتُحفظ ساعاته.`:`Reset "${m.name}"'s session? Current hours will be saved.`)) onResetSession(m.id); }}
+                      {canAttendance && canManage(currentUser, m, customRoles) && (() => { const rec = attendanceRecords.filter(r => r.userId === m.id && r.date === todayStr()); const openRec = rec.find(r=>!r.clockOut); const lastRec = rec[rec.length-1]; return openRec || (lastRec && !lastRec.reset); })() && (
+                        <button onClick={() => { if(window.confirm(lang==='ar'?`إعادة ضبط دوام "${m.name}"؟ سيُسمح له ببدء دوام جديد.`:`Reset "${m.name}"'s session? They will be able to start work again.`)) onResetSession(m.id); }}
                           title={lang==='ar'?'إعادة الدوام':'Reset Session'}
                           className="p-1.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 text-xs border border-sky-500/15 transition-all">
                           <Ic name="repeat2" size={13}/>
@@ -12802,12 +12809,20 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       };
 
       const handleResetSession = (userId) => {
+        const today = todayStr();
         setAttendance(prev => {
           const next = prev.map(r => {
-            // close ANY open session for this user (today OR dangling from previous days)
-            if (r.userId === userId && !r.clockOut) {
+            if (r.userId !== userId) return r;
+            // close open sessions (any day) + mark today's last session as reset so user can restart
+            if (!r.clockOut) {
               const pauses = (r.pauses||[]).map(p => p.end ? p : { ...p, end: new Date().toISOString() });
               const updated = { ...r, clockOut: new Date().toISOString(), pauses, reset: true };
+              db.save('attendance', updated);
+              return updated;
+            }
+            // today's closed session that hasn't been reset yet — mark it so user can restart
+            if (r.date === today && !r.reset) {
+              const updated = { ...r, reset: true };
               db.save('attendance', updated);
               return updated;
             }
@@ -12816,7 +12831,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
           broadcastAtt(next);
           return next;
         });
-        showToast('تم إعادة ضبط الدوام ✓');
+        showToast(lang==='ar'?'تم إعادة ضبط الدوام — يستطيع الآن بدء دوام جديد ✓':'Session reset — they can now start work again ✓');
       };
 
       const handleAddDeduction  = d  => { setDeductions(prev => [...prev, d]); db.save('deductions', d); };
