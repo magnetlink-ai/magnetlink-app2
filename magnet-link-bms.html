@@ -3528,27 +3528,23 @@
 
     const StatusDropdown = ({ current, onSelect, onClose }) => {
       const { t } = useLang();
-      const ref = useRef(null);
-      useEffect(() => {
-        const h = e => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
-        document.addEventListener('mousedown', h);
-        return () => document.removeEventListener('mousedown', h);
-      }, []);
-
       return (
-        <div ref={ref}
-          className="absolute z-50 top-full mt-1 left-0 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-1.5 w-40">
-          <div className="text-[10px] text-slate-500 px-2 py-1">{t('crm_change_status')}</div>
-          {LEAD_STATUSES.map(s => (
-            <button key={s.id}
-              onClick={() => { onSelect(s.id); onClose(); }}
-              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-colors
-                ${current === s.id ? 'bg-slate-700 text-white' : 'text-slate-300 hover:bg-slate-700'}`}>
-              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.dot}`} />
-              {sl(s,t)}
-              {current === s.id && <span className="mr-auto"><Ic name="check" size={10} /></span>}
-            </button>
-          ))}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center" onMouseDown={onClose}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-2 w-52"
+            onMouseDown={e => e.stopPropagation()}>
+            <div className="text-[11px] text-slate-500 px-2 py-1.5 font-medium">{t('crm_change_status')}</div>
+            {LEAD_STATUSES.map(s => (
+              <button key={s.id}
+                onClick={() => { onSelect(s.id); onClose(); }}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors
+                  ${current === s.id ? 'bg-slate-700 text-white' : 'text-slate-300 hover:bg-slate-700'}`}>
+                <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${s.dot}`} />
+                {sl(s,t)}
+                {current === s.id && <span className="mr-auto"><Ic name="check" size={12} /></span>}
+              </button>
+            ))}
+          </div>
         </div>
       );
     };
@@ -4351,8 +4347,18 @@
       const optionalCols = TOGGLEABLE_COLS.filter(c => cols[c.key]);
       const totalCols = alwaysCols.length + optionalCols.length + 1; // +1 for actions
 
+      const dropLead = leads.find(l => l.id === openDrop);
+
       return (
         <div className="space-y-5">
+          {/* Status picker overlay — outside table to avoid fixed/stacking context issues */}
+          {dropLead && (
+            <StatusDropdown
+              current={dropLead.status}
+              onSelect={v => { onUpdate(dropLead.id,'status',v); setOpenDrop(null); }}
+              onClose={() => setOpenDrop(null)}
+            />
+          )}
           {/* Header */}
           <div className="flex items-start justify-between">
             <div>
@@ -4490,17 +4496,8 @@
 
                       {/* Status */}
                       <td className="px-4 py-3">
-                        <div className="relative inline-block">
-                          <StatusBadge statusId={lead.status}
-                            onClick={() => setOpenDrop(p => p === lead.id ? null : lead.id)} />
-                          {openDrop === lead.id && (
-                            <StatusDropdown
-                              current={lead.status}
-                              onSelect={v => { onUpdate(lead.id,'status',v); setOpenDrop(null); }}
-                              onClose={() => setOpenDrop(null)}
-                            />
-                          )}
-                        </div>
+                        <StatusBadge statusId={lead.status}
+                          onClick={() => setOpenDrop(p => p === lead.id ? null : lead.id)} />
                       </td>
 
                       {/* Notes (optional) */}
