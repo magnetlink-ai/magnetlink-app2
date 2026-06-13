@@ -5771,7 +5771,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                           <Ic name="calendar" size={13}/>
                         </button>
                       )}
-                      {canAttendance && canManage(currentUser, m, customRoles) && getTodayRec(m.id) && !getTodayRec(m.id).clockOut && (
+                      {canAttendance && canManage(currentUser, m, customRoles) && attendanceRecords.some(r => r.userId === m.id && !r.clockOut) && (
                         <button onClick={() => { if(window.confirm(lang==='ar'?`إعادة ضبط دوام "${m.name}"؟ ستُغلق الجلسة الحالية وتُحفظ ساعاته.`:`Reset "${m.name}"'s session? Current hours will be saved.`)) onResetSession(m.id); }}
                           title={lang==='ar'?'إعادة الدوام':'Reset Session'}
                           className="p-1.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 text-xs border border-sky-500/15 transition-all">
@@ -12802,10 +12802,10 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       };
 
       const handleResetSession = (userId) => {
-        const today = todayStr();
         setAttendance(prev => {
           const next = prev.map(r => {
-            if (r.userId === userId && r.date === today && !r.clockOut) {
+            // close ANY open session for this user (today OR dangling from previous days)
+            if (r.userId === userId && !r.clockOut) {
               const pauses = (r.pauses||[]).map(p => p.end ? p : { ...p, end: new Date().toISOString() });
               const updated = { ...r, clockOut: new Date().toISOString(), pauses, reset: true };
               db.save('attendance', updated);
