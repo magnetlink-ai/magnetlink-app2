@@ -2000,6 +2000,7 @@
       moon:        ['M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z'],
       globe:       ['M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z','M2 12h20','M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'],
       menu:        ['M3 6h18','M3 12h18','M3 18h18'],
+      video:       ['M23 7l-7 5 7 5V7z','M1 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5z'],
     };
 
     const Ic = ({ name, size = 16 }) => (
@@ -11465,6 +11466,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
     const CHAT_SCOPES = [
       'https://graph.microsoft.com/Chat.ReadWrite',
       'https://graph.microsoft.com/Chat.Create',
+      'https://graph.microsoft.com/OnlineMeetings.ReadWrite',
     ];
 
     const getChatToken = async () => {
@@ -11516,6 +11518,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       const [renaming,      setRenaming]      = useState(false);
       const [renameVal,     setRenameVal]     = useState('');
       const [confirmDel,    setConfirmDel]    = useState(false);
+      const [startingCall,  setStartingCall]  = useState(false);
       const messagesEndRef = useRef(null);
       const pollRef        = useRef(null);
       const textareaRef    = useRef(null);
@@ -11670,6 +11673,34 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
           setConfirmDel(false);
           showToast(t('chat_leave_ok'));
         } catch(e) { showToast(t('chat_leave_err') + e.message.slice(0,80)); setConfirmDel(false); }
+      };
+
+      /* ── Start group call ── */
+      const startCall = async () => {
+        if (!selected || startingCall) return;
+        setStartingCall(true);
+        try {
+          const subject = getChatName(selected);
+          const now = new Date();
+          const end = new Date(now.getTime() + 60 * 60 * 1000);
+          const meeting = await chatFetch('/me/onlineMeetings', {
+            method: 'POST',
+            body: JSON.stringify({
+              subject,
+              startDateTime: now.toISOString(),
+              endDateTime:   end.toISOString(),
+            }),
+          });
+          const joinUrl = meeting.joinWebUrl;
+          await chatFetch(`/me/chats/${selected.id}/messages`, {
+            method: 'POST',
+            body: JSON.stringify({ body: { content: `📹 اجتماع جماعي — انضم الآن:\n${joinUrl}`, contentType: 'text' } }),
+          });
+          await loadMessages(selected.id, true);
+          showToast(lang === 'ar' ? 'تم إنشاء الاجتماع وإرسال الرابط' : 'Meeting created & link sent');
+        } catch(e) {
+          showToast((lang === 'ar' ? 'خطأ: ' : 'Error: ') + (e.message || '').slice(0, 80));
+        } finally { setStartingCall(false); }
       };
 
       /* ── Create chat (1-on-1 or group) ── */
@@ -11909,6 +11940,14 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
                           <Ic name="edit2" size={13}/>
                         </button>
                       )}
+                      <button onClick={startCall} disabled={startingCall}
+                        className={`p-1.5 rounded-lg transition flex items-center justify-center
+                          ${startingCall ? 'text-slate-600 cursor-not-allowed' : 'text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10'}`}
+                        title={lang === 'ar' ? 'بدء اتصال جماعي' : 'Start group call'}>
+                        {startingCall
+                          ? <Ic name="repeat2" size={14}/>
+                          : <Ic name="video" size={14}/>}
+                      </button>
                       <button onClick={() => loadMessages(selected.id)}
                         className="text-slate-500 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition" title={t('chat_refresh')}>
                         <Ic name="repeat2" size={14}/>
