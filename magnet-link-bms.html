@@ -2001,6 +2001,11 @@
       globe:       ['M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z','M2 12h20','M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'],
       menu:        ['M3 6h18','M3 12h18','M3 18h18'],
       video:       ['M23 7l-7 5 7 5V7z','M1 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5z'],
+      phone:       ['M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.37 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.56a16 16 0 0 0 6.06 6.06l.72-.72a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z'],
+      phone_off:   ['M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67M6.34 6.34A19.68 19.68 0 0 0 1.61 3.37 2 2 0 0 0 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.56','M1 1l22 22'],
+      mic:         ['M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z','M19 10v2a7 7 0 0 1-14 0v-2','M12 19v4','M8 23h8'],
+      mic_off:     ['M1 1l22 22','M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6','M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23','M12 19v4','M8 23h8'],
+      monitor:     ['M20 3H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z','M8 21l4-4 4 4','M12 17v4'],
     };
 
     const Ic = ({ name, size = 16 }) => (
@@ -6441,6 +6446,13 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                           <td className="px-4 py-3">{mst&&<span className={`text-xs px-2.5 py-1 rounded-full border flex items-center gap-1.5 w-fit ${mst.badge}`}><span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${mst.dot}`}/>{sl(mst,t)}</span>}</td>
                           <td className="px-3 py-3">
                             <div className="flex items-center gap-1">
+                              {/* Call button — visible for active team members who aren't yourself */}
+                              {isTeam && member.id !== currentUser?.id && member.status === 'active' && (
+                                <button onClick={() => window._bmsStartCall?.(member)}
+                                  className="p-1.5 rounded-lg text-slate-600 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all" title="اتصال / Call">
+                                  <Ic name="phone" size={13}/>
+                                </button>
+                              )}
                               {canManage(currentUser,member,customRoles)?(
                                 <>
                                   <button onClick={()=>{if(isTeam)setEditMember(member);else setEditClient(member);setFormOpen(true);}}
@@ -11493,6 +11505,265 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       return res.headers.get('content-type')?.includes('json') ? res.json() : res;
     };
 
+    /* ═══════════════════════════ CALL MANAGER ═══════════════════════════ */
+    const CallManager = ({ currentUser, showToast }) => {
+      const { lang } = useLang();
+      const [callState,    setCallState]    = useState('idle'); // idle | outgoing | incoming | active
+      const [incomingCall, setIncomingCall] = useState(null);
+      const [activeCall,   setActiveCall]   = useState(null);
+      const [duration,     setDuration]     = useState(0);
+      const [muted,        setMuted]        = useState(false);
+      const [sharing,      setSharing]      = useState(false);
+
+      const pcRef             = useRef(null);
+      const localStreamRef    = useRef(null);
+      const screenStreamRef   = useRef(null);
+      const remoteAudioRef    = useRef(null);
+      const screenPreviewRef  = useRef(null);
+      const timerRef          = useRef(null);
+      const ringRef           = useRef(null);
+      const activeCallRef     = useRef(null);
+      const callStateRef      = useRef('idle');
+
+      useEffect(() => { activeCallRef.current  = activeCall;  }, [activeCall]);
+      useEffect(() => { callStateRef.current   = callState;   }, [callState]);
+
+      /* ── Ringtone ── */
+      const startRing = () => {
+        stopRing();
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        let alive = true;
+        const play = () => {
+          if (!alive) return;
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.connect(g); g.connect(ctx.destination);
+          o.frequency.value = 420; o.type = 'sine';
+          g.gain.setValueAtTime(0.25, ctx.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+          o.start(); o.stop(ctx.currentTime + 0.5);
+          setTimeout(play, 2200);
+        };
+        play();
+        ringRef.current = { stop: () => { alive = false; try { ctx.close(); } catch(_){} } };
+      };
+      const stopRing = () => { ringRef.current?.stop(); ringRef.current = null; };
+
+      /* ── Timer ── */
+      const startTimer = () => { setDuration(0); timerRef.current = setInterval(() => setDuration(d => d+1), 1000); };
+      const stopTimer  = () => { clearInterval(timerRef.current); setDuration(0); };
+
+      /* ── RTCPeerConnection factory ── */
+      const makePC = () => new RTCPeerConnection({
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+        ]
+      });
+
+      /* ── Signal to another user via Supabase Realtime broadcast ── */
+      const signalTo = useCallback(async (targetId, event, payload) => {
+        if (!_sb) return;
+        const ch = _sb.channel(`bms-call-${targetId}`);
+        await new Promise(res => ch.subscribe(status => { if (status === 'SUBSCRIBED') res(); }));
+        await ch.send({ type: 'broadcast', event, payload });
+        setTimeout(() => { try { _sb.removeChannel(ch); } catch(_){} }, 3000);
+      }, []);
+
+      /* ── Cleanup ── */
+      const cleanup = useCallback(() => {
+        stopRing(); stopTimer();
+        pcRef.current?.close(); pcRef.current = null;
+        localStreamRef.current?.getTracks().forEach(t => t.stop()); localStreamRef.current = null;
+        screenStreamRef.current?.getTracks().forEach(t => t.stop()); screenStreamRef.current = null;
+        setSharing(false); setMuted(false);
+      }, []);
+
+      /* ── Subscribe to my channel ── */
+      useEffect(() => {
+        if (!currentUser || !_sb) return;
+        const ch = _sb.channel(`bms-call-${currentUser.id}`)
+          .on('broadcast', { event: 'ring' }, async ({ payload }) => {
+            if (callStateRef.current !== 'idle') {
+              signalTo(payload.callerId, 'reject', { callId: payload.callId }); return;
+            }
+            setIncomingCall(payload); setCallState('incoming'); startRing();
+          })
+          .on('broadcast', { event: 'answer' }, async ({ payload }) => {
+            if (!pcRef.current) return;
+            await pcRef.current.setRemoteDescription(new RTCSessionDescription(payload.answer));
+            stopRing(); setCallState('active'); startTimer();
+          })
+          .on('broadcast', { event: 'ice' }, async ({ payload }) => {
+            try { if (pcRef.current && payload.candidate) await pcRef.current.addIceCandidate(new RTCIceCandidate(payload.candidate)); } catch(_){}
+          })
+          .on('broadcast', { event: 'hangup' }, () => {
+            cleanup(); setActiveCall(null); setIncomingCall(null); setCallState('idle');
+            showToast(lang === 'ar' ? 'انتهت المكالمة' : 'Call ended');
+          })
+          .on('broadcast', { event: 'reject' }, () => {
+            cleanup(); setActiveCall(null); setCallState('idle');
+            showToast(lang === 'ar' ? 'لم يرد على المكالمة' : 'No answer');
+          });
+        ch.subscribe();
+        return () => { try { _sb.removeChannel(ch); } catch(_){} };
+      }, [currentUser?.id]);
+
+      /* ── Start outgoing call ── */
+      const startCall = useCallback(async (targetUser) => {
+        if (callStateRef.current !== 'idle') return;
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          localStreamRef.current = stream;
+          const pc = makePC(); pcRef.current = pc;
+          stream.getTracks().forEach(t => pc.addTrack(t, stream));
+          pc.ontrack = e => { if (remoteAudioRef.current) remoteAudioRef.current.srcObject = e.streams[0]; };
+          pc.onicecandidate = e => { if (e.candidate && activeCallRef.current) signalTo(activeCallRef.current.userId, 'ice', { candidate: e.candidate }); };
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          const callId = `c${Date.now()}`;
+          const info = { userId: targetUser.id, userName: targetUser.name, callId };
+          setActiveCall(info); activeCallRef.current = info;
+          setCallState('outgoing'); callStateRef.current = 'outgoing';
+          startRing();
+          await signalTo(targetUser.id, 'ring', { callerId: currentUser.id, callerName: currentUser.name, callId, offer });
+          setTimeout(() => { if (activeCallRef.current?.callId === callId && callStateRef.current === 'outgoing') { cleanup(); setActiveCall(null); setCallState('idle'); showToast(lang==='ar'?'لم يرد':'No answer'); } }, 30000);
+        } catch(e) { showToast((lang==='ar'?'خطأ: ':'Error: ') + e.message); }
+      }, [currentUser, signalTo, cleanup]);
+
+      /* ── Answer ── */
+      const answerCall = useCallback(async () => {
+        if (!incomingCall) return;
+        stopRing();
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          localStreamRef.current = stream;
+          const pc = makePC(); pcRef.current = pc;
+          stream.getTracks().forEach(t => pc.addTrack(t, stream));
+          pc.ontrack = e => { if (remoteAudioRef.current) remoteAudioRef.current.srcObject = e.streams[0]; };
+          pc.onicecandidate = e => { if (e.candidate) signalTo(incomingCall.callerId, 'ice', { candidate: e.candidate }); };
+          await pc.setRemoteDescription(new RTCSessionDescription(incomingCall.offer));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          const info = { userId: incomingCall.callerId, userName: incomingCall.callerName, callId: incomingCall.callId };
+          setActiveCall(info); setIncomingCall(null); setCallState('active'); startTimer();
+          await signalTo(incomingCall.callerId, 'answer', { callId: incomingCall.callId, answer });
+        } catch(e) { showToast((lang==='ar'?'خطأ: ':'Error: ') + e.message); setCallState('idle'); setIncomingCall(null); }
+      }, [incomingCall, signalTo]);
+
+      /* ── Reject ── */
+      const rejectCall = useCallback(async () => {
+        stopRing();
+        if (incomingCall) await signalTo(incomingCall.callerId, 'reject', { callId: incomingCall.callId });
+        setIncomingCall(null); setCallState('idle');
+      }, [incomingCall, signalTo]);
+
+      /* ── End call ── */
+      const endCall = useCallback(async () => {
+        const ac = activeCallRef.current;
+        if (ac) await signalTo(ac.userId, 'hangup', { callId: ac.callId });
+        cleanup(); setActiveCall(null); setCallState('idle');
+      }, [signalTo, cleanup]);
+
+      /* ── Mute ── */
+      const toggleMute = () => {
+        localStreamRef.current?.getAudioTracks().forEach(t => { t.enabled = !t.enabled; });
+        setMuted(m => !m);
+      };
+
+      /* ── Screen share ── */
+      const toggleShare = async () => {
+        if (!pcRef.current) return;
+        if (!sharing) {
+          try {
+            const disp = await navigator.mediaDevices.getDisplayMedia({ video: true });
+            screenStreamRef.current = disp;
+            const vt = disp.getVideoTracks()[0];
+            const vs = pcRef.current.getSenders().find(s => s.track?.kind === 'video');
+            if (vs) vs.replaceTrack(vt); else pcRef.current.addTrack(vt, disp);
+            if (screenPreviewRef.current) screenPreviewRef.current.srcObject = disp;
+            vt.onended = () => { screenStreamRef.current = null; setSharing(false); };
+            setSharing(true);
+          } catch(_) {}
+        } else {
+          screenStreamRef.current?.getTracks().forEach(t => t.stop());
+          screenStreamRef.current = null; setSharing(false);
+        }
+      };
+
+      /* ── Expose globally for Team module call button ── */
+      useEffect(() => {
+        window._bmsStartCall = startCall;
+        return () => { delete window._bmsStartCall; };
+      }, [startCall]);
+
+      const fmtDur = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+
+      return (
+        <>
+          <audio ref={remoteAudioRef} autoPlay playsInline style={{display:'none'}}/>
+
+          {/* ── Incoming call overlay ── */}
+          {callState === 'incoming' && incomingCall && (
+            <div className="fixed inset-0 z-[600] flex items-center justify-center bg-black/75 backdrop-blur-sm">
+              <div className="bg-slate-900 border border-slate-700 rounded-3xl p-8 flex flex-col items-center gap-6 shadow-2xl w-72">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center text-3xl font-bold text-white ring-4 ring-blue-500/30 animate-pulse">
+                  {(incomingCall.callerName||'?').charAt(0).toUpperCase()}
+                </div>
+                <div className="text-center">
+                  <p className="text-white font-bold text-lg">{incomingCall.callerName}</p>
+                  <p className="text-slate-400 text-sm mt-1 animate-pulse">مكالمة واردة...</p>
+                </div>
+                <div className="flex gap-10">
+                  <div className="flex flex-col items-center gap-1.5">
+                    <button onClick={rejectCall} className="w-14 h-14 rounded-full bg-red-600 hover:bg-red-500 flex items-center justify-center transition-all shadow-lg shadow-red-500/30">
+                      <Ic name="phone_off" size={22}/>
+                    </button>
+                    <span className="text-xs text-slate-500">رفض</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1.5">
+                    <button onClick={answerCall} className="w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-500 flex items-center justify-center transition-all shadow-lg shadow-emerald-500/30 animate-bounce">
+                      <Ic name="phone" size={22}/>
+                    </button>
+                    <span className="text-xs text-slate-500">قبول</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Active / ringing call bar ── */}
+          {(callState === 'outgoing' || callState === 'active') && activeCall && (
+            <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[400] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl px-4 py-3 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center text-sm font-bold text-white shrink-0">
+                {(activeCall.userName||'?').charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="text-white font-semibold text-sm truncate">{activeCall.userName}</p>
+                <p className={`text-xs ${callState==='outgoing'?'text-amber-400 animate-pulse':'text-emerald-400'}`}>
+                  {callState==='outgoing' ? (lang==='ar'?'جاري الاتصال...':'Calling...') : fmtDur(duration)}
+                </p>
+              </div>
+              {sharing && <video ref={screenPreviewRef} autoPlay muted className="w-24 h-14 rounded-lg object-cover border border-blue-500/40 shrink-0"/>}
+              {callState === 'active' && <>
+                <button onClick={toggleMute} title={muted?(lang==='ar'?'فتح الميك':'Unmute'):(lang==='ar'?'كتم':'Mute')}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center transition ${muted?'bg-red-500/20 text-red-400':'bg-slate-800 text-slate-400 hover:text-white'}`}>
+                  <Ic name={muted?'mic_off':'mic'} size={15}/>
+                </button>
+                <button onClick={toggleShare} title={sharing?(lang==='ar'?'إيقاف المشاركة':'Stop sharing'):(lang==='ar'?'مشاركة الشاشة':'Share screen')}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center transition ${sharing?'bg-blue-500/20 text-blue-400':'bg-slate-800 text-slate-400 hover:text-blue-400'}`}>
+                  <Ic name="monitor" size={15}/>
+                </button>
+              </>}
+              <button onClick={endCall} title={lang==='ar'?'إنهاء':'End'}
+                className="w-9 h-9 rounded-full bg-red-600 hover:bg-red-500 flex items-center justify-center transition shrink-0">
+                <Ic name="phone_off" size={15}/>
+              </button>
+            </div>
+          )}
+        </>
+      );
+    };
+
     const ChatModule = ({ showToast }) => {
       const { t, lang } = useLang();
       const [authed,       setAuthed]       = useState(false);
@@ -13154,6 +13425,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
             lang={lang}
           />
           {toast && <Toast msg={toast.msg} onUndo={toast.onUndo} undoLabel={toast.undoLabel} onClose={() => setToast(null)}/>}
+          <CallManager currentUser={currentUser} showToast={showToast}/>
         </div>
         </LangContext.Provider>
       );
