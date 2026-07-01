@@ -11478,7 +11478,6 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
     const CHAT_SCOPES = [
       'https://graph.microsoft.com/Chat.ReadWrite',
       'https://graph.microsoft.com/Chat.Create',
-      'https://graph.microsoft.com/OnlineMeetings.ReadWrite',
     ];
 
     const getChatToken = async () => {
@@ -11764,7 +11763,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       );
     };
 
-    const ChatModule = ({ showToast }) => {
+    const ChatModule = ({ showToast, teamMembers }) => {
       const { t, lang } = useLang();
       const [authed,       setAuthed]       = useState(false);
       const [signingIn,    setSigningIn]    = useState(false);
@@ -11789,7 +11788,6 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       const [renaming,      setRenaming]      = useState(false);
       const [renameVal,     setRenameVal]     = useState('');
       const [confirmDel,    setConfirmDel]    = useState(false);
-      const [startingCall,  setStartingCall]  = useState(false);
       const messagesEndRef = useRef(null);
       const pollRef        = useRef(null);
       const textareaRef    = useRef(null);
@@ -11944,34 +11942,6 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
           setConfirmDel(false);
           showToast(t('chat_leave_ok'));
         } catch(e) { showToast(t('chat_leave_err') + e.message.slice(0,80)); setConfirmDel(false); }
-      };
-
-      /* ── Start group call ── */
-      const startCall = async () => {
-        if (!selected || startingCall) return;
-        setStartingCall(true);
-        try {
-          const subject = getChatName(selected);
-          const now = new Date();
-          const end = new Date(now.getTime() + 60 * 60 * 1000);
-          const meeting = await chatFetch('/me/onlineMeetings', {
-            method: 'POST',
-            body: JSON.stringify({
-              subject,
-              startDateTime: now.toISOString(),
-              endDateTime:   end.toISOString(),
-            }),
-          });
-          const joinUrl = meeting.joinWebUrl;
-          await chatFetch(`/me/chats/${selected.id}/messages`, {
-            method: 'POST',
-            body: JSON.stringify({ body: { content: `📹 اجتماع جماعي — انضم الآن:\n${joinUrl}`, contentType: 'text' } }),
-          });
-          await loadMessages(selected.id, true);
-          showToast(lang === 'ar' ? 'تم إنشاء الاجتماع وإرسال الرابط' : 'Meeting created & link sent');
-        } catch(e) {
-          showToast((lang === 'ar' ? 'خطأ: ' : 'Error: ') + (e.message || '').slice(0, 80));
-        } finally { setStartingCall(false); }
       };
 
       /* ── Create chat (1-on-1 or group) ── */
@@ -12211,14 +12181,27 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
                           <Ic name="edit2" size={13}/>
                         </button>
                       )}
-                      <button onClick={startCall} disabled={startingCall}
-                        className={`p-1.5 rounded-lg transition flex items-center justify-center
-                          ${startingCall ? 'text-slate-600 cursor-not-allowed' : 'text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10'}`}
-                        title={lang === 'ar' ? 'بدء اتصال جماعي' : 'Start group call'}>
-                        {startingCall
-                          ? <Ic name="repeat2" size={14}/>
-                          : <Ic name="video" size={14}/>}
-                      </button>
+                      {(() => {
+                        // Match chat member to BMS team member by email for WebRTC call
+                        const otherMember = !isGroup
+                          ? (selected.members||[]).find(m => m.userId !== myProfile?.id)
+                          : null;
+                        const otherEmail = otherMember?.email?.toLowerCase();
+                        const bmsUser = otherEmail
+                          ? (teamMembers||[]).find(m => m.email?.toLowerCase() === otherEmail && m.status === 'active')
+                          : null;
+                        if (!bmsUser && isGroup) return null; // group: no call button (WebRTC is 1-on-1)
+                        return (
+                          <button
+                            onClick={() => bmsUser && window._bmsStartCall?.(bmsUser)}
+                            disabled={!bmsUser}
+                            className={`p-1.5 rounded-lg transition flex items-center justify-center
+                              ${bmsUser ? 'text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10' : 'text-slate-700 cursor-not-allowed'}`}
+                            title={bmsUser ? (lang==='ar'?'اتصال صوتي':'Voice call') : (lang==='ar'?'غير متاح للخارجيين':'Not a BMS member')}>
+                            <Ic name="phone" size={14}/>
+                          </button>
+                        );
+                      })()}
                       <button onClick={() => loadMessages(selected.id)}
                         className="text-slate-500 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition" title={t('chat_refresh')}>
                         <Ic name="repeat2" size={14}/>
@@ -13340,7 +13323,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
               showToast={showToast}/>
           );
           case 'email': return <EmailModule showToast={showToast}/>;
-          case 'chat':  return <ChatModule  showToast={showToast}/>;
+          case 'chat':  return <ChatModule  showToast={showToast} teamMembers={teamMembers}/>;
           case 'announcements': return (
             <AnnouncementsModule
               announcements={announcements}
