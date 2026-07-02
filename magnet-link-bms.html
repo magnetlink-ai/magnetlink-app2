@@ -1839,8 +1839,8 @@
       { id:'timeout', tKey:'s_timeout', label:'Time Out', badge:'bg-orange-500/15 text-orange-300 border-orange-500/30',    dot:'bg-orange-400'  },
     ];
 
-    const DEPT_KEYS   = ['crm','clients','projects','finance','team','social','design','web','tasks'];
-    const DEPT_LABELS = { crm:'CRM', clients:'Clients', projects:'Projects', finance:'Finance', team:'Team', social:'Social Media', design:'Design & Content', web:'Web Services', tasks:'Tasks' };
+    const DEPT_KEYS   = ['crm','clients','projects','finance','team','social','design','web','tasks','email','chat','announcements'];
+    const DEPT_LABELS = { crm:'CRM', clients:'Clients', projects:'Projects', finance:'Finance', team:'Team', social:'Social Media', design:'Design & Content', web:'Web Services', tasks:'Tasks', email:'Email', chat:'Team Chat', announcements:'Announcements' };
     const DEFAULT_EMPLOYEE_PERMS = Object.fromEntries(DEPT_KEYS.map(k => [k, { access:true,          fields:{} }]));
     const DEFAULT_CLIENT_PERMS   = Object.fromEntries(DEPT_KEYS.map(k => [k, { access:k==='social',   fields:{} }]));
 
@@ -2041,7 +2041,6 @@
     const canSee = (user, sectionId, customRoles) => {
       if (!user) return false;
       if (sectionId === 'dashboard') return true;
-      if (sectionId === 'announcements') return true;
       if (user.role === 'super_admin' || user.role === 'admin') return true;
       if (user.role === 'client') return user.permissions?.[sectionId]?.access === true;
       const cr = (customRoles||[]).find(r => r.id === user.role);
