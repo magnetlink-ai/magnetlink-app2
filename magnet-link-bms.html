@@ -927,6 +927,7 @@
         app_notif_project_added:'مشروع جديد أُضيف',
         app_notif_member_added:'موظف جديد انضم للفريق',
         app_notif_task_assigned:'مهمة جديدة أُسندت إليك',
+        app_notif_new_task:'مهمة جديدة من {{name}}',
         app_task_no_title:'مهمة بدون عنوان',
         app_notif_task_updated:'تحديث على مهمة',
         app_notif_task_status:'تغيرت الحالة',
@@ -1507,6 +1508,7 @@
         app_notif_project_added:'New project added',
         app_notif_member_added:'New team member joined',
         app_notif_task_assigned:'New task assigned to you',
+        app_notif_new_task:'New task from {{name}}',
         app_task_no_title:'Untitled task',
         app_notif_task_updated:'Task update',
         app_notif_task_status:'Status changed',
@@ -13116,14 +13118,15 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
           return false;
         }
       };
-      /* Broadcast to everyone who can see `visSection` (excluding the actor); navigates to `navSection` on click */
-      /* Broadcast to literally every account in the system — no permission filter, includes the actor too */
+      /* Broadcast to every account in the system, excluding whoever triggered the action */
       const notifyTeam = (visSection, type, title, body, navSection) => {
         [...teamMembers, ...teamClients]
+          .filter(u => u.id !== currentUser?.id)
           .forEach(u => pushNotif({ userId: u.id, type, title, body, section: navSection || visSection }));
       };
       const notifyEveryone = (type, title, body, navSection) => {
         [...teamMembers, ...teamClients]
+          .filter(u => u.id !== currentUser?.id)
           .forEach(u => pushNotif({ userId: u.id, type, title, body, section: navSection }));
       };
 
@@ -13615,10 +13618,15 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       const handleSaveTaskTask = task => {
         const existing = taskTasks.find(x => x.id === task.id);
         if (!existing) {
-          (task.assignees||[]).filter(uid => uid !== currentUser?.id).forEach(uid => {
+          const assigneeIds = task.assignees||[];
+          assigneeIds.filter(uid => uid !== currentUser?.id).forEach(uid => {
             const m = teamMembers.find(x => x.id === uid);
             if (m) pushNotif({ userId:uid, type:'task_assigned', title:t('app_notif_task_assigned'), body:task.title||t('app_task_no_title'), section:'tasks' });
           });
+          /* Everyone else on the team (not already pinged as an assignee) hears that a new task exists */
+          [...teamMembers, ...teamClients]
+            .filter(u => u.id !== currentUser?.id && !assigneeIds.includes(u.id))
+            .forEach(u => pushNotif({ userId:u.id, type:'tasks_activity', title:t('app_notif_new_task').replace('{{name}}', currentUser?.name||'—'), body:task.title||t('app_task_no_title'), section:'tasks' }));
         } else if (existing.status !== task.status) {
           (task.assignees||[]).filter(uid => uid !== currentUser?.id).forEach(uid =>
             pushNotif({ userId:uid, type:'task_updated', title:t('app_notif_task_updated'), body:`"${task.title}" — ${t('app_notif_task_status')}`, section:'tasks' })
