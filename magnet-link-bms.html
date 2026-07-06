@@ -917,6 +917,7 @@
         att_from_of:'من', att_per_day:'س/يوم',
         att_above_8:'مُضافة من الإدارة', att_no_leaves:'لا إجازات',
         att_started:'بدأت الاستراحة ⏸', att_resumed:'استأنفت العمل ✓',
+        att_enable_push:'تفعيل إشعارات الجهاز',
         /* App / notifications */
         under_dev:'هذه الوحدة قيد التطوير',
         app_lead_converted:'تم تحويل "{{name}}" إلى عميل ✓',
@@ -929,6 +930,17 @@
         app_task_no_title:'مهمة بدون عنوان',
         app_notif_task_updated:'تحديث على مهمة',
         app_notif_task_status:'تغيرت الحالة',
+        app_act_added:'أُضيف', app_act_updated:'تم التعديل', app_act_deleted:'تم الحذف',
+        app_notif_crm_activity:'نشاط جديد في CRM',
+        app_notif_client_activity:'نشاط على عميل',
+        app_notif_project_activity:'نشاط على مشروع/فاتورة',
+        app_notif_team_activity:'نشاط في الفريق',
+        app_notif_finance_activity:'نشاط مالي',
+        app_notif_design_activity:'نشاط في التصميم والمحتوى',
+        app_notif_social_activity:'نشاط في السوشيال ميديا',
+        app_notif_tasks_activity:'نشاط في المهام',
+        app_notif_web_activity:'نشاط في خدمات الويب',
+        app_notif_announcement:'إعلان جديد',
         /* Initial data strings */
         d_lead1_name:'شركة النور للتجارة',
         d_lead1_notes:'مهتم جداً بإدارة انستغرام وتيك توك، ينتظر العرض النهائي',
@@ -1485,6 +1497,7 @@
         att_from_of:'of', att_per_day:'h/day',
         att_above_8:'Added by management', att_no_leaves:'No leaves',
         att_started:'Break started ⏸', att_resumed:'Resumed ✓',
+        att_enable_push:'Enable device notifications',
         /* App / notifications */
         under_dev:'This module is under development',
         app_lead_converted:'Lead "{{name}}" converted to client ✓',
@@ -1497,6 +1510,17 @@
         app_task_no_title:'Untitled task',
         app_notif_task_updated:'Task update',
         app_notif_task_status:'Status changed',
+        app_act_added:'Added', app_act_updated:'Updated', app_act_deleted:'Deleted',
+        app_notif_crm_activity:'CRM activity',
+        app_notif_client_activity:'Client activity',
+        app_notif_project_activity:'Project activity',
+        app_notif_team_activity:'Team activity',
+        app_notif_finance_activity:'Finance activity',
+        app_notif_design_activity:'Design & Content activity',
+        app_notif_social_activity:'Social Media activity',
+        app_notif_tasks_activity:'Tasks activity',
+        app_notif_web_activity:'Web Services activity',
+        app_notif_announcement:'New announcement',
         /* Initial data */
         d_lead1_name:'Al-Noor Trading Co.',
         d_lead1_notes:'Very interested in Instagram & TikTok management, awaiting final proposal',
@@ -1751,6 +1775,14 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_X8ny-P0SPGRTJFhMbfRuvg_ug_KiM7t';
     const _sbReady = SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY';
     const _sb = _sbReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+    /* Public VAPID key for Web Push — safe to expose client-side (the private key lives only in the Edge Function secrets) */
+    const VAPID_PUBLIC_KEY = 'BFGh0KLQOhJ5aNK_yWhKBJFQE6L-T17E1LbqL4kVt5dC62HtsB9xYSAMee3O2007K7g2qVh_QGp2k-wpMKLuLpo';
+    const urlBase64ToUint8Array = base64String => {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const rawData = atob(base64);
+      return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+    };
 
     const db = {
       load: async table => {
@@ -2653,6 +2685,16 @@
       lead_won:      { color:'text-amber-400',  bg:'bg-amber-500/10',  icon:'crm'      },
       client_added:  { color:'text-sky-400',    bg:'bg-sky-500/10',    icon:'client'   },
       member_added:  { color:'text-blue-400', bg:'bg-blue-500/10', icon:'users'    },
+      crm_activity:      { color:'text-amber-400',   bg:'bg-amber-500/10',   icon:'crm'      },
+      client_activity:   { color:'text-sky-400',     bg:'bg-sky-500/10',     icon:'client'   },
+      project_activity:  { color:'text-emerald-400', bg:'bg-emerald-500/10', icon:'projects' },
+      team_activity:     { color:'text-blue-400',    bg:'bg-blue-500/10',    icon:'users'    },
+      finance_activity:  { color:'text-purple-400',  bg:'bg-purple-500/10',  icon:'finance'  },
+      design_activity:   { color:'text-pink-400',    bg:'bg-pink-500/10',    icon:'design'   },
+      social_activity:   { color:'text-cyan-400',    bg:'bg-cyan-500/10',    icon:'social'   },
+      tasks_activity:    { color:'text-blue-400',    bg:'bg-blue-500/10',    icon:'tasks'    },
+      web_activity:      { color:'text-teal-400',    bg:'bg-teal-500/10',    icon:'web'      },
+      announcement:      { color:'text-red-400',     bg:'bg-red-500/10',     icon:'bell'     },
       general:       { color:'text-slate-400',  bg:'bg-slate-700/60',  icon:'bell'     },
     };
 
@@ -2764,7 +2806,7 @@
         <>
         {/* Mobile backdrop */}
         {isOpen && (
-          <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={onClose} />
+          <div className="fixed inset-0 bg-black/50 z-[35] md:hidden" onClick={onClose} />
         )}
         <aside dir="ltr" className={`fixed top-0 h-screen w-56 bg-slate-900 flex flex-col z-40 transition-transform duration-300
           ${lang === 'ar' ? 'right-0 border-l border-slate-800' : 'left-0 border-r border-slate-800'}
@@ -2843,7 +2885,7 @@
 
     /* ═══════════════════════════ ATTENDANCE BAR ═══════════════════════════ */
 
-    const AttendanceBar = ({ currentUser, attendanceRecords, onClockIn, onClockOut, onPause, onResume, notifications, onMarkRead, onMarkAllRead, onNavigate, onMenuClick }) => {
+    const AttendanceBar = ({ currentUser, attendanceRecords, onClockIn, onClockOut, onPause, onResume, notifications, onMarkRead, onMarkAllRead, onNavigate, onMenuClick, pushSubscribed, onEnablePush }) => {
       const { t, lang } = useLang();
       const [, setTick] = useState(0);
       const [showNotifs, setShowNotifs] = useState(false);
@@ -2964,6 +3006,12 @@
                         )}
                       </span>
                       <div className="flex items-center gap-1">
+                        {!pushSubscribed && (
+                          <button onClick={onEnablePush}
+                            className="text-[11px] text-emerald-400 hover:text-emerald-300 px-2 py-1 rounded-lg hover:bg-slate-800 transition whitespace-nowrap">
+                            🔔 {t('att_enable_push')}
+                          </button>
+                        )}
                         {myUnread > 0 && (
                           <button onClick={() => onMarkAllRead(currentUser?.id)}
                             className="text-[11px] text-blue-400 hover:text-blue-300 px-2 py-1 rounded-lg hover:bg-slate-800 transition">
@@ -12815,7 +12863,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
           try {
             const [
               lds, cls, prj, inv, exp, sal, att, ofd, ded, bon, ot,
-              tm,  tc,  cr,  td,  tb,  tt,  da,  ca,  doc, pwds
+              tm,  tc,  cr,  td,  tb,  tt,  da,  ca,  doc, pwds, notifs
             ] = await Promise.all([
               db.load('leads'),        db.load('clients'),       db.load('projects'),
               db.load('invoices'),     db.load('expenses'),      db.load('salaries'),
@@ -12824,7 +12872,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
               db.load('team_members'),  db.load('team_clients'),
               db.load('custom_roles'), db.load('task_depts'),    db.load('task_buckets'),
               db.load('task_tasks'),   db.load('design_assets'), db.load('client_assets'),
-              db.load('documents'),    db.load('user_passwords'),
+              db.load('documents'),    db.load('user_passwords'), db.load('notifications'),
             ]);
             if (pwds.length) {
               const ps = JSON.parse(localStorage.getItem('bms_passwords')||'{}');
@@ -12857,6 +12905,16 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
             setDesignAssets(da);
             setClientAssets(ca);
             setDcDocuments(doc);
+            if (notifs.length) {
+              setNotifications(prev => {
+                const merged = [...prev];
+                notifs.forEach(n => { if (!merged.find(x => x.id === n.id)) merged.push(n); });
+                merged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                const capped = merged.slice(0, 300);
+                try { localStorage.setItem('bms_notifications', JSON.stringify(capped)); } catch(_) {}
+                return capped;
+              });
+            }
           } catch(e) {
             console.error('Supabase initial load failed:', e);
             setTeamMembers(INITIAL_TEAM);
@@ -12930,6 +12988,26 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         try { return JSON.parse(localStorage.getItem('bms_announcements') || '[]'); } catch(_) { return []; }
       });
       const [annBarDismissed, setAnnBarDismissed] = useState(false);
+      const [pushSubscribed, setPushSubscribed] = useState(false);
+      useEffect(() => {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window) || typeof Notification === 'undefined') return;
+        if (Notification.permission !== 'granted') return;
+        navigator.serviceWorker.ready
+          .then(reg => reg.pushManager.getSubscription())
+          .then(sub => setPushSubscribed(!!sub))
+          .catch(() => {});
+      }, [currentUser?.id]);
+      useEffect(() => {
+        if (!('serviceWorker' in navigator)) return;
+        const onMsg = e => { if (e.data?.type === 'bms-notif-nav' && e.data.section) setPage(e.data.section); };
+        navigator.serviceWorker.addEventListener('message', onMsg);
+        return () => navigator.serviceWorker.removeEventListener('message', onMsg);
+      }, []);
+      useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const open = params.get('open');
+        if (open) { setPage(open); window.history.replaceState({}, '', window.location.pathname); }
+      }, []);
 
       const toastTimerRef = React.useRef(null);
       const showToast = (msg, opts = {}) => {
@@ -12946,11 +13024,19 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
           try { localStorage.setItem('bms_notifications', JSON.stringify(updated)); } catch(_) {}
           return updated;
         });
+        db.save('notifications', n);
+        fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'apikey': SUPABASE_ANON_KEY },
+          body: JSON.stringify({ userIds: [String(n.userId)], title: n.title, body: n.body, section: n.section }),
+        }).catch(() => {});
       };
       const markNotifRead = (id) => {
         setNotifications(prev => {
           const updated = prev.map(n => n.id === id ? {...n, read:true} : n);
           try { localStorage.setItem('bms_notifications', JSON.stringify(updated)); } catch(_) {}
+          const changed = updated.find(n => n.id === id);
+          if (changed) db.save('notifications', changed);
           return updated;
         });
       };
@@ -12958,8 +13044,47 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         setNotifications(prev => {
           const updated = prev.map(n => n.userId === userId ? {...n, read:true} : n);
           try { localStorage.setItem('bms_notifications', JSON.stringify(updated)); } catch(_) {}
+          db.saveMany('notifications', updated.filter(n => n.userId === userId));
           return updated;
         });
+      };
+      const subscribeToPush = async () => {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+          showToast(lang === 'ar' ? 'هذا الجهاز/المتصفح ما بيدعم إشعارات الموبايل' : 'This device/browser does not support push notifications');
+          return false;
+        }
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') {
+          showToast(lang === 'ar' ? 'تم رفض إذن الإشعارات' : 'Notification permission denied');
+          return false;
+        }
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          let sub = await reg.pushManager.getSubscription();
+          if (!sub) {
+            sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
+          }
+          await db.save('push_subscriptions', { id: sub.endpoint, userId: String(currentUser.id), subscription: sub.toJSON(), createdAt: new Date().toISOString() });
+          setPushSubscribed(true);
+          showToast(lang === 'ar' ? '✓ تفعّلت إشعارات الموبايل' : '✓ Phone notifications enabled');
+          return true;
+        } catch (err) {
+          console.error('subscribeToPush', err);
+          showToast(lang === 'ar' ? 'صار خطأ بتفعيل الإشعارات' : 'Failed to enable push notifications');
+          return false;
+        }
+      };
+      /* Broadcast to everyone who can see `visSection` (excluding the actor); navigates to `navSection` on click */
+      const notifyTeam = (visSection, type, title, body, navSection) => {
+        [...teamMembers, ...teamClients]
+          .filter(u => u.id !== currentUser?.id && canSee(u, visSection, customRoles))
+          .forEach(u => pushNotif({ userId: u.id, type, title, body, section: navSection || visSection }));
+      };
+      /* Broadcast to literally everyone (announcements are exempt from the permission system) */
+      const notifyEveryone = (type, title, body, navSection) => {
+        [...teamMembers, ...teamClients]
+          .filter(u => u.id !== currentUser?.id)
+          .forEach(u => pushNotif({ userId: u.id, type, title, body, section: navSection }));
       };
 
       const saveAnnouncements = (list) => {
@@ -12978,6 +13103,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         setAnnouncements(updated);
         saveAnnouncements(updated);
         setAnnBarDismissed(false);
+        notifyEveryone('announcement', t('app_notif_announcement'), text);
       };
       const deactivateAnnouncement = (id) => {
         const updated = announcements.map(a => a.id === id ? { ...a, active: false } : a);
@@ -13034,12 +13160,16 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       }, [dbLoaded]);
 
       const handleLeadUpdate = (id, field, value, newLead) => {
-        if (newLead) { setLeads(prev => [newLead, ...prev]); db.save('leads', newLead); return; }
+        if (newLead) {
+          setLeads(prev => [newLead, ...prev]);
+          db.save('leads', newLead);
+          notifyTeam('crm', 'crm_activity', t('app_notif_crm_activity'), `${newLead.name||'—'} — ${t('app_act_added')}`);
+          return;
+        }
         if (field === '_full') {
           const old = leads.find(l => l.id === id);
           if (old && old.status !== 'won' && value.status === 'won') {
-            teamMembers.filter(m => m.id !== currentUser?.id && canSee(m,'crm',customRoles))
-              .forEach(m => pushNotif({ userId:m.id, type:'lead_won', title:t('app_notif_lead_won'), body:value.name||'—', section:'clients' }));
+            notifyTeam('crm', 'lead_won', t('app_notif_lead_won'), value.name||'—', 'clients');
           }
           setLeads(prev => prev.map(l => l.id === id ? value : l));
           db.save('leads', value);
@@ -13047,8 +13177,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         }
         if (field === 'status' && value === 'won') {
           const lead = leads.find(l => l.id === id);
-          teamMembers.filter(m => m.id !== currentUser?.id && canSee(m,'crm',customRoles))
-            .forEach(m => pushNotif({ userId:m.id, type:'lead_won', title:t('app_notif_lead_won'), body:lead?.name||'—', section:'clients' }));
+          notifyTeam('crm', 'lead_won', t('app_notif_lead_won'), lead?.name||'—', 'clients');
         }
         setLeads(prev => {
           const next = prev.map(l => l.id === id ? { ...l, [field]: value } : l);
@@ -13057,66 +13186,165 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         });
       };
       const handleLeadDelete = id => {
-        if (confirm(t('app_del_lead_confirm'))) { setLeads(prev => prev.filter(l => l.id !== id)); db.del('leads', id); }
+        if (confirm(t('app_del_lead_confirm'))) {
+          const lead = leads.find(l => l.id === id);
+          setLeads(prev => prev.filter(l => l.id !== id));
+          db.del('leads', id);
+          notifyTeam('crm', 'crm_activity', t('app_notif_crm_activity'), `${lead?.name||'—'} — ${t('app_act_deleted')}`);
+        }
       };
-      const handleClientUpdate = u => { setClients(prev => prev.map(c => c.id === u.id ? u : c)); db.save('clients', u); };
-      const handleClientDelete = id => { setClients(prev => prev.filter(c => c.id !== id)); db.del('clients', id); };
+      const handleClientUpdate = u => {
+        setClients(prev => prev.map(c => c.id === u.id ? u : c));
+        db.save('clients', u);
+        notifyTeam('clients', 'client_activity', t('app_notif_client_activity'), `${u.name||'—'} — ${t('app_act_updated')}`);
+      };
+      const handleClientDelete = id => {
+        const c = clients.find(x => x.id === id);
+        setClients(prev => prev.filter(c => c.id !== id));
+        db.del('clients', id);
+        notifyTeam('clients', 'client_activity', t('app_notif_client_activity'), `${c?.name||'—'} — ${t('app_act_deleted')}`);
+      };
       const handleClientAdd = c => {
         setClients(prev => [c, ...prev]);
         db.save('clients', c);
-        teamMembers.filter(m => m.id !== currentUser?.id && canSee(m,'clients',customRoles))
-          .forEach(m => pushNotif({ userId:m.id, type:'client_added', title:t('app_notif_client_added'), body:c.name||'—', section:'clients' }));
+        notifyTeam('clients', 'client_added', t('app_notif_client_added'), c.name||'—');
       };
 
-      const handleSaveProject = p => { setProjects(prev => prev.map(x => x.id === p.id ? p : x)); db.save('projects', p); };
+      const handleSaveProject = p => {
+        setProjects(prev => prev.map(x => x.id === p.id ? p : x));
+        db.save('projects', p);
+        notifyTeam('projects', 'project_activity', t('app_notif_project_activity'), `${p.name||'—'} — ${t('app_act_updated')}`);
+      };
       const handleAddProject = p => {
         setProjects(prev => [...prev, p]);
         db.save('projects', p);
-        teamMembers.filter(m => m.id !== currentUser?.id && canSee(m,'projects',customRoles))
-          .forEach(m => pushNotif({ userId:m.id, type:'project_added', title:t('app_notif_project_added'), body:p.name||'—', section:'projects' }));
+        notifyTeam('projects', 'project_added', t('app_notif_project_added'), p.name||'—');
       };
       const handleSaveInvoice = inv => {
+        const isNew = !invoices.find(i => i.id === inv.id);
         setInvoices(prev => prev.find(i => i.id === inv.id) ? prev.map(i => i.id === inv.id ? inv : i) : [...prev, inv]);
         db.save('invoices', inv);
+        notifyTeam('projects', 'project_activity', t('app_notif_project_activity'), `${inv.inv_no||'—'} — ${t(isNew?'app_act_added':'app_act_updated')}`);
       };
-      const handleDeleteInvoice = id => { setInvoices(prev => prev.filter(i => i.id !== id)); db.del('invoices', id); };
+      const handleDeleteInvoice = id => {
+        const inv = invoices.find(i => i.id === id);
+        setInvoices(prev => prev.filter(i => i.id !== id));
+        db.del('invoices', id);
+        notifyTeam('projects', 'project_activity', t('app_notif_project_activity'), `${inv?.inv_no||'—'} — ${t('app_act_deleted')}`);
+      };
 
       const handleAddMember = m => {
         setTeamMembers(prev => [...prev, m]);
         db.save('team_members', m);
-        teamMembers.filter(x => x.id !== currentUser?.id && ['super_admin','admin'].includes(x.role))
-          .forEach(x => pushNotif({ userId:x.id, type:'member_added', title:t('app_notif_member_added'), body:m.name||'—', section:'team' }));
+        notifyTeam('team', 'member_added', t('app_notif_member_added'), m.name||'—');
       };
-      const handleUpdateMember = m   => { setTeamMembers(prev => prev.map(x => x.id === m.id ? m : x)); db.save('team_members', m); };
-      const handleDeleteMember = id  => { setTeamMembers(prev => { const m=prev.find(x=>x.id===id); if(m?.role==='super_admin')return prev; return prev.filter(x=>x.id!==id); }); db.del('team_members', id); };
-      const handleAddClient    = c   => { setTeamClients(prev => [...prev, c]); db.save('team_clients', c); };
-      const handleUpdateClient = c   => { setTeamClients(prev => prev.map(x => x.id === c.id ? c : x)); db.save('team_clients', c); };
-      const handleDeleteClient = id  => { setTeamClients(prev => prev.filter(x => x.id !== id)); db.del('team_clients', id); };
+      const handleUpdateMember = m   => {
+        setTeamMembers(prev => prev.map(x => x.id === m.id ? m : x));
+        db.save('team_members', m);
+        notifyTeam('team', 'team_activity', t('app_notif_team_activity'), `${m.name||'—'} — ${t('app_act_updated')}`);
+      };
+      const handleDeleteMember = id  => {
+        const m = teamMembers.find(x=>x.id===id);
+        if (m?.role==='super_admin') return;
+        setTeamMembers(prev => prev.filter(x=>x.id!==id));
+        db.del('team_members', id);
+        notifyTeam('team', 'team_activity', t('app_notif_team_activity'), `${m?.name||'—'} — ${t('app_act_deleted')}`);
+      };
+      const handleAddClient    = c   => {
+        setTeamClients(prev => [...prev, c]);
+        db.save('team_clients', c);
+        notifyTeam('team', 'team_activity', t('app_notif_team_activity'), `${c.name||'—'} — ${t('app_act_added')}`);
+      };
+      const handleUpdateClient = c   => {
+        setTeamClients(prev => prev.map(x => x.id === c.id ? c : x));
+        db.save('team_clients', c);
+        notifyTeam('team', 'team_activity', t('app_notif_team_activity'), `${c.name||'—'} — ${t('app_act_updated')}`);
+      };
+      const handleDeleteClient = id  => {
+        const c = teamClients.find(x=>x.id===id);
+        setTeamClients(prev => prev.filter(x => x.id !== id));
+        db.del('team_clients', id);
+        notifyTeam('team', 'team_activity', t('app_notif_team_activity'), `${c?.name||'—'} — ${t('app_act_deleted')}`);
+      };
 
-      const handleAddExpense    = e  => { setExpenses(prev => [...prev, e]); db.save('expenses', e); };
-      const handleUpdateExpense = e  => { setExpenses(prev => prev.map(x => x.id === e.id ? e : x)); db.save('expenses', e); };
-      const handleDeleteExpense = id => { setExpenses(prev => prev.filter(x => x.id !== id)); db.del('expenses', id); };
+      const handleAddExpense    = e  => {
+        setExpenses(prev => [...prev, e]);
+        db.save('expenses', e);
+        notifyTeam('finance', 'finance_activity', t('app_notif_finance_activity'), `${e.desc||'—'} — ${t('app_act_added')}`);
+      };
+      const handleUpdateExpense = e  => {
+        setExpenses(prev => prev.map(x => x.id === e.id ? e : x));
+        db.save('expenses', e);
+        notifyTeam('finance', 'finance_activity', t('app_notif_finance_activity'), `${e.desc||'—'} — ${t('app_act_updated')}`);
+      };
+      const handleDeleteExpense = id => {
+        const e = expenses.find(x=>x.id===id);
+        setExpenses(prev => prev.filter(x => x.id !== id));
+        db.del('expenses', id);
+        notifyTeam('finance', 'finance_activity', t('app_notif_finance_activity'), `${e?.desc||'—'} — ${t('app_act_deleted')}`);
+      };
       const handleAddSalary     = s  => { setSalaries(prev => [...prev, s]); db.save('salaries', s); };
       const handleUpdateSalary  = s  => { setSalaries(prev => prev.map(x => x.id === s.id ? s : x)); db.save('salaries', s); };
       const handleDeleteSalary  = id => { setSalaries(prev => prev.filter(x => x.id !== id)); db.del('salaries', id); };
 
       const handleSaveAdsData  = d  => setAdsData(prev => prev.find(x=>x.projectId===d.projectId) ? prev.map(x=>x.projectId===d.projectId?d:x) : [...prev,d]);
-      const handleSavePost     = p  => setSmPosts(prev => prev.find(x=>x.id===p.id) ? prev.map(x=>x.id===p.id?p:x) : [...prev,p]);
-      const handleDeletePost   = id => setSmPosts(prev => prev.filter(x=>x.id!==id));
+      const handleSavePost     = p  => {
+        const isNew = !smPosts.find(x=>x.id===p.id);
+        setSmPosts(prev => prev.find(x=>x.id===p.id) ? prev.map(x=>x.id===p.id?p:x) : [...prev,p]);
+        notifyTeam('social', 'social_activity', t('app_notif_social_activity'), `${p.title||'—'} — ${t(isNew?'app_act_added':'app_act_updated')}`);
+      };
+      const handleDeletePost   = id => {
+        const p = smPosts.find(x=>x.id===id);
+        setSmPosts(prev => prev.filter(x=>x.id!==id));
+        notifyTeam('social', 'social_activity', t('app_notif_social_activity'), `${p?.title||'—'} — ${t('app_act_deleted')}`);
+      };
       const handleReadMessage  = id => setSmMessages(prev => prev.map(x=>x.id===id?{...x,read:true}:x));
-      const handleSaveAccount  = a  => setSmAccounts(prev => prev.find(x=>x.projectId===a.projectId) ? prev.map(x=>x.projectId===a.projectId?a:x) : [...prev,a]);
+      const handleSaveAccount  = a  => {
+        setSmAccounts(prev => prev.find(x=>x.projectId===a.projectId) ? prev.map(x=>x.projectId===a.projectId?a:x) : [...prev,a]);
+        notifyTeam('social', 'social_activity', t('app_notif_social_activity'), `${a.name||a.username||'—'} — ${t('app_act_updated')}`);
+      };
       const handleUpdateStats  = partial => setSmStats(prev => {
         const existing = prev.find(s=>s.projectId===partial.projectId);
         const merged   = existing ? { ...existing, facebook:{...existing.facebook,...partial.facebook}, instagram:{...existing.instagram,...partial.instagram} } : { id:Date.now(), unique_views:0, audience:null, growth_30d:null, ...partial };
         return existing ? prev.map(s=>s.projectId===partial.projectId?merged:s) : [...prev,merged];
       });
 
-      const handleSaveDesignAsset  = a  => { setDesignAssets(prev => prev.find(x=>x.id===a.id) ? prev.map(x=>x.id===a.id?a:x) : [...prev,a]); db.save('design_assets', a); };
-      const handleDeleteDesignAsset= id => { setDesignAssets(prev => prev.filter(x=>x.id!==id)); db.del('design_assets', id); };
-      const handleSaveClientAsset  = a  => { setClientAssets(prev => prev.find(x=>x.id===a.id) ? prev.map(x=>x.id===a.id?a:x) : [...prev,a]); db.save('client_assets', a); };
-      const handleDeleteClientAsset= id => { setClientAssets(prev => prev.filter(x=>x.id!==id)); db.del('client_assets', id); };
-      const handleSaveDocument     = d  => { setDcDocuments(prev => prev.find(x=>x.id===d.id) ? prev.map(x=>x.id===d.id?d:x) : [...prev,d]); db.save('documents', d); };
-      const handleDeleteDocument   = id => { setDcDocuments(prev => prev.filter(x=>x.id!==id)); db.del('documents', id); };
+      const handleSaveDesignAsset  = a  => {
+        const isNew = !designAssets.find(x=>x.id===a.id);
+        setDesignAssets(prev => prev.find(x=>x.id===a.id) ? prev.map(x=>x.id===a.id?a:x) : [...prev,a]);
+        db.save('design_assets', a);
+        notifyTeam('design', 'design_activity', t('app_notif_design_activity'), `${a.title||'—'} — ${t(isNew?'app_act_added':'app_act_updated')}`);
+      };
+      const handleDeleteDesignAsset= id => {
+        const a = designAssets.find(x=>x.id===id);
+        setDesignAssets(prev => prev.filter(x=>x.id!==id));
+        db.del('design_assets', id);
+        notifyTeam('design', 'design_activity', t('app_notif_design_activity'), `${a?.title||'—'} — ${t('app_act_deleted')}`);
+      };
+      const handleSaveClientAsset  = a  => {
+        const isNew = !clientAssets.find(x=>x.id===a.id);
+        setClientAssets(prev => prev.find(x=>x.id===a.id) ? prev.map(x=>x.id===a.id?a:x) : [...prev,a]);
+        db.save('client_assets', a);
+        notifyTeam('design', 'design_activity', t('app_notif_design_activity'), `${a.title||'—'} — ${t(isNew?'app_act_added':'app_act_updated')}`);
+      };
+      const handleDeleteClientAsset= id => {
+        const a = clientAssets.find(x=>x.id===id);
+        setClientAssets(prev => prev.filter(x=>x.id!==id));
+        db.del('client_assets', id);
+        notifyTeam('design', 'design_activity', t('app_notif_design_activity'), `${a?.title||'—'} — ${t('app_act_deleted')}`);
+      };
+      const handleSaveDocument     = d  => {
+        const isNew = !dcDocuments.find(x=>x.id===d.id);
+        setDcDocuments(prev => prev.find(x=>x.id===d.id) ? prev.map(x=>x.id===d.id?d:x) : [...prev,d]);
+        db.save('documents', d);
+        notifyTeam('design', 'design_activity', t('app_notif_design_activity'), `${d.title||'—'} — ${t(isNew?'app_act_added':'app_act_updated')}`);
+      };
+      const handleDeleteDocument   = id => {
+        const d = dcDocuments.find(x=>x.id===id);
+        setDcDocuments(prev => prev.filter(x=>x.id!==id));
+        db.del('documents', id);
+        notifyTeam('design', 'design_activity', t('app_notif_design_activity'), `${d?.title||'—'} — ${t('app_act_deleted')}`);
+      };
 
       const handleSaveShortcuts = ids => {
         setDashShortcuts(ids);
@@ -13297,8 +13525,13 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         showToast('تم حفظ التغييرات ✓');
       };
 
-      const handleAddTaskDept = d => { setTaskDepts(prev => [...prev, d]); db.save('task_depts', d); };
+      const handleAddTaskDept = d => {
+        setTaskDepts(prev => [...prev, d]);
+        db.save('task_depts', d);
+        notifyTeam('tasks', 'tasks_activity', t('app_notif_tasks_activity'), `${d.name||'—'} — ${t('app_act_added')}`);
+      };
       const handleDeleteTaskDept = id => {
+        const dept = taskDepts.find(x => x.id === id);
         const bucketIds = taskBuckets.filter(b => b.department_id === id).map(b => b.id);
         const taskIds   = taskTasks.filter(t => bucketIds.includes(t.bucket_id)).map(t => t.id);
         setTaskTasks(prev => prev.filter(t => !bucketIds.includes(t.bucket_id)));
@@ -13307,6 +13540,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         if (taskIds.length) db.delMany('task_tasks', taskIds);
         if (bucketIds.length) db.delMany('task_buckets', bucketIds);
         db.del('task_depts', id);
+        notifyTeam('tasks', 'tasks_activity', t('app_notif_tasks_activity'), `${dept?.name||'—'} — ${t('app_act_deleted')}`);
       };
       const handleReorderTaskDepts = orderedIds => {
         setTaskDepts(prev => {
@@ -13315,13 +13549,19 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
           return next;
         });
       };
-      const handleAddTaskBucket = b => { setTaskBuckets(prev => [...prev, b]); db.save('task_buckets', b); };
+      const handleAddTaskBucket = b => {
+        setTaskBuckets(prev => [...prev, b]);
+        db.save('task_buckets', b);
+        notifyTeam('tasks', 'tasks_activity', t('app_notif_tasks_activity'), `${b.name||'—'} — ${t('app_act_added')}`);
+      };
       const handleDeleteTaskBucket = id => {
+        const bucket = taskBuckets.find(x => x.id === id);
         const taskIds = taskTasks.filter(t => t.bucket_id === id).map(t => t.id);
         setTaskTasks(prev => prev.filter(tk => tk.bucket_id !== id));
         setTaskBuckets(prev => prev.filter(b => b.id !== id));
         if (taskIds.length) db.delMany('task_tasks', taskIds);
         db.del('task_buckets', id);
+        notifyTeam('tasks', 'tasks_activity', t('app_notif_tasks_activity'), `${bucket?.name||'—'} — ${t('app_act_deleted')}`);
       };
       const handleRenameTaskBucket = (id, name) => {
         setTaskBuckets(prev => {
@@ -13330,6 +13570,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
           if (updated) db.save('task_buckets', updated);
           return next;
         });
+        notifyTeam('tasks', 'tasks_activity', t('app_notif_tasks_activity'), `${name||'—'} — ${t('app_act_updated')}`);
       };
       const handleSaveTaskTask = task => {
         const existing = taskTasks.find(x => x.id === task.id);
@@ -13346,16 +13587,37 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         setTaskTasks(prev => prev.find(x=>x.id===task.id) ? prev.map(x=>x.id===task.id?task:x) : [...prev,task]);
         db.save('task_tasks', task);
       };
-      const handleDeleteTaskTask = id => { setTaskTasks(prev => prev.filter(x=>x.id!==id)); db.del('task_tasks', id); };
-      const handleSaveWebData = record => setWebData(prev => {
-        const exists = prev.find(x => x.id === record.id || x.projectId === record.projectId);
-        return exists
-          ? prev.map(x => (x.id === record.id || x.projectId === record.projectId) ? { ...x, ...record } : x)
-          : [...prev, record];
-      });
-      const handleAddCustomRole    = r  => { setCustomRoles(prev => [...prev, r]); db.save('custom_roles', r); };
-      const handleUpdateCustomRole = r  => { setCustomRoles(prev => prev.map(x => x.id===r.id ? r : x)); db.save('custom_roles', r); };
-      const handleDeleteCustomRole = id => { setCustomRoles(prev => prev.filter(x => x.id!==id)); db.del('custom_roles', id); };
+      const handleDeleteTaskTask = id => {
+        const task = taskTasks.find(x=>x.id===id);
+        setTaskTasks(prev => prev.filter(x=>x.id!==id));
+        db.del('task_tasks', id);
+        notifyTeam('tasks', 'tasks_activity', t('app_notif_tasks_activity'), `${task?.title||t('app_task_no_title')} — ${t('app_act_deleted')}`);
+      };
+      const handleSaveWebData = record => {
+        setWebData(prev => {
+          const exists = prev.find(x => x.id === record.id || x.projectId === record.projectId);
+          return exists
+            ? prev.map(x => (x.id === record.id || x.projectId === record.projectId) ? { ...x, ...record } : x)
+            : [...prev, record];
+        });
+        notifyTeam('web', 'web_activity', t('app_notif_web_activity'), t('app_act_updated'));
+      };
+      const handleAddCustomRole    = r  => {
+        setCustomRoles(prev => [...prev, r]);
+        db.save('custom_roles', r);
+        notifyTeam('team', 'team_activity', t('app_notif_team_activity'), `${r.name||'—'} — ${t('app_act_added')}`);
+      };
+      const handleUpdateCustomRole = r  => {
+        setCustomRoles(prev => prev.map(x => x.id===r.id ? r : x));
+        db.save('custom_roles', r);
+        notifyTeam('team', 'team_activity', t('app_notif_team_activity'), `${r.name||'—'} — ${t('app_act_updated')}`);
+      };
+      const handleDeleteCustomRole = id => {
+        const r = customRoles.find(x=>x.id===id);
+        setCustomRoles(prev => prev.filter(x => x.id!==id));
+        db.del('custom_roles', id);
+        notifyTeam('team', 'team_activity', t('app_notif_team_activity'), `${r?.name||'—'} — ${t('app_act_deleted')}`);
+      };
 
       const render = () => {
         switch (page) {
@@ -13492,6 +13754,8 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
               onMarkRead={markNotifRead}
               onMarkAllRead={markAllNotifsRead}
               onNavigate={setPage}
+              pushSubscribed={pushSubscribed}
+              onEnablePush={subscribeToPush}
               onMenuClick={() => setSidebarOpen(v => !v)}
             />
             <main className="flex-1 p-3 md:p-8">
