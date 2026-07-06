@@ -43,6 +43,20 @@
       overflow-x: hidden;
     }
 
+    /* Edge fade for horizontally-scrollable tables/boards — signals "more content"
+       instead of an abrupt cut, and disappears once fully scrolled that direction. */
+    .scroll-fade-x {
+      background:
+        linear-gradient(to right, #1e293b 30%, rgba(30,41,59,0)) left,
+        linear-gradient(to left,  #1e293b 30%, rgba(30,41,59,0)) right,
+        linear-gradient(to right, rgba(0,0,0,.35), rgba(0,0,0,0)) left,
+        linear-gradient(to left,  rgba(0,0,0,.35), rgba(0,0,0,0)) right;
+      background-repeat: no-repeat;
+      background-color: #1e293b;
+      background-size: 24px 100%, 24px 100%, 12px 100%, 12px 100%;
+      background-attachment: local, local, scroll, scroll;
+    }
+
     body {
       background-color: #09090b;
       background-image:
@@ -4303,7 +4317,7 @@
 
           {/* Table */}
           <div className="bg-slate-800/60 rounded-2xl border border-slate-700/40 overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto scroll-fade-x">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-700/60 text-right">
@@ -4510,7 +4524,7 @@
 
           {/* Table */}
           <div className="bg-slate-800/60 rounded-2xl border border-slate-700/40 overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto scroll-fade-x">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-700/60 text-right">
@@ -5141,7 +5155,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
               className="bg-slate-800 border border-slate-700 focus:border-blue-500 rounded-lg pr-9 pl-3 py-2 text-sm text-white placeholder-slate-500 outline-none w-64"/>
           </div>
           <div className="bg-slate-800/60 rounded-2xl border border-slate-700/40 overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto scroll-fade-x">
               <table className="w-full text-sm">
                 <thead><tr className="border-b border-slate-700/60 text-right">
                   <th className="px-4 py-3 text-xs font-medium text-slate-500 min-w-[200px]">{t('prj_col_name')}</th>
@@ -5498,7 +5512,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
             <div className="px-4 pt-4 pb-2">
               <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{ar?'تفاصيل الأيام':'Daily Details'}</div>
             </div>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto scroll-fade-x">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-slate-700/50">
@@ -6560,7 +6574,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                 className="bg-slate-800 border border-slate-700 focus:border-blue-500 rounded-lg pr-9 pl-3 py-2 text-sm text-white placeholder-slate-500 outline-none w-52"/>
             </div>
             <div className="bg-slate-800/60 rounded-2xl border border-slate-700/40 overflow-hidden">
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto scroll-fade-x">
                 <table className="w-full text-sm">
                   <thead><tr className="border-b border-slate-700/60 text-right">
                     <th className="px-4 py-3 text-xs font-medium text-slate-500 min-w-[180px]">{t('tm_col_name')}</th>
@@ -9340,7 +9354,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
                 {publishedPosts.length===0
                   ? <p className="text-slate-600 text-xs text-center py-6">{t('soc_no_pub_posts')}</p>
                   : (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto scroll-fade-x">
                       <table className="w-full text-xs" style={{direction:'rtl'}}>
                         <thead>
                           <tr className="border-b border-slate-800">
@@ -10772,7 +10786,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
               {keywords.length === 0 ? (
                 <div className="text-center py-6 text-slate-500 text-sm">لا توجد كلمات مفتاحية — أضف كلمة</div>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto scroll-fade-x">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="text-slate-500 text-xs border-b border-slate-700/50">
@@ -11076,7 +11090,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
                 </div>
 
                 {/* Buckets row */}
-                <div className="p-3 overflow-x-auto" dir="ltr">
+                <div className="p-3 overflow-x-auto scroll-fade-x" dir="ltr">
                   <div className="flex gap-3 min-w-max">
                     {buckets.map(bucket => {
                       const bTasks  = getTasks(bucket.id);
@@ -13793,7 +13807,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
             theme={theme} onToggleTheme={toggleTheme}
             lang={lang} onToggleLang={toggleLang}
             isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-          <div className={`flex-1 flex flex-col min-h-screen ${lang === 'ar' ? 'md:ml-14' : 'md:mr-14'}`}>
+          <div className={`flex-1 flex flex-col min-h-screen min-w-0 ${lang === 'ar' ? 'md:mr-56' : 'md:ml-56'}`}>
             {activeAnn && !annBarDismissed && (
               <AnnouncementBar ann={activeAnn} onDismiss={() => setAnnBarDismissed(true)}/>
             )}
