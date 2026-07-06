@@ -13807,7 +13807,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
             theme={theme} onToggleTheme={toggleTheme}
             lang={lang} onToggleLang={toggleLang}
             isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-          <div className={`flex-1 flex flex-col min-h-screen min-w-0 ${lang === 'ar' ? 'md:mr-56' : 'md:ml-56'}`}>
+          <div className={`flex-1 flex flex-col min-h-screen min-w-0 transition-[margin] duration-300 ${sidebarOpen ? (lang === 'ar' ? 'md:mr-56' : 'md:ml-56') : ''}`}>
             {activeAnn && !annBarDismissed && (
               <AnnouncementBar ann={activeAnn} onDismiss={() => setAnnBarDismissed(true)}/>
             )}
