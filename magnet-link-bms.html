@@ -37,6 +37,12 @@
       --accent: #06b6d4;
     }
 
+    /* the off-canvas sidebar is translated past the viewport edge when closed;
+       without this the translated-away aside still opens up horizontal scroll on mobile */
+    html, body {
+      overflow-x: hidden;
+    }
+
     body {
       background-color: #09090b;
       background-image:
