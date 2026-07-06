@@ -13025,10 +13025,13 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
           return updated;
         });
         db.save('notifications', n);
+        /* Phone push: fold title+body into one line — some Android skins hide/collapse the body
+           line on the lock screen, so the specific action must live in the title itself. */
+        const pushTitle = n.body ? `${n.title} — ${n.body}` : n.title;
         fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'apikey': SUPABASE_ANON_KEY },
-          body: JSON.stringify({ userIds: [String(n.userId)], title: n.title, body: n.body, section: n.section }),
+          body: JSON.stringify({ userIds: [String(n.userId)], title: pushTitle, body: n.body, section: n.section }),
         }).catch(() => {});
       };
       const markNotifRead = (id) => {
