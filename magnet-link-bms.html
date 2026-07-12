@@ -451,6 +451,7 @@
         des_comment_ph:'أضف تعليقاً...', des_send:'إرسال',
         des_move:'نقل ↕', des_subtitle:'الأصول البصرية والمكتوبة',
         des_sp_connected:'تم الاتصال بـ SharePoint ✓', des_sp_connect_err:'فشل الاتصال: ',
+        des_sp_session_expired:'انتهت جلسة SharePoint، الرجاء الاتصال من جديد',
         des_sp_folders_ok:'تم إنشاء مجلدات "{{name}}" بـ SharePoint ✓',
         des_err_prefix:'خطأ: ', des_sp_err_move:'خطأ SP: ', des_sp_err_delete:'خطأ حذف SP: ',
         des_sync_loading:'⏳ جاري...', des_sync_btn:'🔄 مزامنة', des_sync_action:'مزامنة',
@@ -1036,6 +1037,7 @@
         des_comment_ph:'Add a comment...', des_send:'Send',
         des_move:'Move ↕', des_subtitle:'Visual & Written Assets',
         des_sp_connected:'Connected to SharePoint ✓', des_sp_connect_err:'Connection failed: ',
+        des_sp_session_expired:'SharePoint session expired, please reconnect',
         des_sp_folders_ok:'Created folders for "{{name}}" in SharePoint ✓',
         des_err_prefix:'Error: ', des_sp_err_move:'SP Error: ', des_sp_err_delete:'SP Delete Error: ',
         des_sync_loading:'⏳ Loading...', des_sync_btn:'🔄 Sync', des_sync_action:'Sync',
@@ -1664,10 +1666,19 @@
         saveMsAccountLink(_currentBmsUserId, res.account);
         account = res.account;
       }
-      const res = await msal.acquireTokenSilent({ scopes: SP_SCOPES, account }).catch(async () =>
-        msalAcquireTokenPopup({ scopes: SP_SCOPES, account })
-      );
-      return res.accessToken;
+      try {
+        const res = await msal.acquireTokenSilent({ scopes: SP_SCOPES, account });
+        return res.accessToken;
+      } catch (e) {
+        /* Silent renewal failed — don't auto-open a popup here: by the time we're
+           this deep in an async chain (upload/sync/etc.) it's no longer inside the
+           original click's user-gesture, so browsers block it (empty_window_error).
+           Drop the stale link and ask the user to press "Connect" again instead. */
+        removeMsAccountLink(_currentBmsUserId);
+        const err = new Error('SP_SESSION_EXPIRED');
+        err.code = 'SP_SESSION_EXPIRED';
+        throw err;
+      }
     };
 
     const graphFetch = async (url, opts={}) => {
@@ -7448,7 +7459,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
       );
     };
 
-    const AssetModal = ({ asset, mode, categories, teamMembers, spFolder, onSave, onClose, showToast }) => {
+    const AssetModal = ({ asset, mode, categories, teamMembers, spFolder, onSave, onClose, showToast, onAuthExpired }) => {
       const { t } = useLang();
       const [form,     setForm]     = useState(asset || { title:'', category:categories[0]||'Poster', designer_id:'', due_date:'', file_type:'', file_size:'', sharepoint_path:'', sp_item_id:'', sp_web_url:'', status: mode==='design'?'under_modification':undefined, comments:[] });
       const [fileObj,  setFileObj]  = useState(null);
@@ -7483,7 +7494,8 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
             saved.sp_web_url      = uploaded.webUrl || '';
             showToast && showToast(t('asset_sp_ok'));
           } catch(err) {
-            showToast && showToast(t('asset_sp_err') + err.message);
+            if (err.code === 'SP_SESSION_EXPIRED') { onAuthExpired && onAuthExpired(); }
+            else { showToast && showToast(t('asset_sp_err') + err.message); }
             setUploading(false);
             return;
           }
@@ -7557,7 +7569,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
       );
     };
 
-    const DocumentModal = ({ doc, categories, teamMembers, spFolder, onSave, onClose, showToast }) => {
+    const DocumentModal = ({ doc, categories, teamMembers, spFolder, onSave, onClose, showToast, onAuthExpired }) => {
       const { t } = useLang();
       const [form,     setForm]     = useState(doc || { title:'', category:categories[0]||'Content', created_by_id:'', due_date:'', file_type:'', file_size:'', sharepoint_path:'', sp_item_id:'', sp_web_url:'', status:'pending', comments:[] });
       const [fileObj,  setFileObj]  = useState(null);
@@ -7588,7 +7600,8 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
             saved.sp_web_url      = uploaded.webUrl || '';
             showToast && showToast(t('asset_sp_ok'));
           } catch(err) {
-            showToast && showToast(t('asset_sp_err') + err.message);
+            if (err.code === 'SP_SESSION_EXPIRED') { onAuthExpired && onAuthExpired(); }
+            else { showToast && showToast(t('asset_sp_err') + err.message); }
             setUploading(false); return;
           }
           setUploading(false);
@@ -7849,6 +7862,13 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
         setSpUser(null);
       };
 
+      /* ── Session expired mid-flow: drop the stale link, show a clear "reconnect" message ── */
+      const handleSpSessionExpired = () => {
+        setSpUser(null);
+        showToast(t('des_sp_session_expired'));
+      };
+      const isSpSessionExpired = e => e && e.code === 'SP_SESSION_EXPIRED';
+
       /* ── Live SP loading for Design/From Client/Documents tabs ── */
       const TAB_SP_FOLDER = { design:'Design', from_client:'From Client', documents:'Documents' };
 
@@ -7871,7 +7891,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
             files = [...files, ...(sfData.value || []).filter(i => !i.folder).map(i => ({ ...i, _cat: sf.name }))];
           }
           setSpLive(files);
-        } catch(e) { setSpLive([]); }
+        } catch(e) { setSpLive([]); if (isSpSessionExpired(e)) handleSpSessionExpired(); }
         setSpLiveLoad(false);
       };
 
@@ -7903,7 +7923,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
           const data = await graphFetch(url);
           setSpBrowseItems(data.value || []);
           setSpBrowsePath(breadcrumb);
-        } catch(e) { showToast('SharePoint error: ' + e.message); }
+        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast('SharePoint error: ' + e.message); }
         setSpBrowseLoad(false);
       };
 
@@ -7923,7 +7943,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
             for (const cat of cfg.cats)
               await spCreateFolder(`${cfg.root}/${cat}`);
           showToast(t('des_sp_folders_ok').replace('{{name}}', project.name));
-        } catch(e) { showToast(t('des_err_prefix') + e.message); }
+        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_err_prefix') + e.message); }
         setSpLoading(false);
       };
 
@@ -7973,7 +7993,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
             });
           }
           showToast(t('des_toast_sync').replace('{{name}}',project.name).replace('{{n}}',addedCount));
-        } catch(e) { showToast(t('des_err_prefix') + e.message); console.error(e); }
+        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_err_prefix') + e.message); console.error(e); }
         setSpLoading(false);
       };
 
@@ -7986,7 +8006,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
         /* Move in SharePoint */
         if (asset.sp_item_id && spUser) {
           try { await spMoveItem(asset.sp_item_id, `${destCfg.root}/${destCat}`); }
-          catch(e) { showToast(t('des_sp_err_move') + e.message); return; }
+          catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_sp_err_move') + e.message); return; }
         }
         /* Remove from source */
         if (fromTab==='design')      onDeleteDesignAsset(asset.id);
@@ -8004,21 +8024,21 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
       const deleteDesign = async (asset) => {
         if (asset.sp_item_id && spUser) {
           try { await spDeleteFile(asset.sp_item_id); }
-          catch(e) { showToast(t('des_sp_err_delete') + e.message); return; }
+          catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_sp_err_delete') + e.message); return; }
         }
         onDeleteDesignAsset(asset.id);
       };
       const deleteClient = async (asset) => {
         if (asset.sp_item_id && spUser) {
           try { await spDeleteFile(asset.sp_item_id); }
-          catch(e) { showToast(t('des_sp_err_delete') + e.message); return; }
+          catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_sp_err_delete') + e.message); return; }
         }
         onDeleteClientAsset(asset.id);
       };
       const deleteDocument = async (doc) => {
         if (doc.sp_item_id && spUser) {
           try { await spDeleteFile(doc.sp_item_id); }
-          catch(e) { showToast(t('des_sp_err_delete') + e.message); return; }
+          catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_sp_err_delete') + e.message); return; }
         }
         onDeleteDocument(doc.id);
       };
@@ -8029,7 +8049,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
         if (asset.sp_item_id && spUser && spPaths) {
           const tabKey = fromTab==='from_client' ? 'from_client' : fromTab==='documents' ? 'documents' : 'design';
           try { await spMoveItem(asset.sp_item_id, `${spPaths[tabKey].root}/${toCat}`); }
-          catch(e) { showToast(t('des_sp_err_move') + e.message); return; }
+          catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_sp_err_move') + e.message); return; }
         }
         const updated = { ...asset, category: toCat };
         if (fromTab==='design')       onSaveDesignAsset(updated);
@@ -8483,19 +8503,19 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
           {/* Add Asset Modals */}
           {addModal==='design'&&(
             <AssetModal mode="design" categories={allDesignCats} teamMembers={teamMembers}
-              spFolder={spUser&&spPaths ? spPaths.design.root : null} showToast={showToast}
+              spFolder={spUser&&spPaths ? spPaths.design.root : null} showToast={showToast} onAuthExpired={handleSpSessionExpired}
               onSave={a=>{ onSaveDesignAsset({...a,projectId:selProjectId}); showToast(t('des_toast_asset_added')); }}
               onClose={()=>setAddModal(null)} />
           )}
           {addModal==='client'&&(
             <AssetModal mode="client" categories={allClientCats} teamMembers={teamMembers}
-              spFolder={spUser&&spPaths ? spPaths.from_client.root : null} showToast={showToast}
+              spFolder={spUser&&spPaths ? spPaths.from_client.root : null} showToast={showToast} onAuthExpired={handleSpSessionExpired}
               onSave={a=>{ onSaveClientAsset({...a,projectId:selProjectId}); showToast(t('des_toast_client_added')); }}
               onClose={()=>setAddModal(null)} />
           )}
           {addModal==='doc'&&(
             <DocumentModal categories={allDocCats} teamMembers={teamMembers}
-              spFolder={spUser&&spPaths ? spPaths.documents.root : null} showToast={showToast}
+              spFolder={spUser&&spPaths ? spPaths.documents.root : null} showToast={showToast} onAuthExpired={handleSpSessionExpired}
               onSave={d=>{ onSaveDocument({...d,projectId:selProjectId}); showToast(t('des_toast_doc_added')); }}
               onClose={()=>setAddModal(null)} />
           )}
