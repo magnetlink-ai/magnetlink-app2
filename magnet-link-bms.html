@@ -432,7 +432,19 @@
         nav_projects:'المشاريع', nav_finance:'المالية', nav_team:'الفريق',
         nav_social:'Social Media', nav_design:'التصميم والمحتوى',
         nav_web:'خدمات الويب', nav_tasks:'المهام', nav_email:'البريد الإلكتروني',
-        nav_chat:'Teams Chat', nav_announcements:'الإعلانات',
+        nav_chat:'Teams Chat', nav_announcements:'الإعلانات', nav_reports:'التقارير',
+        /* Reports */
+        rep_tab_mine:'تقاريري', rep_tab_team:'متابعة الفريق',
+        rep_field_achievements:'ماذا أنجزت هذا الأسبوع؟', rep_field_blockers:'هل واجهتك أي عوائق؟',
+        rep_field_next_plan:'ما خطتك للأسبوع القادم؟', rep_field_notes:'ملاحظات إضافية (اختياري)',
+        rep_attachment:'مرفق (اختياري)', rep_choose_file:'اختر ملفاً...',
+        rep_submit:'إرسال التقرير', rep_submitted_at:'أُرسل في',
+        rep_status_on_time:'رفع بالوقت', rep_status_late:'رفع متأخر', rep_status_missing:'لسا ما رفع',
+        rep_week_of:'أسبوع', rep_no_report_yet:'لسا ما رفعت تقرير هالأسبوع',
+        rep_already_submitted:'تم إرسال تقرير هالأسبوع', rep_past_weeks:'الأسابيع السابقة',
+        rep_this_week_status:'حالتك هالأسبوع', rep_prev_week:'الأسبوع السابق', rep_next_week:'الأسبوع القادم',
+        rep_view_report:'عرض التقرير', rep_submitted_count:'{{done}}/{{total}} رفعوا هالأسبوع',
+        app_notif_report_reminder:'تذكير: لسا ما رفعت تقرير الأسبوع',
         /* Design & Content */
         des_status_modifying:'قيد التعديل', des_status_ready:'جاهز', des_status_published:'منشور',
         doc_status_pending:'قيد المراجعة', doc_status_approved:'مقبول', doc_status_rejected:'مرفوض',
@@ -1018,7 +1030,19 @@
         nav_projects:'Projects', nav_finance:'Finance', nav_team:'Team',
         nav_social:'Social Media', nav_design:'Design & Content',
         nav_web:'Web Services', nav_tasks:'Tasks', nav_email:'Email',
-        nav_chat:'Teams Chat', nav_announcements:'Announcements',
+        nav_chat:'Teams Chat', nav_announcements:'Announcements', nav_reports:'Reports',
+        /* Reports */
+        rep_tab_mine:'My Reports', rep_tab_team:'Team Overview',
+        rep_field_achievements:'What did you accomplish this week?', rep_field_blockers:'Did you face any blockers?',
+        rep_field_next_plan:'What is your plan for next week?', rep_field_notes:'Additional notes (optional)',
+        rep_attachment:'Attachment (optional)', rep_choose_file:'Choose a file...',
+        rep_submit:'Submit Report', rep_submitted_at:'Submitted at',
+        rep_status_on_time:'Submitted on time', rep_status_late:'Submitted late', rep_status_missing:'Not submitted yet',
+        rep_week_of:'Week of', rep_no_report_yet:"You haven't submitted this week's report yet",
+        rep_already_submitted:"This week's report was submitted", rep_past_weeks:'Past Weeks',
+        rep_this_week_status:'Your status this week', rep_prev_week:'Previous week', rep_next_week:'Next week',
+        rep_view_report:'View report', rep_submitted_count:'{{done}}/{{total}} submitted this week',
+        app_notif_report_reminder:"Reminder: you haven't submitted this week's report",
         /* Design & Content */
         des_status_modifying:'Under Modification', des_status_ready:'Ready', des_status_published:'Published',
         doc_status_pending:'Under Review', doc_status_approved:'Approved', doc_status_rejected:'Rejected',
@@ -2125,6 +2149,7 @@
     const canSee = (user, sectionId, customRoles) => {
       if (!user) return false;
       if (sectionId === 'dashboard') return true;
+      if (sectionId === 'reports') return true;
       if (user.role === 'super_admin' || user.role === 'admin') return true;
       if (user.role === 'client') return user.permissions?.[sectionId]?.access === true;
       const cr = (customRoles||[]).find(r => r.id === user.role);
@@ -2728,6 +2753,7 @@
       tasks_activity:    { color:'text-blue-400',    bg:'bg-blue-500/10',    icon:'tasks'    },
       web_activity:      { color:'text-teal-400',    bg:'bg-teal-500/10',    icon:'web'      },
       announcement:      { color:'text-red-400',     bg:'bg-red-500/10',     icon:'bell'     },
+      report_reminder:   { color:'text-amber-400',   bg:'bg-amber-500/10',   icon:'note'     },
       general:       { color:'text-slate-400',  bg:'bg-slate-700/60',  icon:'bell'     },
     };
 
@@ -2824,6 +2850,7 @@
       { id:'email',         labelKey:'nav_email',         icon:'mail' },
       { id:'chat',          labelKey:'nav_chat',          icon:'chat' },
       { id:'announcements', labelKey:'nav_announcements', icon:'announce' },
+      { id:'reports',       labelKey:'nav_reports',       icon:'note' },
     ];
 
     const Sidebar = ({ page, setPage, currentUser, customRoles, notifications, onMarkRead, onMarkAllRead, onProfile, onLogout, theme, onToggleTheme, lang, onToggleLang, isOpen, onClose }) => {
@@ -3099,6 +3126,22 @@
 
     /* ═══════════════════════════ DASHBOARD WIDGETS ═══════════════════════════ */
 
+    /* Reports week runs Sunday → Thursday. offset=0 is the week containing "now". */
+    const _pad2 = n => String(n).padStart(2, '0');
+    const fmtDateLocal = d => `${d.getFullYear()}-${_pad2(d.getMonth()+1)}-${_pad2(d.getDate())}`;
+    const getWeekBounds = (offset = 0) => {
+      const now = new Date();
+      const sunday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay() + offset*7);
+      const thursday = new Date(sunday); thursday.setDate(sunday.getDate() + 4);
+      return { weekStart: fmtDateLocal(sunday), weekEnd: fmtDateLocal(thursday) };
+    };
+    const isReportLate = (submittedAtIso, weekEnd) => new Date(submittedAtIso) > new Date(weekEnd + 'T23:59:59');
+    const getUserWeekStatus = (userId, weekStart, weekEnd, reports) => {
+      const r = (reports||[]).find(x => x.userId === userId && x.weekStart === weekStart);
+      if (!r) return { status:'missing', report:null };
+      return { status: isReportLate(r.submittedAt, weekEnd) ? 'late' : 'on_time', report:r };
+    };
+
     const SECTION_WIDGET_DEFS = [
       {
         id:'crm', sectionId:'crm', labelKey:'nav_crm', icon:'crm', grad:'from-blue-600 to-blue-800',
@@ -3218,6 +3261,26 @@
             { label:t('w_tasks_total'),      value:all.length,                                       color:'text-cyan-300'    },
             { label:t('w_tasks_inprogress'), value:all.filter(x=>x.status==='in_progress').length,   color:'text-blue-300'    },
             { label:t('w_tasks_done'),       value:all.filter(x=>x.status==='completed').length,     color:'text-emerald-300' },
+          ];
+        },
+      },
+      {
+        id:'reports', sectionId:'reports', labelKey:'nav_reports', icon:'note', grad:'from-slate-600 to-slate-800',
+        getStats:(d,t) => {
+          const isAdminLike = d.currentUser?.role === 'super_admin' || d.currentUser?.role === 'admin';
+          const { weekStart } = getWeekBounds(0);
+          const reports = d.weeklyReports || [];
+          if (isAdminLike) {
+            const all  = [...(d.teamMembers||[]), ...(d.teamClients||[])];
+            const done = all.filter(u => reports.some(r => r.userId === u.id && r.weekStart === weekStart)).length;
+            return [
+              { label:t('rep_submitted_count').replace('{{done}}', done).replace('{{total}}', all.length),
+                value:`${done}/${all.length}`, color: done === all.length ? 'text-emerald-300' : 'text-amber-300' },
+            ];
+          }
+          const mine = reports.find(r => r.userId === d.currentUser?.id && r.weekStart === weekStart);
+          return [
+            { label:t('rep_this_week_status'), value: mine ? '✅' : '❌', color: mine ? 'text-emerald-300' : 'text-rose-300' },
           ];
         },
       },
@@ -3372,13 +3435,13 @@
       );
     };
 
-    const Dashboard = ({ leads, clients, projects, invoices, expenses, teamMembers, attendance,
-                          designAssets, smStats, smPosts, smMessages, taskTasks, announcements,
+    const Dashboard = ({ leads, clients, projects, invoices, expenses, teamMembers, teamClients, attendance,
+                          designAssets, smStats, smPosts, smMessages, taskTasks, announcements, weeklyReports,
                           currentUser, customRoles, setPage, dashShortcuts, onSaveShortcuts }) => {
       const { t, lang } = useLang();
       const [showCustomize, setShowCustomize] = useState(false);
-      const widgetData = { leads, clients, projects, invoices, expenses, teamMembers, attendance,
-                           designAssets, smStats, smPosts, smMessages, taskTasks, announcements };
+      const widgetData = { leads, clients, projects, invoices, expenses, teamMembers, teamClients, attendance,
+                           designAssets, smStats, smPosts, smMessages, taskTasks, announcements, weeklyReports, currentUser };
       const total    = leads.length;
       const won      = leads.filter(l => l.status === 'won').length;
       const lost     = leads.filter(l => l.status === 'lost').length;
@@ -12735,6 +12798,246 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       );
     };
 
+    /* ═══════════════════════════ REPORTS ═══════════════════════════ */
+
+    const ReportsModule = ({ currentUser, teamMembers, teamClients, customRoles, weeklyReports, onSaveReport, showToast }) => {
+      const { t, lang } = useLang();
+      const isAdminLike = currentUser?.role === 'super_admin' || currentUser?.role === 'admin';
+      const [tab, setTab]             = useState('mine');
+      const [weekOffset, setWeekOffset] = useState(0);
+      const [expandedId, setExpandedId] = useState(null);
+      const [form, setForm] = useState({ achievements:'', blockers:'', nextPlan:'', notes:'', attachmentName:'', attachmentDataUrl:'' });
+      const fileInputRef = useRef(null);
+
+      const TABS = [
+        { id:'mine', label:t('rep_tab_mine') },
+        ...(isAdminLike ? [{ id:'team', label:t('rep_tab_team') }] : []),
+      ];
+
+      const { weekStart, weekEnd } = getWeekBounds(weekOffset);
+      const weekLabel = `${t('rep_week_of')} ${weekStart} → ${weekEnd}`;
+      const myStatus = getUserWeekStatus(currentUser?.id, weekStart, weekEnd, weeklyReports);
+
+      const handleFile = e => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (file.size > 3 * 1024 * 1024) {
+          showToast(lang === 'ar' ? 'الملف كبير، اختر ملفاً أصغر من 3MB' : 'File too large, pick something under 3MB');
+          e.target.value = '';
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = ev => setForm(f => ({ ...f, attachmentName:file.name, attachmentDataUrl:ev.target.result }));
+        reader.readAsDataURL(file);
+      };
+
+      const submit = () => {
+        if (!form.achievements.trim()) {
+          showToast(lang === 'ar' ? 'لازم تعبّي على الأقل حقل "ماذا أنجزت"' : 'Please fill in at least "What did you accomplish"');
+          return;
+        }
+        const now = new Date();
+        const record = {
+          id: 'wr_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          userId: currentUser.id,
+          weekStart, weekEnd,
+          achievements: form.achievements.trim(),
+          blockers: form.blockers.trim(),
+          nextPlan: form.nextPlan.trim(),
+          notes: form.notes.trim(),
+          attachmentName: form.attachmentName,
+          attachmentDataUrl: form.attachmentDataUrl,
+          submittedAt: now.toISOString(),
+          status: isReportLate(now.toISOString(), weekEnd) ? 'late' : 'on_time',
+        };
+        onSaveReport(record);
+        setForm({ achievements:'', blockers:'', nextPlan:'', notes:'', attachmentName:'', attachmentDataUrl:'' });
+        showToast(t('rep_already_submitted'));
+      };
+
+      const WeekNav = () => (
+        <div className="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5">
+          <button onClick={() => setWeekOffset(o => o - 1)}
+            className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded-lg hover:bg-slate-800 transition">
+            {lang === 'ar' ? '‹' : '‹'} {t('rep_prev_week')}
+          </button>
+          <span className="text-sm font-medium text-slate-200">{weekLabel}</span>
+          <button onClick={() => setWeekOffset(o => Math.min(0, o + 1))} disabled={weekOffset >= 0}
+            className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded-lg hover:bg-slate-800 transition disabled:opacity-30 disabled:cursor-not-allowed">
+            {t('rep_next_week')} {lang === 'ar' ? '›' : '›'}
+          </button>
+        </div>
+      );
+
+      const StatusPill = ({ status }) => {
+        const meta = {
+          on_time: { label:t('rep_status_on_time'), cls:'bg-emerald-500/15 text-emerald-300 border-emerald-500/30', icon:'check' },
+          late:    { label:t('rep_status_late'),     cls:'bg-amber-500/15 text-amber-300 border-amber-500/30',      icon:'clock2' },
+          missing: { label:t('rep_status_missing'),  cls:'bg-rose-500/15 text-rose-300 border-rose-500/30',         icon:'x' },
+        }[status];
+        return (
+          <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full border ${meta.cls}`}>
+            <Ic name={meta.icon} size={11}/> {meta.label}
+          </span>
+        );
+      };
+
+      const ReportCard = ({ report }) => (
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+          <div>
+            <div className="text-slate-500 text-xs mb-1">{t('rep_field_achievements')}</div>
+            <div className="text-slate-200 text-sm whitespace-pre-wrap">{report.achievements || '—'}</div>
+          </div>
+          <div>
+            <div className="text-slate-500 text-xs mb-1">{t('rep_field_blockers')}</div>
+            <div className="text-slate-200 text-sm whitespace-pre-wrap">{report.blockers || '—'}</div>
+          </div>
+          <div>
+            <div className="text-slate-500 text-xs mb-1">{t('rep_field_next_plan')}</div>
+            <div className="text-slate-200 text-sm whitespace-pre-wrap">{report.nextPlan || '—'}</div>
+          </div>
+          {report.notes && (
+            <div>
+              <div className="text-slate-500 text-xs mb-1">{t('rep_field_notes')}</div>
+              <div className="text-slate-200 text-sm whitespace-pre-wrap">{report.notes}</div>
+            </div>
+          )}
+          {report.attachmentName && (
+            <a href={report.attachmentDataUrl} download={report.attachmentName}
+              className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300">
+              <Ic name="attach" size={12}/> {report.attachmentName}
+            </a>
+          )}
+          <div className="text-[11px] text-slate-600 pt-2 border-t border-slate-800">
+            {t('rep_submitted_at')}: {new Date(report.submittedAt).toLocaleString(lang === 'ar' ? 'ar-JO' : 'en-US')}
+          </div>
+        </div>
+      );
+
+      return (
+        <div className="max-w-3xl mx-auto space-y-6 py-2" dir="rtl">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl bg-slate-700/40 flex items-center justify-center text-slate-300">
+              <Ic name="note" size={20}/>
+            </div>
+            <div>
+              <h2 className="text-white font-bold text-lg">{t('nav_reports')}</h2>
+            </div>
+          </div>
+
+          <div className="flex gap-1 border-b border-slate-800">
+            {TABS.map(tb => (
+              <button key={tb.id} onClick={() => setTab(tb.id)}
+                className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-all ${tab === tb.id ? 'border-blue-500 text-blue-300' : 'border-transparent text-slate-500 hover:text-slate-300'}`}>
+                {tb.label}
+              </button>
+            ))}
+          </div>
+
+          {tab === 'mine' && (
+            <div className="space-y-4">
+              <WeekNav/>
+              {myStatus.report ? (
+                <ReportCard report={myStatus.report}/>
+              ) : weekOffset > 0 ? (
+                <div className="text-center py-10 text-slate-600 text-sm">{t('rep_no_report_yet')}</div>
+              ) : (
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                  <div className="text-amber-400 text-xs font-medium flex items-center gap-1.5">
+                    <Ic name="alert_t" size={12}/> {t('rep_no_report_yet')}
+                  </div>
+                  <div>
+                    <label className="text-slate-400 text-xs mb-1.5 block">{t('rep_field_achievements')}</label>
+                    <textarea value={form.achievements} onChange={e => setForm(f => ({ ...f, achievements:e.target.value }))}
+                      rows={3} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-blue-500 transition resize-none"/>
+                  </div>
+                  <div>
+                    <label className="text-slate-400 text-xs mb-1.5 block">{t('rep_field_blockers')}</label>
+                    <textarea value={form.blockers} onChange={e => setForm(f => ({ ...f, blockers:e.target.value }))}
+                      rows={2} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-blue-500 transition resize-none"/>
+                  </div>
+                  <div>
+                    <label className="text-slate-400 text-xs mb-1.5 block">{t('rep_field_next_plan')}</label>
+                    <textarea value={form.nextPlan} onChange={e => setForm(f => ({ ...f, nextPlan:e.target.value }))}
+                      rows={2} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-blue-500 transition resize-none"/>
+                  </div>
+                  <div>
+                    <label className="text-slate-400 text-xs mb-1.5 block">{t('rep_field_notes')}</label>
+                    <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes:e.target.value }))}
+                      rows={2} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-blue-500 transition resize-none"/>
+                  </div>
+                  <div>
+                    <label className="text-slate-400 text-xs mb-1.5 block">{t('rep_attachment')}</label>
+                    <input ref={fileInputRef} type="file" className="hidden" onChange={handleFile}/>
+                    <button onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-2 text-xs text-slate-300 border border-slate-700 hover:border-blue-500/40 px-3 py-2 rounded-lg transition-all">
+                      <Ic name="attach" size={12}/> {form.attachmentName || t('rep_choose_file')}
+                    </button>
+                  </div>
+                  <button onClick={submit}
+                    className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold py-2.5 rounded-xl transition">
+                    <Ic name="check" size={14}/> {t('rep_submit')}
+                  </button>
+                </div>
+              )}
+
+              <div>
+                <h3 className="text-slate-400 text-xs font-semibold mb-2">{t('rep_past_weeks')}</h3>
+                <div className="space-y-1.5">
+                  {weeklyReports.filter(r => r.userId === currentUser?.id).sort((a,b) => b.weekStart.localeCompare(a.weekStart)).map(r => (
+                    <div key={r.id} className="flex items-center justify-between bg-slate-900/60 border border-slate-800 rounded-xl px-4 py-2.5 text-xs">
+                      <span className="text-slate-400">{t('rep_week_of')} {r.weekStart}</span>
+                      <StatusPill status={r.status}/>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {tab === 'team' && isAdminLike && (() => {
+            const allPeople = [...(teamMembers||[]), ...(teamClients||[])];
+            const rows = allPeople.map(u => ({ user:u, ...getUserWeekStatus(u.id, weekStart, weekEnd, weeklyReports) }));
+            const doneCount = rows.filter(r => r.status !== 'missing').length;
+            return (
+              <div className="space-y-4">
+                <WeekNav/>
+                <div className="text-sm text-slate-400">{t('rep_submitted_count').replace('{{done}}', doneCount).replace('{{total}}', allPeople.length)}</div>
+                <div className="space-y-2">
+                  {rows.map(({ user, status, report }) => {
+                    const ri = getRoleInfo(user.role, customRoles);
+                    const expanded = expandedId === user.id;
+                    return (
+                      <div key={user.id} className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                        <button onClick={() => report && setExpandedId(expanded ? null : user.id)}
+                          className={`w-full flex items-center justify-between px-4 py-3 ${report ? 'cursor-pointer hover:bg-slate-800/60' : 'cursor-default'} transition`}>
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${ri.grad} flex items-center justify-center text-white text-xs font-bold`}>
+                              {(user.name||'?')[0]}
+                            </div>
+                            <div className="text-start">
+                              <div className="text-sm text-slate-200 font-medium">{user.name}</div>
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded border ${ri.badge}`}>{ri.label}</span>
+                            </div>
+                          </div>
+                          <StatusPill status={status}/>
+                        </button>
+                        {expanded && report && (
+                          <div className="border-t border-slate-800 p-4">
+                            <ReportCard report={report}/>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      );
+    };
+
     /* ═══════════════════════════ PRESENCE STRIP ═══════════════════════════ */
 
     const PresenceStrip = ({ teamMembers, teamClients, attendance, customRoles, lang }) => {
@@ -12855,6 +13158,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       const [taskDepts,    setTaskDepts]     = useState([]);
       const [taskBuckets,  setTaskBuckets]   = useState([]);
       const [taskTasks,    setTaskTasks]     = useState([]);
+      const [weeklyReports, setWeeklyReports] = useState([]);
       const [webData,      setWebData]       = useState(INITIAL_WEB_DATA);
       const [customRoles,  setCustomRoles]   = useState([]);
       const [dashShortcuts, setDashShortcuts] = useState([]);
@@ -12906,7 +13210,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
           try {
             const [
               lds, cls, prj, inv, exp, sal, att, ofd, ded, bon, ot,
-              tm,  tc,  cr,  td,  tb,  tt,  da,  ca,  doc, pwds, notifs
+              tm,  tc,  cr,  td,  tb,  tt,  da,  ca,  doc, pwds, notifs, wr
             ] = await Promise.all([
               db.load('leads'),        db.load('clients'),       db.load('projects'),
               db.load('invoices'),     db.load('expenses'),      db.load('salaries'),
@@ -12916,6 +13220,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
               db.load('custom_roles'), db.load('task_depts'),    db.load('task_buckets'),
               db.load('task_tasks'),   db.load('design_assets'), db.load('client_assets'),
               db.load('documents'),    db.load('user_passwords'), db.load('notifications'),
+              db.load('weekly_reports'),
             ]);
             if (pwds.length) {
               const ps = JSON.parse(localStorage.getItem('bms_passwords')||'{}');
@@ -12948,6 +13253,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
             setDesignAssets(da);
             setClientAssets(ca);
             setDcDocuments(doc);
+            setWeeklyReports(wr);
             if (notifs.length) {
               setNotifications(prev => {
                 const merged = [...prev];
@@ -13169,6 +13475,19 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
           .filter(u => u.id !== currentUser?.id)
           .forEach(u => pushNotif({ userId: u.id, type, title, body, section: navSection }));
       };
+
+      /* Thursday nudge: once the current week reaches its last day, remind whoever hasn't
+         submitted their weekly report yet — at most one reminder per person per week. */
+      useEffect(() => {
+        if (!currentUser) return;
+        const { weekStart, weekEnd } = getWeekBounds(0);
+        if (new Date() < new Date(weekEnd + 'T00:00:00')) return;
+        const hasReport = weeklyReports.some(r => r.userId === currentUser.id && r.weekStart === weekStart);
+        if (hasReport) return;
+        const alreadyNotified = notifications.some(n => n.userId === currentUser.id && n.type === 'report_reminder' && n.weekStart === weekStart);
+        if (alreadyNotified) return;
+        pushNotif({ userId: currentUser.id, type:'report_reminder', title:t('app_notif_report_reminder'), body:`${t('rep_week_of')} ${weekStart}`, section:'reports', weekStart });
+      }, [currentUser, weeklyReports, notifications]);
 
       const saveAnnouncements = (list) => {
         try { localStorage.setItem('bms_announcements', JSON.stringify(list)); } catch(_) {}
@@ -13681,6 +14000,10 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         db.del('task_tasks', id);
         notifyTeam('tasks', 'tasks_activity', t('app_notif_tasks_activity'), `${task?.title||t('app_task_no_title')} — ${t('app_act_deleted')}`);
       };
+      const handleSaveWeeklyReport = record => {
+        setWeeklyReports(prev => prev.find(x => x.id === record.id) ? prev.map(x => x.id === record.id ? record : x) : [...prev, record]);
+        db.save('weekly_reports', record);
+      };
       const handleSaveWebData = record => {
         setWebData(prev => {
           const exists = prev.find(x => x.id === record.id || x.projectId === record.projectId);
@@ -13711,9 +14034,9 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         switch (page) {
           case 'dashboard': return <Dashboard
             leads={leads} clients={clients} projects={projects} invoices={invoices}
-            expenses={expenses} teamMembers={teamMembers} attendance={attendance}
+            expenses={expenses} teamMembers={teamMembers} teamClients={teamClients} attendance={attendance}
             designAssets={designAssets} smStats={smStats} smPosts={smPosts}
-            smMessages={smMessages} taskTasks={taskTasks} announcements={announcements}
+            smMessages={smMessages} taskTasks={taskTasks} announcements={announcements} weeklyReports={weeklyReports}
             currentUser={currentUser} customRoles={customRoles} setPage={setPage}
             dashShortcuts={dashShortcuts} onSaveShortcuts={handleSaveShortcuts}/>;
           case 'crm': return <CRM leads={leads} clients={clients} onUpdate={handleLeadUpdate} onDelete={handleLeadDelete}/>;
@@ -13787,6 +14110,12 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
               onDeactivate={deactivateAnnouncement}
               onDelete={deleteAnnouncement}
               showToast={showToast}/>
+          );
+          case 'reports': return (
+            <ReportsModule
+              currentUser={currentUser} teamMembers={teamMembers} teamClients={teamClients}
+              customRoles={customRoles} weeklyReports={weeklyReports}
+              onSaveReport={handleSaveWeeklyReport} showToast={showToast}/>
           );
           default: return <ComingSoon name={NAV.find(n => n.id === page)?.label || page} />;
         }
