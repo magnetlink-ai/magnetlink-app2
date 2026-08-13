@@ -7026,6 +7026,24 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
         onUpdateExpense({ ...srcExp, paid_months:[...rest,{month,paid:newPaid,paid_date}] });
       };
 
+      /* ── Salary payment confirmation (per month) ── */
+      const salPaidInfo = (salId) => {
+        const rec = salaries.find(s=>s.id===salId);
+        if (!rec) return null;
+        return (rec.paid_months||[]).find(p=>p.month===month) || null;
+      };
+      const toggleSalPaid = (sal, newPaid) => {
+        const paid_date = newPaid ? new Date().toISOString().split('T')[0] : null;
+        const existing = salaries.find(s=>s.id===sal.id);
+        const rest = (existing?.paid_months||[]).filter(p=>p.month!==month);
+        if (existing) {
+          onUpdateSalary({ ...existing, paid_months:[...rest,{month,paid:newPaid,paid_date}] });
+        } else {
+          /* auto salary (derived from Team) has no backing record yet — create a payment-only marker */
+          onAddSalary({ id: sal.id, is_payment_marker:true, employee_name: sal.employee_name, paid_months:[{month,paid:newPaid,paid_date}] });
+        }
+      };
+
       const TABS = [
         {id:'money_in',  labelKey:'fin_tab_in'},
         {id:'money_out', labelKey:'fin_tab_out'},
@@ -7270,15 +7288,19 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                     <th className="px-4 py-3 text-xs font-medium text-rose-500/70 text-left">{t('fin_col_deductions')}</th>
                     <th className="px-4 py-3 text-xs font-medium text-emerald-500/70 text-left">{t('fin_col_bonuses')}</th>
                     <th className="px-4 py-3 text-xs font-medium text-blue-400 text-left">{t('fin_col_net')}</th>
-                    <th className="px-3 py-3 w-20"></th>
+                    <th className="px-4 py-3 text-xs font-medium text-slate-500">{t('tm_col_status')}</th>
+                    <th className="px-4 py-3 text-xs font-medium text-slate-500">{t('fin_col_paid_date')}</th>
+                    <th className="px-3 py-3 w-40"></th>
                   </tr></thead>
                   <tbody>
-                    {monthSals.length===0&&<tr><td colSpan={7} className="text-center py-12 text-slate-600">{t('fin_no_salaries')}</td></tr>}
+                    {monthSals.length===0&&<tr><td colSpan={9} className="text-center py-12 text-slate-600">{t('fin_no_salaries')}</td></tr>}
                     {monthSals.map(sal=>{
                       const uid  = sal._memberId || null;
                       const ded  = uid ? empDed(uid)   : 0;
                       const bon  = uid ? empBonus(uid) : 0;
                       const net  = sal.amount - ded + bon;
+                      const payInfo = salPaidInfo(sal.id);
+                      const isPaid  = !!(payInfo && payInfo.paid);
                       return (
                         <tr key={sal.id} className={`border-b border-slate-700/30 hover:bg-white/[0.02] ${sal._auto?'':'bg-blue-500/[0.03]'}`}>
                           <td className="px-4 py-3">
@@ -7316,13 +7338,28 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                               ${net.toFixed(2)}
                             </span>
                           </td>
+                          <td className="px-4 py-3">
+                            {isPaid
+                              ?<span className="text-xs bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">{t('fin_status_paid')}</span>
+                              :<span className="text-xs bg-rose-500/15 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded-full">{t('fin_status_unpaid')}</span>}
+                          </td>
+                          <td className="px-4 py-3 text-slate-500 text-xs">{(payInfo&&payInfo.paid_date)||'—'}</td>
                           <td className="px-3 py-3">
-                            {!sal._auto && (
-                              <div className="flex items-center gap-1">
-                                <button onClick={()=>setSalModal({edit:salaries.find(s=>s.id===sal.id)})} className="p-1.5 rounded-lg text-slate-600 hover:text-blue-400 hover:bg-blue-500/10 transition-all"><Ic name="edit2" size={13}/></button>
-                                <button onClick={()=>{if(confirm(t('fin_del_salary'))){onDeleteSalary(sal.id);showToast(t('fin_del_sal_toast'));}}} className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"><Ic name="trash" size={13}/></button>
-                              </div>
-                            )}
+                            <div className="flex items-center gap-1">
+                              <button onClick={()=>toggleSalPaid(sal,!isPaid)}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                                  isPaid
+                                    ?'bg-slate-700/60 text-slate-400 hover:bg-rose-500/15 hover:text-rose-300'
+                                    :'bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25'}`}>
+                                {isPaid?t('fin_btn_undo'):t('fin_btn_paid')}
+                              </button>
+                              {!sal._auto && (
+                                <>
+                                  <button onClick={()=>setSalModal({edit:salaries.find(s=>s.id===sal.id)})} className="p-1.5 rounded-lg text-slate-600 hover:text-blue-400 hover:bg-blue-500/10 transition-all"><Ic name="edit2" size={13}/></button>
+                                  <button onClick={()=>{if(confirm(t('fin_del_salary'))){onDeleteSalary(sal.id);showToast(t('fin_del_sal_toast'));}}} className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"><Ic name="trash" size={13}/></button>
+                                </>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -7334,7 +7371,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                     <td className="px-4 py-3 text-rose-400 font-semibold text-left">{deductionTotal>0?`−$${deductionTotal.toFixed(2)}`:'—'}</td>
                     <td className="px-4 py-3 text-emerald-400 font-semibold text-left">{bonusTotal>0?`+$${bonusTotal.toFixed(2)}`:'—'}</td>
                     <td className="px-4 py-3 text-blue-400 font-bold text-left">${netSalary.toFixed(2)}</td>
-                    <td/>
+                    <td/><td/><td/>
                   </tr></tfoot>}
                 </table>
               </div>
