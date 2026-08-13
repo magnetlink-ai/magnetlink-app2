@@ -465,7 +465,7 @@
         des_sp_connected:'تم الاتصال بـ SharePoint ✓', des_sp_connect_err:'فشل الاتصال: ',
         des_sp_session_expired:'انتهت جلسة SharePoint، الرجاء الاتصال من جديد',
         des_sp_folders_ok:'تم إنشاء مجلدات "{{name}}" بـ SharePoint ✓',
-        des_err_prefix:'خطأ: ', des_sp_err_move:'خطأ SP: ', des_sp_err_delete:'خطأ حذف SP: ',
+        des_err_prefix:'خطأ: ', des_sp_err_move:'خطأ SP: ', des_sp_err_delete:'خطأ حذف SP: ', des_sp_err_restore:'خطأ الاسترجاع: ',
         des_sync_loading:'⏳ جاري...', des_sync_btn:'🔄 مزامنة', des_sync_action:'مزامنة',
         des_setup_btn:'📁 إعداد', des_setup_title:'إنشاء هيكل المجلدات بـ SharePoint',
         des_sp_logout:'خروج', des_sp_connecting:'⏳ جاري الاتصال...', des_sp_connect_btn:'🔗 اتصال بـ SharePoint',
@@ -484,6 +484,8 @@
         des_toast_doc_added:'تمت إضافة الوثيقة ✓', des_toast_cat_added:'تمت إضافة التصنيف ✓',
         des_toast_moved:'تم النقل إلى {{dest}} ✓', des_toast_cat_moved:'تم النقل إلى {{cat}} ✓',
         des_toast_sync:'مزامنة "{{name}}": {{n}} ملف جديد ✓',
+        des_toast_deleted:'تم حذف "{{name}}"', des_undo:'تراجع', des_toast_restored:'تم الاسترجاع ✓',
+        des_delete_btn:'حذف', des_rename_hint:'اضغط على الاسم للتعديل',
         des_add_cat_title:'إضافة تصنيف جديد', des_cat_name_ph:'اسم التصنيف...',
         des_details:'تفاصيل', des_download:'⬇ تنزيل', des_client_count:'{{n}} ملف من العميل',
         /* Statuses — Lead */
@@ -1063,7 +1065,7 @@
         des_sp_connected:'Connected to SharePoint ✓', des_sp_connect_err:'Connection failed: ',
         des_sp_session_expired:'SharePoint session expired, please reconnect',
         des_sp_folders_ok:'Created folders for "{{name}}" in SharePoint ✓',
-        des_err_prefix:'Error: ', des_sp_err_move:'SP Error: ', des_sp_err_delete:'SP Delete Error: ',
+        des_err_prefix:'Error: ', des_sp_err_move:'SP Error: ', des_sp_err_delete:'SP Delete Error: ', des_sp_err_restore:'Restore error: ',
         des_sync_loading:'⏳ Loading...', des_sync_btn:'🔄 Sync', des_sync_action:'Sync',
         des_setup_btn:'📁 Setup', des_setup_title:'Create SharePoint folder structure',
         des_sp_logout:'Logout', des_sp_connecting:'⏳ Connecting...', des_sp_connect_btn:'🔗 Connect to SharePoint',
@@ -1082,6 +1084,8 @@
         des_toast_doc_added:'Document added ✓', des_toast_cat_added:'Category added ✓',
         des_toast_moved:'Moved to {{dest}} ✓', des_toast_cat_moved:'Moved to {{cat}} ✓',
         des_toast_sync:'Synced "{{name}}": {{n}} new files ✓',
+        des_toast_deleted:'"{{name}}" deleted', des_undo:'Undo', des_toast_restored:'Restored ✓',
+        des_delete_btn:'Delete', des_rename_hint:'Click the name to edit',
         des_add_cat_title:'Add New Category', des_cat_name_ph:'Category name...',
         des_details:'Details', des_download:'⬇ Download', des_client_count:'{{n}} files from client',
         /* Statuses */
@@ -1768,6 +1772,12 @@
     const spDeleteFile = async (itemId) => {
       const driveId = await getDriveId();
       await graphFetch(`/drives/${driveId}/items/${itemId}`, { method:'DELETE', headers:{'Content-Type':undefined} });
+    };
+
+    /* ── Restore a deleted file from the SharePoint recycle bin (undo) ── */
+    const spRestoreFile = async (itemId) => {
+      const driveId = await getDriveId();
+      await graphFetch(`/drives/${driveId}/items/${itemId}/restore`, { method:'POST', body: JSON.stringify({}) });
     };
 
     /* ── Create folder (creates parents too, ignores if exists) ── */
@@ -7758,8 +7768,9 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
       );
     };
 
-    const AssetDetailOverlay = ({ asset, teamMembers, onUpdate, onClose, isDoc }) => {
+    const AssetDetailOverlay = ({ asset, teamMembers, onUpdate, onDelete, onClose, srcTab }) => {
       const { t } = useLang();
+      const isDoc = srcTab === 'documents';
       const [newComment, setNewComment] = useState('');
       const [imgOpening, setImgOpening] = useState(false);
       const person = teamMembers.find(m=>m.id===(isDoc?asset.created_by_id:asset.designer_id));
@@ -7796,14 +7807,24 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
             <div className="flex-1 overflow-y-auto p-6 border-r border-slate-800">
               {/* Header */}
               <div className="flex items-start justify-between mb-5">
-                <div>
-                  <h3 className="text-white font-bold text-lg mb-1">{asset.title}</h3>
+                <div className="min-w-0">
+                  <h3 className="text-white font-bold text-lg mb-1" title={t('des_rename_hint')}>
+                    <InlineEdit value={asset.title||''} onChange={v=>{ if(v && v.trim()) onUpdate({...asset, title:v.trim()}); }} />
+                  </h3>
                   {isDoc
                     ? <span className="flex items-center gap-1.5 text-xs text-slate-400"><span className={`w-2 h-2 rounded-full ${statusCfg?.dot}`}/>{t(statusCfg?.tKey)||statusCfg?.label}</span>
                     : <span className={`text-xs px-2 py-0.5 rounded-full border ${statusCfg?.badge||''}`}>{t(statusCfg?.tKey)||statusCfg?.label||asset.status}</span>
                   }
                 </div>
-                <button onClick={onClose} className="text-slate-500 hover:text-slate-300 text-2xl leading-none flex-shrink-0">×</button>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  {onDelete && (
+                    <button onClick={()=>{ if(confirm(t('des_confirm_delete_asset'))){ onDelete(asset); } }}
+                      className="text-slate-500 hover:text-red-400 transition-colors" title={t('des_delete_btn')}>
+                      <Ic name="trash" size={16}/>
+                    </button>
+                  )}
+                  <button onClick={onClose} className="text-slate-500 hover:text-slate-300 text-2xl leading-none">×</button>
+                </div>
               </div>
 
               {/* Meta grid */}
@@ -7824,7 +7845,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
               </div>
 
               {/* Status actions */}
-              {!isDoc&&(
+              {srcTab==='design'&&(
                 <div className="flex gap-2 mb-5">
                   {asset.status==='under_modification'&&<button onClick={()=>onUpdate({...asset,status:'ready'})} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2 text-sm font-medium">{t('des_btn_approve')}</button>}
                   {asset.status==='ready'&&<button onClick={()=>onUpdate({...asset,status:'published'})} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg py-2 text-sm font-medium">{t('des_btn_publish')}</button>}
@@ -8121,27 +8142,28 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
       };
 
       /* ── SP-aware delete wrappers ── */
-      const deleteDesign = async (asset) => {
-        if (asset.sp_item_id && spUser) {
-          try { await spDeleteFile(asset.sp_item_id); }
+      /* Generic SP-aware delete with undo (restores the file from the SP recycle bin + re-saves local metadata) */
+      const deleteWithUndo = async (item, { deleteLocal, saveLocal }) => {
+        if (item.sp_item_id && spUser) {
+          try { await spDeleteFile(item.sp_item_id); }
           catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_sp_err_delete') + e.message); return; }
+          setSpLive(prev => prev.filter(f => f.id !== item.sp_item_id));
         }
-        onDeleteDesignAsset(asset.id);
+        deleteLocal(item.id);
+        showToast(t('des_toast_deleted').replace('{{name}}', item.title||'—'), {
+          undoLabel: t('des_undo'),
+          onUndo: async () => {
+            saveLocal(item);
+            if (item.sp_item_id && spUser) {
+              try { await spRestoreFile(item.sp_item_id); await loadCurrentTab(); showToast(t('des_toast_restored')); }
+              catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_sp_err_restore') + e.message); }
+            }
+          },
+        });
       };
-      const deleteClient = async (asset) => {
-        if (asset.sp_item_id && spUser) {
-          try { await spDeleteFile(asset.sp_item_id); }
-          catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_sp_err_delete') + e.message); return; }
-        }
-        onDeleteClientAsset(asset.id);
-      };
-      const deleteDocument = async (doc) => {
-        if (doc.sp_item_id && spUser) {
-          try { await spDeleteFile(doc.sp_item_id); }
-          catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_sp_err_delete') + e.message); return; }
-        }
-        onDeleteDocument(doc.id);
-      };
+      const deleteDesign   = asset => deleteWithUndo(asset, { deleteLocal: onDeleteDesignAsset, saveLocal: onSaveDesignAsset });
+      const deleteClient   = asset => deleteWithUndo(asset, { deleteLocal: onDeleteClientAsset,  saveLocal: onSaveClientAsset });
+      const deleteDocument = doc   => deleteWithUndo(doc,   { deleteLocal: onDeleteDocument,      saveLocal: onSaveDocument   });
 
       /* ── Move between categories within same tab ── */
       const handleMoveCat = async (asset, fromTab, toCat) => {
@@ -8293,7 +8315,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                                 const designer = teamMembers.find(m=>m.id===asset.designer_id);
                                 return (
                                   <div key={asset.id} draggable onDragStart={()=>setDragInfo({asset,fromTab:'design'})} onDragEnd={()=>setDragInfo(null)} className="bg-slate-900 border border-amber-500/25 rounded-xl overflow-hidden cursor-grab active:cursor-grabbing active:opacity-60 active:scale-95 transition-transform">
-                                    <SpThumbnail itemId={asset.sp_item_id} fileType={asset.file_type} className="h-28" onClick={()=>setDetailAsset({...asset,_isDoc:false})} />
+                                    <SpThumbnail itemId={asset.sp_item_id} fileType={asset.file_type} className="h-28" onClick={()=>setDetailAsset({...asset,_srcTab:'design'})} />
                                     <div className="p-3">
                                       <div className="text-white text-sm font-medium truncate mb-0.5">{asset.title}</div>
                                       <div className="text-xs text-slate-500 mb-1">{designer?.name||'—'} · {asset.file_type||'—'}</div>
@@ -8301,9 +8323,10 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                                       <div className="flex gap-1.5">
                                         <button onClick={()=>{onSaveDesignAsset({...asset,status:'ready'});showToast(t('des_toast_approved'));}}
                                           className="flex-1 bg-blue-600/80 hover:bg-blue-600 text-white text-xs py-1.5 rounded-lg font-medium">{t('des_btn_approve_doc')}</button>
-                                        <button onClick={()=>setDetailAsset({...asset,_isDoc:false})}
+                                        <button onClick={()=>setDetailAsset({...asset,_srcTab:'design'})}
                                           className="px-3 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs py-1.5 rounded-lg">{t('edit')}</button>
                                         <MoveMenu asset={asset} fromTab="design" onMove={handleMoveAsset}/>
+                                        <button onClick={()=>{if(confirm(t('des_confirm_delete_asset')))deleteDesign(asset);}} className="px-2 bg-slate-800 hover:bg-red-900/40 text-slate-500 hover:text-red-400 text-xs py-1.5 rounded-lg">×</button>
                                       </div>
                                     </div>
                                   </div>
@@ -8322,7 +8345,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                                 const designer = teamMembers.find(m=>m.id===asset.designer_id);
                                 return (
                                   <div key={asset.id} draggable onDragStart={()=>setDragInfo({asset,fromTab:'design'})} onDragEnd={()=>setDragInfo(null)} className={`bg-slate-900 border rounded-xl overflow-hidden cursor-grab active:cursor-grabbing active:opacity-60 active:scale-95 transition-transform ${asset.status==='published'?'border-emerald-500/25':'border-blue-500/25'}`}>
-                                    <SpThumbnail itemId={asset.sp_item_id} fileType={asset.file_type} className="h-28" onClick={()=>setDetailAsset({...asset,_isDoc:false})} />
+                                    <SpThumbnail itemId={asset.sp_item_id} fileType={asset.file_type} className="h-28" onClick={()=>setDetailAsset({...asset,_srcTab:'design'})} />
                                     <div className="p-3">
                                       <div className="flex items-start justify-between gap-1 mb-0.5">
                                         <div className="text-white text-sm font-medium truncate">{asset.title}</div>
@@ -8331,7 +8354,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                                       <div className="text-xs text-slate-500 mb-2">{designer?.name||'—'} · {asset.file_type||'—'}</div>
                                       <div className="flex gap-1.5">
                                         {asset.status==='ready'&&<button onClick={()=>{onSaveDesignAsset({...asset,status:'published'});showToast(t('des_toast_published'));}} className="flex-1 bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs py-1.5 rounded-lg font-medium">{t('des_btn_publish')}</button>}
-                                        <button onClick={()=>setDetailAsset({...asset,_isDoc:false})} className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs py-1.5 rounded-lg">{t('des_details')}</button>
+                                        <button onClick={()=>setDetailAsset({...asset,_srcTab:'design'})} className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs py-1.5 rounded-lg">{t('des_details')}</button>
                                         <MoveMenu asset={asset} fromTab="design" onMove={handleMoveAsset}/>
                                         <button onClick={()=>{if(confirm(t('des_confirm_delete_asset')))deleteDesign(asset);}} className="px-2 bg-slate-800 hover:bg-red-900/40 text-slate-500 hover:text-red-400 text-xs py-1.5 rounded-lg">×</button>
                                       </div>
@@ -8390,7 +8413,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                           {items.map(asset=>(
                             <div key={asset.id} draggable onDragStart={()=>setDragInfo({asset,fromTab:'from_client'})} onDragEnd={()=>setDragInfo(null)} className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl overflow-hidden cursor-grab active:cursor-grabbing active:opacity-60 active:scale-95 transition-all">
-                              <SpThumbnail itemId={asset.sp_item_id} fileType={asset.file_type} className="h-28" onClick={()=>setDetailAsset({...asset,_isDoc:false})} />
+                              <SpThumbnail itemId={asset.sp_item_id} fileType={asset.file_type} className="h-28" onClick={()=>setDetailAsset({...asset,_srcTab:'from_client'})} />
                               <div className="p-3">
                                 <div className="text-white text-sm font-medium truncate mb-0.5">{asset.title}</div>
                                 <div className="text-xs text-slate-500 mb-2">{asset.file_type||'—'} · {asset.file_size||'—'}</div>
@@ -8458,7 +8481,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                           {items.map(doc=>{
                             const dcfg = DOC_STATUS_CFG[doc.status]||DOC_STATUS_CFG.pending;
                             return (
-                              <div key={doc.id} draggable onDragStart={()=>setDragInfo({asset:doc,fromTab:'documents'})} onDragEnd={()=>setDragInfo(null)} onClick={()=>setDetailAsset({...doc,_isDoc:true})} className={`bg-slate-900 border border-slate-800 border-r-4 rounded-xl p-4 cursor-grab active:cursor-grabbing active:opacity-60 active:scale-95 hover:border-slate-600 transition-all ${dcfg.borderColor}`}>
+                              <div key={doc.id} draggable onDragStart={()=>setDragInfo({asset:doc,fromTab:'documents'})} onDragEnd={()=>setDragInfo(null)} onClick={()=>setDetailAsset({...doc,_srcTab:'documents'})} className={`bg-slate-900 border border-slate-800 border-r-4 rounded-xl p-4 cursor-grab active:cursor-grabbing active:opacity-60 active:scale-95 hover:border-slate-600 transition-all ${dcfg.borderColor}`}>
                                 <div className="flex items-start justify-between mb-2">
                                   <div className="flex items-center gap-2 min-w-0">
                                     <span className="text-2xl flex-shrink-0">{fileTypeIcon(doc.file_type)}</span>
@@ -8481,7 +8504,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                                   {doc.status!=='approved'&&<button onClick={e=>{e.stopPropagation();onSaveDocument({...doc,status:'approved'});showToast(t('des_toast_approved'));}} className="flex-1 bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs py-1.5 rounded-lg font-medium">{t('des_btn_approve_doc')}</button>}
                                   {doc.status!=='rejected'&&<button onClick={e=>{e.stopPropagation();onSaveDocument({...doc,status:'rejected'});showToast(t('des_toast_rejected'));}} className="flex-1 bg-red-600/80 hover:bg-red-600 text-white text-xs py-1.5 rounded-lg">{t('des_btn_reject')}</button>}
                                   {doc.status==='approved'&&<button onClick={e=>{e.stopPropagation();onSaveDocument({...doc,status:'pending'});}} className="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs py-1.5 rounded-lg">{t('des_btn_revert_doc')}</button>}
-                                  <button onClick={e=>{e.stopPropagation();setDetailAsset({...doc,_isDoc:true});}} className="px-3 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs py-1.5 rounded-lg">💬</button>
+                                  <button onClick={e=>{e.stopPropagation();setDetailAsset({...doc,_srcTab:'documents'});}} className="px-3 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs py-1.5 rounded-lg">💬</button>
                                   <button onClick={e=>{e.stopPropagation();if(confirm(t('des_confirm_delete')))deleteDocument(doc);}} className="px-2 bg-slate-800 hover:bg-red-900/40 text-slate-500 hover:text-red-400 text-xs py-1.5 rounded-lg">×</button>
                                 </div>
                               </div>
@@ -8589,12 +8612,19 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
           {detailAsset&&(
             <AssetDetailOverlay
               asset={detailAsset}
-              isDoc={detailAsset._isDoc}
+              srcTab={detailAsset._srcTab}
               teamMembers={teamMembers}
               onUpdate={a=>{
-                if (a._isDoc) { onSaveDocument(a); }
-                else { onSaveDesignAsset(a); }
+                if (a._srcTab==='documents') onSaveDocument(a);
+                else if (a._srcTab==='from_client') onSaveClientAsset(a);
+                else onSaveDesignAsset(a);
                 setDetailAsset(a);
+              }}
+              onDelete={a=>{
+                if (a._srcTab==='documents') deleteDocument(a);
+                else if (a._srcTab==='from_client') deleteClient(a);
+                else deleteDesign(a);
+                setDetailAsset(null);
               }}
               onClose={()=>setDetailAsset(null)}
             />
