@@ -488,6 +488,12 @@
         des_delete_btn:'حذف', des_rename_hint:'اضغط على الاسم للتعديل',
         des_add_cat_title:'إضافة تصنيف جديد', des_cat_name_ph:'اسم التصنيف...',
         des_details:'تفاصيل', des_download:'⬇ تنزيل', des_client_count:'{{n}} ملف من العميل',
+        des_toast_cat_deleted:'تم حذف التصنيف', des_delete_cat:'حذف التصنيف', des_empty_cat:'لا توجد ملفات بهذا التصنيف بعد — اضغط + للإضافة',
+        des_connect_hint:'اربط حساب Microsoft من الزر أعلاه لعرض الملفات',
+        des_loading_files:'جاري تحميل الملفات من SharePoint...',
+        des_browse_connect_hint:'اربط حساب Microsoft أولاً من الزر أعلاه',
+        des_browse_loading_short:'جاري التحميل...', des_browse_loading:'جاري تحميل الملفات...', des_folder_empty:'الفولدر فاضي',
+        des_col_name:'الاسم', des_col_type:'النوع', des_col_size:'الحجم', des_col_modified:'آخر تعديل',
         /* Statuses — Lead */
         s_hot:'ساخن', s_warm:'دافئ', s_cold:'بارد', s_pending:'معلق',
         s_won:'تم ✓', s_lost:'خسارة',
@@ -1088,6 +1094,12 @@
         des_delete_btn:'Delete', des_rename_hint:'Click the name to edit',
         des_add_cat_title:'Add New Category', des_cat_name_ph:'Category name...',
         des_details:'Details', des_download:'⬇ Download', des_client_count:'{{n}} files from client',
+        des_toast_cat_deleted:'Category deleted', des_delete_cat:'Delete category', des_empty_cat:'No files in this category yet — click + to add one',
+        des_connect_hint:'Connect your Microsoft account above to view files',
+        des_loading_files:'Loading files from SharePoint...',
+        des_browse_connect_hint:'Connect your Microsoft account above first',
+        des_browse_loading_short:'Loading...', des_browse_loading:'Loading files...', des_folder_empty:'This folder is empty',
+        des_col_name:'Name', des_col_type:'Type', des_col_size:'Size', des_col_modified:'Modified',
         /* Statuses */
         s_hot:'Hot', s_warm:'Warm', s_cold:'Cold', s_pending:'Pending',
         s_won:'Won ✓', s_lost:'Lost',
@@ -7569,9 +7581,9 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
       );
     };
 
-    const AssetModal = ({ asset, mode, categories, teamMembers, spFolder, onSave, onClose, showToast, onAuthExpired }) => {
+    const AssetModal = ({ asset, mode, categories, initialCategory, teamMembers, spFolder, onSave, onClose, showToast, onAuthExpired }) => {
       const { t } = useLang();
-      const [form,     setForm]     = useState(asset || { title:'', category:categories[0]||'Poster', designer_id:'', due_date:'', file_type:'', file_size:'', sharepoint_path:'', sp_item_id:'', sp_web_url:'', status: mode==='design'?'under_modification':undefined, comments:[] });
+      const [form,     setForm]     = useState(asset || { title:'', category:initialCategory||categories[0]||'Poster', designer_id:'', due_date:'', file_type:'', file_size:'', sharepoint_path:'', sp_item_id:'', sp_web_url:'', status: mode==='design'?'under_modification':undefined, comments:[] });
       const [fileObj,  setFileObj]  = useState(null);
       const [uploading,setUploading]= useState(false);
       const f = (k,v) => setForm(p=>({...p,[k]:v}));
@@ -7679,9 +7691,9 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
       );
     };
 
-    const DocumentModal = ({ doc, categories, teamMembers, spFolder, onSave, onClose, showToast, onAuthExpired }) => {
+    const DocumentModal = ({ doc, categories, initialCategory, teamMembers, spFolder, onSave, onClose, showToast, onAuthExpired }) => {
       const { t } = useLang();
-      const [form,     setForm]     = useState(doc || { title:'', category:categories[0]||'Content', created_by_id:'', due_date:'', file_type:'', file_size:'', sharepoint_path:'', sp_item_id:'', sp_web_url:'', status:'pending', comments:[] });
+      const [form,     setForm]     = useState(doc || { title:'', category:initialCategory||categories[0]||'Content', created_by_id:'', due_date:'', file_type:'', file_size:'', sharepoint_path:'', sp_item_id:'', sp_web_url:'', status:'pending', comments:[] });
       const [fileObj,  setFileObj]  = useState(null);
       const [uploading,setUploading]= useState(false);
       const f = (k,v) => setForm(p=>({...p,[k]:v}));
@@ -7768,12 +7780,15 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
       );
     };
 
-    const AssetDetailOverlay = ({ asset, teamMembers, onUpdate, onDelete, onClose, srcTab }) => {
+    const AssetDetailOverlay = ({ asset, teamMembers, categories, onUpdate, onCategoryChange, onDelete, onClose, srcTab }) => {
       const { t } = useLang();
       const isDoc = srcTab === 'documents';
+      const isClient = srcTab === 'from_client';
       const [newComment, setNewComment] = useState('');
       const [imgOpening, setImgOpening] = useState(false);
-      const person = teamMembers.find(m=>m.id===(isDoc?asset.created_by_id:asset.designer_id));
+      const members = teamMembers.filter(m=>m.status==='active');
+      const personOptions = [{value:'', label:t('asset_select_ph')}, ...members.map(m=>({value:m.id, label:m.name}))];
+      const catOptions = (categories||[]).map(c=>({value:c, label:c}));
 
       const openFullImage = async () => {
         if (!asset.sp_item_id) return;
@@ -7827,21 +7842,44 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                 </div>
               </div>
 
-              {/* Meta grid */}
+              {/* Meta grid — click any value to edit */}
               <div className="grid grid-cols-2 gap-3 mb-4">
-                {[
-                  [t('asset_category_lbl'), asset.category],
-                  [isDoc?t('doc_executor_lbl'):t('asset_designer_lbl'), person?.name||'—'],
-                  ['Due Date', asset.due_date||'—'],
-                  [t('asset_file_type_lbl'), asset.file_type||'—'],
-                  [t('des_file_size'), asset.file_size||'—'],
-                  [t('des_created_lbl'), asset.created||'—'],
-                ].map(([k,v])=>(
-                  <div key={k} className="bg-slate-800/50 rounded-lg p-3">
-                    <div className="text-xs text-slate-500 mb-0.5">{k}</div>
-                    <div className="text-slate-200 text-sm font-medium">{v}</div>
+                <div className="bg-slate-800/50 rounded-lg p-3">
+                  <div className="text-xs text-slate-500 mb-0.5">{t('asset_category_lbl')}</div>
+                  <div className="text-slate-200 text-sm font-medium">
+                    <InlineEdit value={asset.category} type="select" options={catOptions}
+                      onChange={v=>{ if(v && v!==asset.category){ onCategoryChange ? onCategoryChange(v) : onUpdate({...asset, category:v}); } }} />
                   </div>
-                ))}
+                </div>
+                {!isClient&&(
+                  <div className="bg-slate-800/50 rounded-lg p-3">
+                    <div className="text-xs text-slate-500 mb-0.5">{isDoc?t('doc_executor_lbl'):t('asset_designer_lbl')}</div>
+                    <div className="text-slate-200 text-sm font-medium">
+                      <InlineEdit value={isDoc?(asset.created_by_id||''):(asset.designer_id||'')} type="select" options={personOptions}
+                        onChange={v=>onUpdate({...asset, [isDoc?'created_by_id':'designer_id']: v?Number(v):''})} />
+                    </div>
+                  </div>
+                )}
+                {!isClient&&(
+                  <div className="bg-slate-800/50 rounded-lg p-3">
+                    <div className="text-xs text-slate-500 mb-0.5">Due Date</div>
+                    <div className="text-slate-200 text-sm font-medium">
+                      <InlineEdit value={asset.due_date||''} onChange={v=>onUpdate({...asset, due_date:v})} />
+                    </div>
+                  </div>
+                )}
+                <div className="bg-slate-800/50 rounded-lg p-3">
+                  <div className="text-xs text-slate-500 mb-0.5">{t('asset_file_type_lbl')}</div>
+                  <div className="text-slate-200 text-sm font-medium">{asset.file_type||'—'}</div>
+                </div>
+                <div className="bg-slate-800/50 rounded-lg p-3">
+                  <div className="text-xs text-slate-500 mb-0.5">{t('des_file_size')}</div>
+                  <div className="text-slate-200 text-sm font-medium">{asset.file_size||'—'}</div>
+                </div>
+                <div className="bg-slate-800/50 rounded-lg p-3">
+                  <div className="text-xs text-slate-500 mb-0.5">{t('des_created_lbl')}</div>
+                  <div className="text-slate-200 text-sm font-medium">{asset.created||'—'}</div>
+                </div>
               </div>
 
               {/* Status actions */}
@@ -8004,14 +8042,14 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
             `/drives/${driveId}/root:/${safe}/${folder}:/children?$select=id,name,size,webUrl,folder,file,lastModifiedDateTime&$orderby=name`
           ).catch(() => ({ value: [] }));
           const items = rootData.value || [];
-          let files = items.filter(i => !i.folder).map(i => ({ ...i, _cat: folder }));
-          for (const sf of items.filter(i => i.folder)) {
+          const rootFiles = items.filter(i => !i.folder).map(i => ({ ...i, _cat: folder }));
+          const subFolders = await Promise.all(items.filter(i => i.folder).map(async sf => {
             const sfData = await graphFetch(
               `/drives/${driveId}/items/${sf.id}/children?$select=id,name,size,webUrl,folder,file,lastModifiedDateTime&$orderby=name`
             ).catch(() => ({ value: [] }));
-            files = [...files, ...(sfData.value || []).filter(i => !i.folder).map(i => ({ ...i, _cat: sf.name }))];
-          }
-          setSpLive(files);
+            return (sfData.value || []).filter(i => !i.folder).map(i => ({ ...i, _cat: sf.name }));
+          }));
+          setSpLive([...rootFiles, ...subFolders.flat()]);
         } catch(e) { setSpLive([]); if (isSpSessionExpired(e)) handleSpSessionExpired(); }
         setSpLiveLoad(false);
       };
@@ -8180,6 +8218,12 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
         showToast(t('des_toast_cat_moved').replace('{{cat}}', toCat));
       };
 
+      /* ── Delete an empty custom category ── */
+      const handleDeleteCategory = (type, cat) => {
+        setCustomCats(p => ({ ...p, [type]: p[type].filter(c => c !== cat) }));
+        showToast(t('des_toast_cat_deleted'));
+      };
+
       return (
         <div>
           <div className="flex items-center justify-between mb-6">
@@ -8264,9 +8308,9 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
               {activeTab==='design'&&(
                 <div>
                   {!spUser ? (
-                    <div className="text-center text-slate-500 py-20">اربط حساب Microsoft من الزر أعلاه لعرض الملفات</div>
+                    <div className="text-center text-slate-500 py-20">{t('des_connect_hint')}</div>
                   ) : spLiveLoad ? (
-                    <div className="text-center text-slate-600 py-20">جاري تحميل الملفات من SharePoint...</div>
+                    <div className="text-center text-slate-600 py-20">{t('des_loading_files')}</div>
                   ) : (
                   <>
                   <div className="flex items-center justify-between mb-5">
@@ -8279,7 +8323,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                     ); })()}
                     <div className="flex gap-2">
                       <button onClick={()=>setAddCatModal({type:'design',name:''})} className="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg border border-slate-700">{t('des_add_cat')}</button>
-                      <button onClick={()=>setAddModal('design')} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">{t('des_add_asset')}</button>
+                      <button onClick={()=>setAddModal({type:'design'})} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">{t('des_add_asset')}</button>
                     </div>
                   </div>
 
@@ -8289,10 +8333,10 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                     return allCats.map(cat=>{
                     const spCatItems = spLive.filter(f=>f._cat===cat);
                     const items = spCatItems.map(sp=>getMeta(sp,designAssets));
-                    if (items.length===0) return null;
                     const underMod = items.filter(a=>a.status==='under_modification');
                     const approved  = items.filter(a=>a.status!=='under_modification');
                     const isDropTarget = dragOverCat===cat && dragInfo?.fromTab==='design' && dragInfo?.asset?.category!==cat;
+                    const isCustomCat = customCats.design.includes(cat);
                     return (
                       <div key={cat}
                         onDragOver={e=>{e.preventDefault();if(dragInfo?.fromTab==='design')setDragOverCat(cat);}}
@@ -8304,7 +8348,14 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                           <span className="text-xs text-slate-600">{items.length} {t('des_asset_count')}</span>
                           <div className={`flex-1 h-px ${isDropTarget?'bg-blue-500/40':'bg-slate-800'}`}/>
                           {isDropTarget&&<span className="text-xs text-blue-400 font-medium">{t('des_drop_here')}</span>}
+                          <button onClick={()=>setAddModal({type:'design',category:cat})} className="text-xs w-5 h-5 flex items-center justify-center rounded bg-slate-800 hover:bg-blue-600 text-slate-400 hover:text-white" title={t('des_add_asset')}>+</button>
+                          {isCustomCat&&items.length===0&&(
+                            <button onClick={()=>handleDeleteCategory('design',cat)} className="text-xs w-5 h-5 flex items-center justify-center rounded bg-slate-800 hover:bg-red-900/40 text-slate-500 hover:text-red-400" title={t('des_delete_cat')}>×</button>
+                          )}
                         </div>
+                        {items.length===0&&(
+                          <div className="text-center text-slate-600 text-xs py-6 border border-dashed border-slate-800 rounded-lg mb-2">{t('des_empty_cat')}</div>
+                        )}
                         {underMod.length>0&&(
                           <div className="mb-4">
                             <div className="text-xs text-amber-400/70 font-medium mb-3 flex items-center gap-2">
@@ -8378,16 +8429,16 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
               {activeTab==='from_client'&&(
                 <div>
                   {!spUser ? (
-                    <div className="text-center text-slate-500 py-20">اربط حساب Microsoft من الزر أعلاه لعرض الملفات</div>
+                    <div className="text-center text-slate-500 py-20">{t('des_connect_hint')}</div>
                   ) : spLiveLoad ? (
-                    <div className="text-center text-slate-600 py-20">جاري تحميل الملفات من SharePoint...</div>
+                    <div className="text-center text-slate-600 py-20">{t('des_loading_files')}</div>
                   ) : (
                   <>
                   <div className="flex items-center justify-between mb-5">
                     <div className="text-sm text-slate-500">{t('des_client_count').replace('{{n}}', spLive.length)}</div>
                     <div className="flex gap-2">
                       <button onClick={()=>setAddCatModal({type:'client',name:''})} className="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg border border-slate-700">{t('des_add_cat')}</button>
-                      <button onClick={()=>setAddModal('client')} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">{t('des_add_file')}</button>
+                      <button onClick={()=>setAddModal({type:'client'})} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">{t('des_add_file')}</button>
                     </div>
                   </div>
                   {(() => {
@@ -8396,8 +8447,8 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                     return allCats.map(cat=>{
                     const spCatItems = spLive.filter(f=>f._cat===cat);
                     const items = spCatItems.map(sp=>getMeta(sp,clientAssets));
-                    if (items.length===0) return null;
                     const isDropTarget = dragOverCat===cat && dragInfo?.fromTab==='from_client' && dragInfo?.asset?.category!==cat;
+                    const isCustomCat = customCats.client.includes(cat);
                     return (
                       <div key={cat}
                         onDragOver={e=>{e.preventDefault();if(dragInfo?.fromTab==='from_client')setDragOverCat(cat);}}
@@ -8409,7 +8460,14 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                           <span className="text-xs text-slate-600">{items.length} {t('des_file_count')}</span>
                           <div className={`flex-1 h-px ${isDropTarget?'bg-blue-500/40':'bg-slate-800'}`}/>
                           {isDropTarget&&<span className="text-xs text-blue-400 font-medium">{t('des_drop_here')}</span>}
+                          <button onClick={()=>setAddModal({type:'client',category:cat})} className="text-xs w-5 h-5 flex items-center justify-center rounded bg-slate-800 hover:bg-blue-600 text-slate-400 hover:text-white" title={t('des_add_file')}>+</button>
+                          {isCustomCat&&items.length===0&&(
+                            <button onClick={()=>handleDeleteCategory('client',cat)} className="text-xs w-5 h-5 flex items-center justify-center rounded bg-slate-800 hover:bg-red-900/40 text-slate-500 hover:text-red-400" title={t('des_delete_cat')}>×</button>
+                          )}
                         </div>
+                        {items.length===0&&(
+                          <div className="text-center text-slate-600 text-xs py-6 border border-dashed border-slate-800 rounded-lg mb-2">{t('des_empty_cat')}</div>
+                        )}
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                           {items.map(asset=>(
                             <div key={asset.id} draggable onDragStart={()=>setDragInfo({asset,fromTab:'from_client'})} onDragEnd={()=>setDragInfo(null)} className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl overflow-hidden cursor-grab active:cursor-grabbing active:opacity-60 active:scale-95 transition-all">
@@ -8439,9 +8497,9 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
               {activeTab==='documents'&&(
                 <div>
                   {!spUser ? (
-                    <div className="text-center text-slate-500 py-20">اربط حساب Microsoft من الزر أعلاه لعرض الملفات</div>
+                    <div className="text-center text-slate-500 py-20">{t('des_connect_hint')}</div>
                   ) : spLiveLoad ? (
-                    <div className="text-center text-slate-600 py-20">جاري تحميل الملفات من SharePoint...</div>
+                    <div className="text-center text-slate-600 py-20">{t('des_loading_files')}</div>
                   ) : (
                   <>
                   <div className="flex items-center justify-between mb-5">
@@ -8454,7 +8512,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                     ); })()}
                     <div className="flex gap-2">
                       <button onClick={()=>setAddCatModal({type:'docs',name:''})} className="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg border border-slate-700">{t('des_add_cat')}</button>
-                      <button onClick={()=>setAddModal('doc')} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">{t('des_add_doc')}</button>
+                      <button onClick={()=>setAddModal({type:'doc'})} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">{t('des_add_doc')}</button>
                     </div>
                   </div>
                   {(() => {
@@ -8463,8 +8521,8 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                     return allCats.map(cat=>{
                     const spCatItems = spLive.filter(f=>f._cat===cat);
                     const items = spCatItems.map(sp=>getMeta(sp,documents));
-                    if (items.length===0) return null;
                     const isDropTarget = dragOverCat===cat && dragInfo?.fromTab==='documents' && dragInfo?.asset?.category!==cat;
+                    const isCustomCat = customCats.docs.includes(cat);
                     return (
                       <div key={cat}
                         onDragOver={e=>{e.preventDefault();if(dragInfo?.fromTab==='documents')setDragOverCat(cat);}}
@@ -8476,7 +8534,14 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                           <span className="text-xs text-slate-600">{items.length} {t('des_doc_count')}</span>
                           <div className={`flex-1 h-px ${isDropTarget?'bg-blue-500/40':'bg-slate-800'}`}/>
                           {isDropTarget&&<span className="text-xs text-blue-400 font-medium">{t('des_drop_here')}</span>}
+                          <button onClick={()=>setAddModal({type:'doc',category:cat})} className="text-xs w-5 h-5 flex items-center justify-center rounded bg-slate-800 hover:bg-blue-600 text-slate-400 hover:text-white" title={t('des_add_doc')}>+</button>
+                          {isCustomCat&&items.length===0&&(
+                            <button onClick={()=>handleDeleteCategory('docs',cat)} className="text-xs w-5 h-5 flex items-center justify-center rounded bg-slate-800 hover:bg-red-900/40 text-slate-500 hover:text-red-400" title={t('des_delete_cat')}>×</button>
+                          )}
                         </div>
+                        {items.length===0&&(
+                          <div className="text-center text-slate-600 text-xs py-6 border border-dashed border-slate-800 rounded-lg mb-2">{t('des_empty_cat')}</div>
+                        )}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {items.map(doc=>{
                             const dcfg = DOC_STATUS_CFG[doc.status]||DOC_STATUS_CFG.pending;
@@ -8531,7 +8596,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                   <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center">
                     <svg viewBox="0 0 23 23" width="28" height="28"><rect x="1" y="1" width="10" height="10" fill="#f25022"/><rect x="12" y="1" width="10" height="10" fill="#7fba00"/><rect x="1" y="12" width="10" height="10" fill="#00a4ef"/><rect x="12" y="12" width="10" height="10" fill="#ffb900"/></svg>
                   </div>
-                  <p className="text-slate-400 text-sm">اربط حساب Microsoft أولاً من الزر أعلاه</p>
+                  <p className="text-slate-400 text-sm">{t('des_browse_connect_hint')}</p>
                 </div>
               ) : (
                 <div>
@@ -8548,20 +8613,20 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                         </button>
                       </React.Fragment>
                     ))}
-                    {spBrowseLoad&&<span className="text-slate-500 text-xs ml-2">جاري التحميل...</span>}
+                    {spBrowseLoad&&<span className="text-slate-500 text-xs ml-2">{t('des_browse_loading_short')}</span>}
                   </div>
                   {/* File list */}
                   {spBrowseLoad && spBrowseItems.length===0 ? (
-                    <div className="text-center text-slate-600 py-16">جاري تحميل الملفات...</div>
+                    <div className="text-center text-slate-600 py-16">{t('des_browse_loading')}</div>
                   ) : spBrowseItems.length===0 ? (
-                    <div className="text-center text-slate-600 py-16">الفولدر فاضي</div>
+                    <div className="text-center text-slate-600 py-16">{t('des_folder_empty')}</div>
                   ) : (
                     <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
                       <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-slate-800 text-xs text-slate-500 font-medium">
-                        <div className="col-span-6">الاسم</div>
-                        <div className="col-span-2 text-center">النوع</div>
-                        <div className="col-span-2 text-center">الحجم</div>
-                        <div className="col-span-2 text-center">آخر تعديل</div>
+                        <div className="col-span-6">{t('des_col_name')}</div>
+                        <div className="col-span-2 text-center">{t('des_col_type')}</div>
+                        <div className="col-span-2 text-center">{t('des_col_size')}</div>
+                        <div className="col-span-2 text-center">{t('des_col_modified')}</div>
                       </div>
                       {spBrowseItems.map(item=>{
                         const isFolder = !!item.folder;
@@ -8614,6 +8679,8 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
               asset={detailAsset}
               srcTab={detailAsset._srcTab}
               teamMembers={teamMembers}
+              categories={detailAsset._srcTab==='documents'?allDocCats:detailAsset._srcTab==='from_client'?allClientCats:allDesignCats}
+              onCategoryChange={async v=>{ await handleMoveCat(detailAsset, detailAsset._srcTab, v); setDetailAsset(p=>({...p, category:v})); }}
               onUpdate={a=>{
                 if (a._srcTab==='documents') onSaveDocument(a);
                 else if (a._srcTab==='from_client') onSaveClientAsset(a);
@@ -8631,22 +8698,22 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
           )}
 
           {/* Add Asset Modals */}
-          {addModal==='design'&&(
-            <AssetModal mode="design" categories={allDesignCats} teamMembers={teamMembers}
+          {addModal?.type==='design'&&(
+            <AssetModal mode="design" categories={allDesignCats} initialCategory={addModal.category} teamMembers={teamMembers}
               spFolder={spUser&&spPaths ? spPaths.design.root : null} showToast={showToast} onAuthExpired={handleSpSessionExpired}
-              onSave={a=>{ onSaveDesignAsset({...a,projectId:selProjectId}); showToast(t('des_toast_asset_added')); }}
+              onSave={a=>{ onSaveDesignAsset({...a,projectId:selProjectId}); showToast(t('des_toast_asset_added')); loadCurrentTab(); }}
               onClose={()=>setAddModal(null)} />
           )}
-          {addModal==='client'&&(
-            <AssetModal mode="client" categories={allClientCats} teamMembers={teamMembers}
+          {addModal?.type==='client'&&(
+            <AssetModal mode="client" categories={allClientCats} initialCategory={addModal.category} teamMembers={teamMembers}
               spFolder={spUser&&spPaths ? spPaths.from_client.root : null} showToast={showToast} onAuthExpired={handleSpSessionExpired}
-              onSave={a=>{ onSaveClientAsset({...a,projectId:selProjectId}); showToast(t('des_toast_client_added')); }}
+              onSave={a=>{ onSaveClientAsset({...a,projectId:selProjectId}); showToast(t('des_toast_client_added')); loadCurrentTab(); }}
               onClose={()=>setAddModal(null)} />
           )}
-          {addModal==='doc'&&(
-            <DocumentModal categories={allDocCats} teamMembers={teamMembers}
+          {addModal?.type==='doc'&&(
+            <DocumentModal categories={allDocCats} initialCategory={addModal.category} teamMembers={teamMembers}
               spFolder={spUser&&spPaths ? spPaths.documents.root : null} showToast={showToast} onAuthExpired={handleSpSessionExpired}
-              onSave={d=>{ onSaveDocument({...d,projectId:selProjectId}); showToast(t('des_toast_doc_added')); }}
+              onSave={d=>{ onSaveDocument({...d,projectId:selProjectId}); showToast(t('des_toast_doc_added')); loadCurrentTab(); }}
               onClose={()=>setAddModal(null)} />
           )}
 
