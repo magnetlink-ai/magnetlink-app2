@@ -1,2 +1,18 @@
 node_modules/
 *.BACKUP-*.html
+
+# Secrets / credentials — never commit
+.env
+.env.*
+storage_state.json
+verify_login.js
+
+# Local CLI cache (Supabase)
+supabase/.temp/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+
+# Stray local artifact
+UsersMGxAppDataLocalTempclaudec--div4

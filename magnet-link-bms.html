@@ -494,6 +494,9 @@
         des_browse_connect_hint:'اربط حساب Microsoft أولاً من الزر أعلاه',
         des_browse_loading_short:'جاري التحميل...', des_browse_loading:'جاري تحميل الملفات...', des_folder_empty:'الفولدر فاضي',
         des_col_name:'الاسم', des_col_type:'النوع', des_col_size:'الحجم', des_col_modified:'آخر تعديل',
+        des_new_folder:'+ مجلد جديد', des_upload_here:'+ رفع ملف', des_new_folder_name_ph:'اسم المجلد الجديد',
+        des_confirm_delete_folder:'حذف هذا المجلد وكل ما بداخله؟ هذا الإجراء لا يمكن التراجع عنه من هنا.',
+        des_toast_renamed:'تمت إعادة التسمية ✓', des_rename_title:'إعادة تسمية', des_drop_move_here:'أفلت هنا للنقل',
         /* Statuses — Lead */
         s_hot:'ساخن', s_warm:'دافئ', s_cold:'بارد', s_pending:'معلق',
         s_won:'تم ✓', s_lost:'خسارة',
@@ -1100,6 +1103,9 @@
         des_browse_connect_hint:'Connect your Microsoft account above first',
         des_browse_loading_short:'Loading...', des_browse_loading:'Loading files...', des_folder_empty:'This folder is empty',
         des_col_name:'Name', des_col_type:'Type', des_col_size:'Size', des_col_modified:'Modified',
+        des_new_folder:'+ New Folder', des_upload_here:'+ Upload File', des_new_folder_name_ph:'New folder name',
+        des_confirm_delete_folder:'Delete this folder and everything inside it? This cannot be undone from here.',
+        des_toast_renamed:'Renamed ✓', des_rename_title:'Rename', des_drop_move_here:'Drop here to move',
         /* Statuses */
         s_hot:'Hot', s_warm:'Warm', s_cold:'Cold', s_pending:'Pending',
         s_won:'Won ✓', s_lost:'Lost',
@@ -1761,12 +1767,13 @@
       return data.value;
     };
 
-    /* ── Upload file (≤4MB simple upload) ── */
+    /* ── Upload file (≤4MB simple upload) — folderPath may be empty (uploads to drive root) ── */
     const spUploadFile = async (folderPath, fileName, fileContent) => {
       const driveId = await getDriveId();
       const token = await getToken();
+      const path = folderPath ? `${folderPath}/${fileName}` : fileName;
       const res = await fetch(
-        `https://graph.microsoft.com/v1.0/drives/${driveId}/root:/${folderPath}/${fileName}:/content`,
+        `https://graph.microsoft.com/v1.0/drives/${driveId}/root:/${path}:/content`,
         { method:'PUT', headers:{ Authorization:`Bearer ${token}`, 'Content-Type':'application/octet-stream' }, body: fileContent }
       );
       if (!res.ok) throw new Error(`Upload error ${res.status}`);
@@ -1790,6 +1797,17 @@
     const spRestoreFile = async (itemId) => {
       const driveId = await getDriveId();
       await graphFetch(`/drives/${driveId}/items/${itemId}/restore`, { method:'POST', body: JSON.stringify({}) });
+    };
+
+    /* ── Rename a file or folder in place (keeps it in the same parent folder) ── */
+    const spRenameItem = async (itemId, newName) => {
+      const driveId = await getDriveId();
+      try {
+        await graphFetch(`/drives/${driveId}/items/${itemId}`, { method:'PATCH', body: JSON.stringify({ name: newName }) });
+      } catch(e) {
+        if (e.message && e.message.includes('nameAlreadyExists')) throw new Error('nameAlreadyExists');
+        throw e;
+      }
     };
 
     /* ── Create folder (creates parents too, ignores if exists) ── */
@@ -4859,7 +4877,11 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
       const updItem  = (id,k,v) => setF(p=>({...p,items:p.items.map(i=>i.id===id?{...i,[k]:v}:i)}));
       const addPmt   = () => setF(p=>({...p,payments:[...p.payments,{id:Date.now(),pct:0,status:'pending'}]}));
       const remPmt   = id => setF(p=>({...p,payments:p.payments.filter(x=>x.id!==id)}));
-      const updPmt   = (id,k,v) => setF(p=>({...p,payments:p.payments.map(x=>x.id===id?{...x,[k]:v}:x)}));
+      const updPmt   = (id,k,v) => setF(p=>({...p,payments:p.payments.map(x=>{
+        if (x.id!==id) return x;
+        if (k==='status') return { ...x, status:v, paid_date: v==='paid' ? (x.paid_date||new Date().toISOString().split('T')[0]) : null };
+        return { ...x, [k]:v };
+      })}));
 
       const save = () => {
         if(!resolvedProject){alert(t('inv_err_project'));return;}
@@ -7970,6 +7992,11 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
       const [spBrowsePath,  setSpBrowsePath] = useState([]);
       const [spBrowseItems, setSpBrowseItems]= useState([]);
       const [spBrowseLoad,  setSpBrowseLoad] = useState(false);
+      const [spBrowseUploading, setSpBrowseUploading] = useState(false);
+      const [spBrowseDrag,      setSpBrowseDrag]      = useState(null);
+      const [spBrowseDragOver,  setSpBrowseDragOver]  = useState(null);
+      const [renamingItemId,    setRenamingItemId]    = useState(null);
+      const [renameVal,         setRenameVal]         = useState('');
       const [spLive,        setSpLive]       = useState([]);
       const [spLiveLoad,    setSpLiveLoad]   = useState(false);
 
@@ -8056,7 +8083,7 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
 
       const getMeta = (spItem, assets) => {
         const m = assets.find(a => a.sp_item_id === spItem.id);
-        if (m) return m;
+        if (m) return spItem._cat ? { ...m, category: spItem._cat } : m;
         const sz = spItem.size != null
           ? spItem.size < 1048576 ? (spItem.size/1024).toFixed(1)+' KB' : (spItem.size/1048576).toFixed(2)+' MB'
           : '—';
@@ -8091,6 +8118,110 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
           spBrowseFetch(null, []);
         }
       }, [activeTab, spUser]);
+
+      /* ── Browser tab: current folder helpers ── */
+      const browseFolderId = spBrowsePath.length ? spBrowsePath[spBrowsePath.length-1].id : null;
+      const browseFolderPath = spBrowsePath.map(s=>s.name).join('/');
+      const refreshBrowse = () => spBrowseFetch(browseFolderId, spBrowsePath);
+
+      /* ── Find a live item's local metadata record across all three tabs, by sp_item_id ── */
+      const findLocalBySpId = (spItemId) => {
+        let item = designAssets.find(a=>a.sp_item_id===spItemId);
+        if (item) return { list:'design', item };
+        item = clientAssets.find(a=>a.sp_item_id===spItemId);
+        if (item) return { list:'client', item };
+        item = documents.find(a=>a.sp_item_id===spItemId);
+        if (item) return { list:'documents', item };
+        return null;
+      };
+      const syncLocalSave = (found, patch) => {
+        const updated = { ...found.item, ...patch };
+        if (found.list==='design') onSaveDesignAsset(updated);
+        else if (found.list==='client') onSaveClientAsset(updated);
+        else onSaveDocument(updated);
+      };
+      const syncLocalDelete = (found) => {
+        if (found.list==='design') onDeleteDesignAsset(found.item.id);
+        else if (found.list==='client') onDeleteClientAsset(found.item.id);
+        else onDeleteDocument(found.item.id);
+      };
+
+      /* ── Browser tab: upload file(s) into the currently browsed folder ── */
+      const handleBrowseUpload = async (fileList) => {
+        if (!fileList || !fileList.length) return;
+        setSpBrowseUploading(true);
+        try {
+          for (const file of Array.from(fileList)) {
+            const buf = await file.arrayBuffer();
+            await spUploadFile(browseFolderPath, file.name, buf);
+          }
+          showToast(t('des_toast_asset_added'));
+          await refreshBrowse();
+        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_err_prefix') + e.message); }
+        setSpBrowseUploading(false);
+      };
+
+      /* ── Browser tab: create a new folder in the currently browsed folder ── */
+      const handleBrowseNewFolder = async () => {
+        const name = (prompt(t('des_new_folder_name_ph'))||'').trim();
+        if (!name) return;
+        try {
+          await spCreateFolder(browseFolderPath ? `${browseFolderPath}/${name}` : name);
+          showToast(t('des_toast_cat_added'));
+          await refreshBrowse();
+        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_err_prefix') + e.message); }
+      };
+
+      /* ── Browser tab: rename a file or folder — renames the real SharePoint item + syncs the local title if tracked ── */
+      const handleBrowseRename = async (item) => {
+        const newName = renameVal.trim();
+        setRenamingItemId(null);
+        if (!newName || newName === item.name) return;
+        try {
+          await spRenameItem(item.id, newName);
+        } catch(e) {
+          isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_err_prefix') + e.message);
+          return;
+        }
+        if (!item.folder) {
+          const found = findLocalBySpId(item.id);
+          if (found) syncLocalSave(found, { title: newName.replace(/\.[^.]+$/, '') });
+        }
+        showToast(t('des_toast_renamed'));
+        await refreshBrowse();
+      };
+
+      /* ── Browser tab: delete a file or folder — deletes from SharePoint + removes matching local metadata, with undo ── */
+      const handleBrowseDelete = async (item) => {
+        if (!confirm(item.folder ? t('des_confirm_delete_folder') : t('des_confirm_delete_asset'))) return;
+        try { await spDeleteFile(item.id); }
+        catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_sp_err_delete') + e.message); return; }
+        const found = !item.folder ? findLocalBySpId(item.id) : null;
+        if (found) syncLocalDelete(found);
+        await refreshBrowse();
+        showToast(t('des_toast_deleted').replace('{{name}}', item.name), {
+          undoLabel: t('des_undo'),
+          onUndo: async () => {
+            try { await spRestoreFile(item.id); await refreshBrowse(); showToast(t('des_toast_restored')); }
+            catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_sp_err_restore') + e.message); }
+          },
+        });
+      };
+
+      /* ── Browser tab: drag a file/folder onto a folder row to move it ── */
+      const handleBrowseMove = async (dragged, destFolder) => {
+        if (dragged.id === destFolder.id) return;
+        try {
+          const destPath = browseFolderPath ? `${browseFolderPath}/${destFolder.name}` : destFolder.name;
+          await spMoveItem(dragged.id, destPath);
+        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_sp_err_move') + e.message); return; }
+        if (!dragged.folder) {
+          const found = findLocalBySpId(dragged.id);
+          if (found) syncLocalSave(found, { category: destFolder.name });
+        }
+        showToast(t('des_toast_moved').replace('{{dest}}', destFolder.name));
+        await refreshBrowse();
+      };
 
       /* ── Setup: create per-project folder structure in SharePoint ── */
       const handleSetupFolders = async () => {
@@ -8600,20 +8731,30 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                 </div>
               ) : (
                 <div>
-                  {/* Breadcrumb */}
-                  <div className="flex items-center gap-1 mb-4 flex-wrap">
-                    <button onClick={()=>spBrowseFetch(null,[])} className="text-blue-400 hover:text-blue-300 text-sm font-medium">WebApp</button>
-                    {spBrowsePath.map((seg,i)=>(
-                      <React.Fragment key={seg.id}>
-                        <span className="text-slate-600 text-sm">/</span>
-                        <button
-                          onClick={()=>spBrowseFetch(seg.id, spBrowsePath.slice(0,i+1))}
-                          className={`text-sm font-medium ${i===spBrowsePath.length-1?'text-white':'text-blue-400 hover:text-blue-300'}`}>
-                          {seg.name}
-                        </button>
-                      </React.Fragment>
-                    ))}
-                    {spBrowseLoad&&<span className="text-slate-500 text-xs ml-2">{t('des_browse_loading_short')}</span>}
+                  {/* Breadcrumb + toolbar */}
+                  <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <button onClick={()=>spBrowseFetch(null,[])} className="text-blue-400 hover:text-blue-300 text-sm font-medium">WebApp</button>
+                      {spBrowsePath.map((seg,i)=>(
+                        <React.Fragment key={seg.id}>
+                          <span className="text-slate-600 text-sm">/</span>
+                          <button
+                            onClick={()=>spBrowseFetch(seg.id, spBrowsePath.slice(0,i+1))}
+                            className={`text-sm font-medium ${i===spBrowsePath.length-1?'text-white':'text-blue-400 hover:text-blue-300'}`}>
+                            {seg.name}
+                          </button>
+                        </React.Fragment>
+                      ))}
+                      {spBrowseLoad&&<span className="text-slate-500 text-xs ml-2">{t('des_browse_loading_short')}</span>}
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={handleBrowseNewFolder} disabled={spBrowseUploading}
+                        className="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg border border-slate-700 disabled:opacity-50">{t('des_new_folder')}</button>
+                      <label className={`text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer ${spBrowseUploading?'opacity-50 pointer-events-none':''}`}>
+                        {spBrowseUploading ? t('asset_uploading') : t('des_upload_here')}
+                        <input type="file" multiple className="hidden" onChange={e=>{ handleBrowseUpload(e.target.files); e.target.value=''; }} />
+                      </label>
+                    </div>
                   </div>
                   {/* File list */}
                   {spBrowseLoad && spBrowseItems.length===0 ? (
@@ -8623,10 +8764,11 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                   ) : (
                     <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
                       <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-slate-800 text-xs text-slate-500 font-medium">
-                        <div className="col-span-6">{t('des_col_name')}</div>
+                        <div className="col-span-5">{t('des_col_name')}</div>
                         <div className="col-span-2 text-center">{t('des_col_type')}</div>
                         <div className="col-span-2 text-center">{t('des_col_size')}</div>
                         <div className="col-span-2 text-center">{t('des_col_modified')}</div>
+                        <div className="col-span-1"></div>
                       </div>
                       {spBrowseItems.map(item=>{
                         const isFolder = !!item.folder;
@@ -8643,12 +8785,25 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                           : '📎';
                         const size = item.size != null ? (item.size < 1024*1024 ? (item.size/1024).toFixed(1)+' KB' : (item.size/1024/1024).toFixed(1)+' MB') : '—';
                         const modified = item.lastModifiedDateTime ? new Date(item.lastModifiedDateTime).toLocaleDateString('ar-SA',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '—';
+                        const isDropTarget = isFolder && spBrowseDragOver===item.id && spBrowseDrag?.id!==item.id;
+                        const isRenaming = renamingItemId===item.id;
                         return (
                           <div key={item.id}
-                            className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-slate-800/60 hover:bg-slate-800/40 transition-colors items-center group">
-                            <div className="col-span-6 flex items-center gap-2 min-w-0">
+                            draggable={!isRenaming}
+                            onDragStart={()=>setSpBrowseDrag(item)}
+                            onDragEnd={()=>{setSpBrowseDrag(null);setSpBrowseDragOver(null);}}
+                            onDragOver={e=>{ if(isFolder&&spBrowseDrag&&spBrowseDrag.id!==item.id){ e.preventDefault(); setSpBrowseDragOver(item.id); } }}
+                            onDragLeave={e=>{ if(!e.currentTarget.contains(e.relatedTarget)) setSpBrowseDragOver(null); }}
+                            onDrop={e=>{ e.preventDefault(); setSpBrowseDragOver(null); if(isFolder&&spBrowseDrag&&spBrowseDrag.id!==item.id){ handleBrowseMove(spBrowseDrag,item); setSpBrowseDrag(null); } }}
+                            className={`grid grid-cols-12 gap-2 px-4 py-3 border-b border-slate-800/60 transition-colors items-center group ${isDropTarget?'bg-blue-500/10 ring-1 ring-blue-500/60':'hover:bg-slate-800/40'}`}>
+                            <div className="col-span-5 flex items-center gap-2 min-w-0">
                               <span className="text-lg flex-shrink-0">{fileIcon}</span>
-                              {isFolder ? (
+                              {isRenaming ? (
+                                <input autoFocus value={renameVal} onChange={e=>setRenameVal(e.target.value)}
+                                  onBlur={()=>handleBrowseRename(item)}
+                                  onKeyDown={e=>{ if(e.key==='Enter') handleBrowseRename(item); if(e.key==='Escape') setRenamingItemId(null); }}
+                                  className="flex-1 min-w-0 bg-slate-800 border border-blue-500 rounded-md px-2 py-0.5 text-sm text-white outline-none" dir="ltr" />
+                              ) : isFolder ? (
                                 <button onClick={()=>spBrowseFetch(item.id,[...spBrowsePath,{id:item.id,name:item.name}])}
                                   className="text-blue-300 hover:text-blue-200 text-sm font-medium truncate text-left" dir="ltr">
                                   {item.name}
@@ -8659,10 +8814,17 @@ ${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدف
                                   {item.name}
                                 </a>
                               )}
+                              {isDropTarget&&<span className="text-xs text-blue-400 font-medium flex-shrink-0">{t('des_drop_move_here')}</span>}
                             </div>
                             <div className="col-span-2 text-center text-xs text-slate-500 uppercase">{isFolder?'Folder':ext||'—'}</div>
                             <div className="col-span-2 text-center text-xs text-slate-500">{isFolder?`${item.folder.childCount??''} items`:size}</div>
                             <div className="col-span-2 text-center text-xs text-slate-500">{modified}</div>
+                            <div className="col-span-1 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={()=>{setRenamingItemId(item.id);setRenameVal(item.name);}} title={t('des_rename_title')}
+                                className="text-slate-500 hover:text-blue-400 text-xs w-6 h-6 flex items-center justify-center rounded hover:bg-slate-800">✎</button>
+                              <button onClick={()=>handleBrowseDelete(item)} title={t('des_delete_btn')}
+                                className="text-slate-500 hover:text-red-400 text-xs w-6 h-6 flex items-center justify-center rounded hover:bg-red-900/40">×</button>
+                            </div>
                           </div>
                         );
                       })}

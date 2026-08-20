@@ -38,10 +38,12 @@ Deno.serve(async (req) => {
     }
 
     const ids = userIds.map(String);
-    const { data: rows, error } = await supabase
+    // One device can be shared by several accounts (e.g. tested on the same phone), so a
+    // subscription row holds a list of userIds. Table is small (one row per device), so a
+    // full scan + in-memory filter is simpler and more robust than a jsonb path query.
+    const { data: allRows, error } = await supabase
       .from("push_subscriptions")
-      .select("id, data")
-      .in("data->>userId", ids);
+      .select("id, data");
 
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), {
@@ -49,6 +51,11 @@ Deno.serve(async (req) => {
         headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
       });
     }
+
+    const rows = (allRows || []).filter((row) => {
+      const rowIds = row.data?.userIds || (row.data?.userId ? [row.data.userId] : []);
+      return rowIds.some((id: string) => ids.includes(String(id)));
+    });
 
     const payload = JSON.stringify({ title, body: body || "", section: section || null });
     const staleIds: string[] = [];
