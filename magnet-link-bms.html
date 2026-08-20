@@ -524,6 +524,11 @@
         dash_pipeline_formula:'= Σ (سعر × احتمالية%)',
         dash_crm_pipeline:'CRM Pipeline', dash_recent_leads:'أحدث Leads',
         dash_from_total:'% من الإجمالي',
+        dash_active_projects:'مشاريع نشطة', dash_pending_invoices:'فواتير مستحقة',
+        dash_collected_month:'محصّل هذا الشهر', dash_new_clients:'عملاء جدد',
+        dash_attendance_today:'حضور اليوم', dash_overdue_tasks:'مهام متأخرة',
+        dash_recent_activity:'آخر نشاط', dash_no_activity:'لا يوجد نشاط بعد',
+        dash_act_new_client:'عميل جديد:', dash_act_new_project:'مشروع جديد:', dash_act_payment:'دفعة محصّلة:',
         dash_my_shortcuts:'ملخص الأقسام', dash_customize:'تخصيص',
         dash_no_widgets:'لا توجد أقسام محددة — اضغط "تخصيص" لاختيار أقسامك',
         dash_customize_title:'تخصيص الداشبورد', dash_customize_sub:'اختر الأقسام التي تريد رؤية ملخصها',
@@ -1131,6 +1136,11 @@
         dash_pipeline_formula:'= Σ (price × probability%)',
         dash_crm_pipeline:'CRM Pipeline', dash_recent_leads:'Recent Leads',
         dash_from_total:'% of total',
+        dash_active_projects:'Active Projects', dash_pending_invoices:'Pending Invoices',
+        dash_collected_month:'Collected This Month', dash_new_clients:'New Clients',
+        dash_attendance_today:'Attendance Today', dash_overdue_tasks:'Overdue Tasks',
+        dash_recent_activity:'Recent Activity', dash_no_activity:'No activity yet',
+        dash_act_new_client:'New client:', dash_act_new_project:'New project:', dash_act_payment:'Payment collected:',
         dash_my_shortcuts:'Section Summary', dash_customize:'Customize',
         dash_no_widgets:'No sections selected — click "Customize" to choose',
         dash_customize_title:'Customize Dashboard', dash_customize_sub:'Choose the sections to show a summary for',
@@ -3493,28 +3503,53 @@
       const [showCustomize, setShowCustomize] = useState(false);
       const widgetData = { leads, clients, projects, invoices, expenses, teamMembers, teamClients, attendance,
                            designAssets, smStats, smPosts, smMessages, taskTasks, announcements, weeklyReports, currentUser };
-      const total    = leads.length;
-      const won      = leads.filter(l => l.status === 'won').length;
-      const lost     = leads.filter(l => l.status === 'lost').length;
-      const active   = leads.filter(l => LEAD_STATUSES.find(s => s.id === l.status)?.active);
-
-      // Weighted pipeline: Σ(price × prob/100) for active leads only
-      const pipeline = active.reduce((s, l) => s + (l.price_quote * (l.probability / 100)), 0);
-
-      const stats = [
-        { label:t('dash_total_leads'), value:total,                   sub:`${active.length} ${t('dash_active_sub')}`,    grad:'from-blue-600 to-blue-800', icon:'crm' },
-        { label:t('dash_pipeline'),    value:`$${Math.round(pipeline).toLocaleString()}`, sub:t('dash_pipeline_sub'), grad:'from-blue-600 to-blue-800',   icon:'finance' },
-        { label:t('dash_converted'),   value:won,                     sub:`${total > 0 ? Math.round(won/total*100) : 0}% ${t('dash_conv_rate')}`, grad:'from-emerald-600 to-emerald-800', icon:'client' },
-        { label:t('dash_lost'),        value:lost,                    sub:`${total > 0 ? Math.round(lost/total*100) : 0}% ${t('dash_from_total')}`, grad:'from-rose-600 to-rose-800', icon:'x' },
-      ];
-
       const byStatus = LEAD_STATUSES.map(s => ({
         ...s,
         count: leads.filter(l => l.status === s.id).length,
         weighted: leads.filter(l => l.status === s.id).reduce((sm, l) => sm + l.price_quote * (l.probability/100), 0),
       })).filter(s => s.count > 0);
 
-      const recent = [...leads].sort((a,b) => b.created.localeCompare(a.created)).slice(0, 6);
+      // ── Cross-module KPI tiles ──
+      const grandTotalOf = inv => {
+        const st = inv.items.reduce((s,i)=>s+i.qty*i.unit_price,0);
+        return st*(1+(inv.tax||0)/100);
+      };
+      const activeProjectsCount = projects.filter(p => p.delivery !== 'delivered').length;
+      const pendingInvoiceAmt = invoices.reduce((sum, inv) => {
+        const gt = grandTotalOf(inv);
+        return sum + inv.payments.filter(p => p.status !== 'paid').reduce((s,p) => s + gt*p.pct/100, 0);
+      }, 0);
+      const thisMonth = new Date().toISOString().slice(0,7);
+      const collectedThisMonth = invoices.reduce((sum, inv) => {
+        const gt = grandTotalOf(inv);
+        return sum + inv.payments.filter(p => p.status==='paid' && (p.paid_date||inv.due_date||'').startsWith(thisMonth)).reduce((s,p) => s + gt*p.pct/100, 0);
+      }, 0);
+      const newClientsThisMonth = clients.filter(c => (c.created||'').startsWith(thisMonth)).length;
+      const todayD = todayStr();
+      const activeMembersCount = teamMembers.filter(m => m.status === 'active').length;
+      const clockedInToday = new Set(attendance.filter(r => r.date === todayD && r.clockIn).map(r => r.userId)).size;
+      const overdueTasksCount = taskTasks.filter(tk => tk.due_date && tk.status !== 'completed' && new Date(tk.due_date) < new Date()).length;
+
+      const kpiTiles = [
+        { label:t('dash_active_projects'),  value:activeProjectsCount, icon:'projects', tint:'bg-blue-500/15 text-blue-400' },
+        { label:t('dash_pending_invoices'), value:`$${Math.round(pendingInvoiceAmt).toLocaleString()}`, icon:'note', tint:'bg-amber-500/15 text-amber-400' },
+        { label:t('dash_collected_month'),  value:`$${Math.round(collectedThisMonth).toLocaleString()}`, icon:'chk_c', tint:'bg-emerald-500/15 text-emerald-400' },
+        { label:t('dash_new_clients'),      value:newClientsThisMonth, icon:'client', tint:'bg-blue-500/15 text-blue-400' },
+        { label:t('dash_attendance_today'), value:`${clockedInToday}/${activeMembersCount}`, icon:'clock2', tint:'bg-emerald-500/15 text-emerald-400' },
+        { label:t('dash_overdue_tasks'),    value:overdueTasksCount, icon:'alert_t', tint:'bg-rose-500/15 text-rose-400' },
+      ];
+
+      // ── Recent activity: merged feed across clients / projects / payments ──
+      const activityFeed = [
+        ...clients.map(c => ({ date:c.created||'', icon:'client', text:`${t('dash_act_new_client')} ${c.name}` })),
+        ...projects.map(p => ({ date:p.start_date||'', icon:'projects', text:`${t('dash_act_new_project')} ${p.name}` })),
+        ...invoices.flatMap(inv => {
+          const gt = grandTotalOf(inv);
+          return inv.payments.filter(p => p.status==='paid' && p.paid_date).map(p => ({
+            date:p.paid_date, icon:'finance', text:`${t('dash_act_payment')} $${Math.round(gt*p.pct/100).toLocaleString()}`,
+          }));
+        }),
+      ].filter(a => a.date).sort((a,b) => b.date.localeCompare(a.date)).slice(0, 6);
 
       const activeWidgets = (dashShortcuts || [])
         .map(id => SECTION_WIDGET_DEFS.find(s => s.id === id))
@@ -3591,15 +3626,14 @@
             )}
           </div>
 
-          <div className="grid grid-cols-4 gap-4">
-            {stats.map((s,i) => (
-              <div key={i} className="bg-slate-800/60 rounded-2xl p-5 border border-slate-700/40">
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.grad} flex items-center justify-center mb-4 shadow-lg`}>
-                  <Ic name={s.icon} size={17} />
+          <div className="grid grid-cols-6 gap-3">
+            {kpiTiles.map((k,i) => (
+              <div key={i} className="bg-slate-800/60 rounded-2xl p-4 border border-slate-700/40">
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center mb-3 ${k.tint}`}>
+                  <Ic name={k.icon} size={15} />
                 </div>
-                <div className="text-2xl font-bold text-white">{s.value}</div>
-                <div className="text-slate-300 text-sm mt-1">{s.label}</div>
-                <div className="text-slate-500 text-xs mt-0.5">{s.sub}</div>
+                <div className="text-lg font-bold text-white font-mono">{k.value}</div>
+                <div className="text-slate-500 text-[11px] mt-0.5">{k.label}</div>
               </div>
             ))}
           </div>
@@ -3616,7 +3650,7 @@
                     <span className={`text-xs px-2.5 py-1 rounded-full border ${s.badge} w-24 text-center flex-shrink-0`}>{sl(s, t)}</span>
                     <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
                       <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-500"
-                        style={{width:`${total > 0 ? (s.count/total)*100 : 0}%`}} />
+                        style={{width:`${leads.length > 0 ? (s.count/leads.length)*100 : 0}%`}} />
                     </div>
                     <span className="text-slate-400 text-sm w-4 text-left">{s.count}</span>
                     <span className="text-slate-600 text-xs w-16 text-left">
@@ -3628,20 +3662,20 @@
             </div>
 
             <div className="col-span-2 bg-slate-800/60 rounded-2xl p-5 border border-slate-700/40">
-              <h3 className="font-semibold text-white mb-5">{t('dash_recent_leads')}</h3>
+              <h3 className="font-semibold text-white mb-5">{t('dash_recent_activity')}</h3>
               <div className="space-y-3">
-                {recent.map(lead => {
-                  const st = LEAD_STATUSES.find(s => s.id === lead.status);
-                  return (
-                    <div key={lead.id} className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="text-sm text-slate-200 truncate">{lead.name}</div>
-                        <div className="text-xs text-slate-500">{lead.source} · {lead.created}</div>
-                      </div>
-                      <span className={`text-[11px] px-2 py-0.5 rounded-full border flex-shrink-0 ${st?.badge}`}>{sl(st, t)}</span>
+                {activityFeed.length===0 && <div className="text-slate-600 text-sm text-center py-6">{t('dash_no_activity')}</div>}
+                {activityFeed.map((a,i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-full bg-slate-700/60 text-slate-400 flex items-center justify-center flex-shrink-0">
+                      <Ic name={a.icon} size={12} />
                     </div>
-                  );
-                })}
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm text-slate-300 truncate">{a.text}</div>
+                      <div className="text-xs text-slate-600">{a.date}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
