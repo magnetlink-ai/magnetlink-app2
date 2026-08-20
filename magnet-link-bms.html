@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Magnet Link — BMS</title>
   <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#2563eb" />
+  <meta name="theme-color" content="#2f74a8" />
   <link rel="icon" href="/icons/icon-192.png" />
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -32,9 +32,8 @@
 
     /* ── Base ── */
     :root {
-      --cyan:   #06b6d4;
-      --blue:   #3b82f6;
-      --accent: #06b6d4;
+      --blue:   #2f74a8;
+      --accent: #2f74a8;
     }
 
     /* the off-canvas sidebar is translated past the viewport edge when closed;
@@ -77,17 +76,17 @@
     }
     .toast-in { animation: slideUp 0.25s ease; }
 
-    /* ── Bouncy transitions ── */
+    /* ── Transitions ── */
     .transition-all, [class*="transition"] {
-      transition-timing-function: cubic-bezier(.34,1.56,.64,1) !important;
+      transition-timing-function: cubic-bezier(.4,0,.2,1) !important;
     }
-    a, button { transition: all 280ms cubic-bezier(.34,1.56,.64,1); }
-    button:active { transform: scale(0.96) !important; transition-duration: 100ms !important; }
+    a, button { transition: all 160ms cubic-bezier(.4,0,.2,1); }
+    button:active { transform: scale(0.98) !important; transition-duration: 80ms !important; }
 
-    /* ── Glow on primary buttons ── */
+    /* ── Primary button hover ── */
     .bg-blue-600:not(:disabled):hover,
     .bg-blue-500:not(:disabled):hover {
-      box-shadow: 0 4px 20px rgba(59,130,246,0.35) !important;
+      box-shadow: 0 2px 10px rgba(47,116,168,0.30) !important;
       transform: translateY(-1px);
     }
 
@@ -95,14 +94,14 @@
     [class*="bg-slate-800"]:hover,
     [class*="bg-slate-900"]:hover {
       transform: translateY(-1px);
-      transition: transform 280ms cubic-bezier(.34,1.56,.64,1),
-                  box-shadow 280ms ease,
-                  border-color 200ms ease;
+      transition: transform 160ms cubic-bezier(.4,0,.2,1),
+                  box-shadow 160ms ease,
+                  border-color 160ms ease;
     }
 
     /* ── Progress glow ── */
     [class*="from-blue"][class*="rounded-full"] {
-      box-shadow: 0 0 8px rgba(59,130,246,0.40);
+      box-shadow: 0 0 6px rgba(47,116,168,0.35);
     }
 
     /* ── JetBrains Mono for numbers ── */
@@ -181,9 +180,9 @@
     [data-theme="light"] .placeholder-slate-500::placeholder { color: #94a3b8 !important; }
 
     /* ── Accent text: darken light shades (-200/-300/-400) for readability on white ── */
-    [data-theme="light"] .text-blue-200   { color: #1d4ed8 !important; }
-    [data-theme="light"] .text-blue-300   { color: #2563eb !important; }
-    [data-theme="light"] .text-blue-400   { color: #1d4ed8 !important; }
+    [data-theme="light"] .text-blue-200   { color: #1d4f73 !important; }
+    [data-theme="light"] .text-blue-300   { color: #24608c !important; }
+    [data-theme="light"] .text-blue-400   { color: #1d4f73 !important; }
     [data-theme="light"] .text-emerald-200 { color: #059669 !important; }
     [data-theme="light"] .text-emerald-300 { color: #059669 !important; }
     [data-theme="light"] .text-emerald-400 { color: #047857 !important; }
@@ -254,12 +253,9 @@
     [data-theme="light"] input,
     [data-theme="light"] textarea,
     [data-theme="light"] select { color: #0f172a !important; caret-color: #0f172a; }
-    [data-theme="light"] .focus\:border-blue-500:focus { border-color: #0891b2 !important; }
-    /* cyan accent in light mode */
-    [data-theme="light"] .text-blue-400  { color: #0891b2 !important; }
-    [data-theme="light"] .text-blue-300  { color: #06b6d4 !important; }
-    [data-theme="light"] .border-blue-500\/30 { border-color: rgba(8,145,178,0.35) !important; }
-    [data-theme="light"] .bg-blue-500\/15 { background-color: rgba(8,145,178,0.12) !important; }
+    [data-theme="light"] .focus\:border-blue-500:focus { border-color: #24608c !important; }
+    [data-theme="light"] .border-blue-500\/30 { border-color: rgba(47,116,168,0.35) !important; }
+    [data-theme="light"] .bg-blue-500\/15 { background-color: rgba(47,116,168,0.12) !important; }
 
     /* ══════════════════════════════════════════════════
        SaaS Design Tokens — Dark Mode Overrides
@@ -275,11 +271,11 @@
     .bg-slate-900\/40 { background-color: rgba(24,24,27,0.40) !important; }
     .bg-slate-900\/30 { background-color: rgba(24,24,27,0.30) !important; }
 
-    /* cards: semi-transparent + backdrop-blur */
+    /* cards: mostly solid, a touch of blur for depth */
     .bg-slate-800\/60 {
-      background-color: rgba(24,24,27,0.45) !important;
-      backdrop-filter: blur(16px) !important;
-      -webkit-backdrop-filter: blur(16px) !important;
+      background-color: rgba(24,24,27,0.65) !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
       border-radius: 18px !important;
     }
     .bg-slate-800\/80 { background-color: rgba(24,24,27,0.70) !important; }
@@ -317,47 +313,47 @@
     .border-slate-600 { border-color: #52525b !important; }
     .divide-slate-800 > * + * { border-color: #27272a !important; }
 
-    /* ── Cyan primary accent ── */
-    .bg-blue-600     { background-color: #0891b2 !important; }
-    .bg-blue-500     { background-color: #06b6d4 !important; }
-    .bg-blue-700     { background-color: #0e7490 !important; }
-    .bg-blue-800     { background-color: #155e75 !important; }
-    .hover\:bg-blue-600:hover { background-color: #0891b2 !important; }
-    .hover\:bg-blue-500:hover { background-color: #06b6d4 !important; }
-    .hover\:bg-blue-700:hover { background-color: #0e7490 !important; }
+    /* ── Brand blue primary accent (from the Magnet Link mark) ── */
+    .bg-blue-600     { background-color: #2f74a8 !important; }
+    .bg-blue-500     { background-color: #4a95c9 !important; }
+    .bg-blue-700     { background-color: #24608c !important; }
+    .bg-blue-800     { background-color: #1d4f73 !important; }
+    .hover\:bg-blue-600:hover { background-color: #275f8a !important; }
+    .hover\:bg-blue-500:hover { background-color: #2f74a8 !important; }
+    .hover\:bg-blue-700:hover { background-color: #1d4f73 !important; }
 
-    .text-blue-400 { color: #22d3ee !important; }
-    .text-blue-300 { color: #67e8f9 !important; }
-    .text-blue-200 { color: #a5f3fc !important; }
-    .hover\:text-blue-400:hover { color: #22d3ee !important; }
+    .text-blue-400 { color: #6fb3de !important; }
+    .text-blue-300 { color: #93c8e8 !important; }
+    .text-blue-200 { color: #bfe0f2 !important; }
+    .hover\:text-blue-400:hover { color: #6fb3de !important; }
 
-    .border-blue-500\/30 { border-color: rgba(6,182,212,0.30) !important; }
-    .border-blue-500\/40 { border-color: rgba(6,182,212,0.40) !important; }
-    .bg-blue-500\/15 { background-color: rgba(6,182,212,0.12) !important; }
-    .bg-blue-500\/20 { background-color: rgba(6,182,212,0.18) !important; }
-    .bg-blue-500\/10 { background-color: rgba(6,182,212,0.08) !important; }
-    .bg-blue-600\/80 { background-color: rgba(8,145,178,0.80) !important; }
+    .border-blue-500\/30 { border-color: rgba(47,116,168,0.35) !important; }
+    .border-blue-500\/40 { border-color: rgba(47,116,168,0.45) !important; }
+    .bg-blue-500\/15 { background-color: rgba(47,116,168,0.14) !important; }
+    .bg-blue-500\/20 { background-color: rgba(47,116,168,0.20) !important; }
+    .bg-blue-500\/10 { background-color: rgba(47,116,168,0.09) !important; }
+    .bg-blue-600\/80 { background-color: rgba(47,116,168,0.80) !important; }
 
-    .from-blue-600   { --tw-gradient-from: #0891b2 !important; }
-    .to-blue-600     { --tw-gradient-to:   #0891b2 !important; }
-    .to-blue-700     { --tw-gradient-to:   #0e7490 !important; }
-    .to-blue-800     { --tw-gradient-to:   #155e75 !important; }
-    .shadow-blue-500\/20 { box-shadow: 0 0 0 1px rgba(6,182,212,0.15), 0 4px 16px rgba(6,182,212,0.15) !important; }
-    .shadow-blue-500\/30 { box-shadow: 0 4px 20px rgba(6,182,212,0.25) !important; }
+    .from-blue-600   { --tw-gradient-from: #2f74a8 !important; }
+    .to-blue-600     { --tw-gradient-to:   #2f74a8 !important; }
+    .to-blue-700     { --tw-gradient-to:   #24608c !important; }
+    .to-blue-800     { --tw-gradient-to:   #1d4f73 !important; }
+    .shadow-blue-500\/20 { box-shadow: 0 0 0 1px rgba(47,116,168,0.15), 0 4px 14px rgba(47,116,168,0.15) !important; }
+    .shadow-blue-500\/30 { box-shadow: 0 3px 14px rgba(47,116,168,0.22) !important; }
 
     /* ring accent */
-    .ring-blue-500   { --tw-ring-color: rgba(6,182,212,0.50) !important; }
-    .focus\:ring-blue-500:focus { --tw-ring-color: rgba(6,182,212,0.40) !important; }
+    .ring-blue-500   { --tw-ring-color: rgba(47,116,168,0.50) !important; }
+    .focus\:ring-blue-500:focus { --tw-ring-color: rgba(47,116,168,0.40) !important; }
 
-    /* ── Input: cyan focus glow ── */
+    /* ── Input: brand-blue focus ── */
     input:focus, textarea:focus, select:focus {
-      border-color: rgba(6,182,212,0.60) !important;
-      box-shadow: 0 0 0 3px rgba(6,182,212,0.10) !important;
+      border-color: rgba(47,116,168,0.65) !important;
+      box-shadow: 0 0 0 3px rgba(47,116,168,0.12) !important;
       outline: none !important;
     }
     .focus\:border-blue-500:focus {
-      border-color: rgba(6,182,212,0.60) !important;
-      box-shadow: 0 0 0 3px rgba(6,182,212,0.10) !important;
+      border-color: rgba(47,116,168,0.65) !important;
+      box-shadow: 0 0 0 3px rgba(47,116,168,0.12) !important;
     }
 
     /* ── Pill-shaped status badges ── */
@@ -368,22 +364,22 @@
       letter-spacing: 0.02em !important;
     }
 
-    /* ── Card hover: cyan border glow ── */
+    /* ── Card hover: subtle border lift ── */
     .bg-slate-800\/60:hover {
-      border-color: rgba(6,182,212,0.18) !important;
-      box-shadow: 0 0 0 1px rgba(6,182,212,0.10),
-                  0 12px 36px rgba(0,0,0,0.55) !important;
+      border-color: rgba(47,116,168,0.16) !important;
+      box-shadow: 0 0 0 1px rgba(47,116,168,0.08),
+                  0 8px 24px rgba(0,0,0,0.45) !important;
     }
 
-    /* ── Primary button glow ── */
+    /* ── Primary button hover ── */
     .bg-blue-600:not(:disabled):hover {
-      box-shadow: 0 4px 22px rgba(8,145,178,0.45) !important;
-      transform: translateY(-1px) scale(1.01) !important;
+      box-shadow: 0 3px 14px rgba(47,116,168,0.35) !important;
+      transform: translateY(-1px) !important;
     }
 
-    /* ── Rounded upgrade: cards get 18px, inputs 12px ── */
-    .rounded-xl  { border-radius: 14px !important; }
-    .rounded-2xl { border-radius: 18px !important; }
+    /* ── Rounded upgrade: cards get 14px, inputs 10px ── */
+    .rounded-xl  { border-radius: 10px !important; }
+    .rounded-2xl { border-radius: 14px !important; }
 
     /* ── Hover bg zinc ── */
     .hover\:bg-slate-800:hover { background-color: #27272a !important; }
