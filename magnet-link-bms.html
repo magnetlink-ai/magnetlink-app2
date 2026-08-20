@@ -377,9 +377,20 @@
       transform: translateY(-1px) !important;
     }
 
-    /* ── Rounded upgrade: cards get 14px, inputs 10px ── */
-    .rounded-xl  { border-radius: 10px !important; }
-    .rounded-2xl { border-radius: 14px !important; }
+    /* ── Rounded upgrade: soft "native" squircle radii ── */
+    .rounded-lg   { border-radius: 12px !important; }
+    .rounded-xl   { border-radius: 14px !important; }
+    .rounded-2xl  { border-radius: 20px !important; }
+
+    /* ── Icon-only action buttons (view/edit/delete/print/close) become circular ── */
+    button[class*="p-1.5"][class*="rounded-lg"],
+    button[class*="p-1"][class*="rounded-lg"] {
+      border-radius: 9999px !important;
+    }
+
+    /* ── Softer, hairline card borders ── */
+    .border-slate-700\/40,
+    .border-slate-700\/30 { border-color: rgba(63,63,70,0.28) !important; }
 
     /* ── Hover bg zinc ── */
     .hover\:bg-slate-800:hover { background-color: #27272a !important; }
@@ -1949,15 +1960,15 @@
     ];
 
     const DELIVERY_STATUSES = [
-      { id:'in_progress', tKey:'s_in_progress', label:'In Progress', badge:'bg-blue-500/15 text-blue-300 border-blue-500/30',         dot:'bg-blue-400'    },
-      { id:'delivered',   tKey:'s_delivered',   label:'Delivered',   badge:'bg-emerald-500/15 text-emerald-300 border-emerald-500/30', dot:'bg-emerald-400' },
-      { id:'late',        tKey:'s_late',        label:'Late',        badge:'bg-red-500/15 text-red-300 border-red-500/30',            dot:'bg-red-400'     },
+      { id:'in_progress', tKey:'s_in_progress', label:'In Progress', badge:'text-blue-300',    dot:'bg-blue-400'    },
+      { id:'delivered',   tKey:'s_delivered',   label:'Delivered',   badge:'text-emerald-300', dot:'bg-emerald-400' },
+      { id:'late',        tKey:'s_late',        label:'Late',        badge:'text-red-300',     dot:'bg-red-400'     },
     ];
 
     const PAYMENT_STATUSES = [
-      { id:'paid',    tKey:'s_paid',    label:'Paid',    badge:'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
-      { id:'partial', tKey:'s_partial', label:'Partial', badge:'bg-amber-500/15 text-amber-300 border-amber-500/30'       },
-      { id:'pending', tKey:'s_unpaid',  label:'Unpaid',  badge:'bg-slate-500/15 text-slate-300 border-slate-500/30'      },
+      { id:'paid',    tKey:'s_paid',    label:'Paid',    badge:'text-emerald-300', dot:'bg-emerald-400' },
+      { id:'partial', tKey:'s_partial', label:'Partial', badge:'text-amber-300',   dot:'bg-amber-400'   },
+      { id:'pending', tKey:'s_unpaid',  label:'Unpaid',  badge:'text-slate-300',   dot:'bg-slate-400'   },
     ];
 
     const SYSTEM_ROLES = [
@@ -5129,7 +5140,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
             <div className="flex-1">
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl font-bold text-white">{project.name}</h1>
-                {dl&&<span className={`text-xs px-2.5 py-1 rounded-full border flex items-center gap-1.5 ${dl.badge}`}><span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dl.dot}`}/>{sl(dl,t)}</span>}
+                {dl&&<span className={`text-xs inline-flex items-center gap-1.5 font-medium ${dl.badge}`}><span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dl.dot}`}/>{sl(dl,t)}</span>}
                 <button onClick={()=>setEditOpen(true)} className="text-xs px-3 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg border border-slate-600">{t('edit')||'تعديل'}</button>
                 {onDeleteProject&&<button onClick={()=>{if(confirm(t('proj_del_confirm'))){onDeleteProject(project.id);onBack();}}} className="text-xs px-3 py-1 bg-slate-700 hover:bg-red-500/20 text-slate-300 hover:text-red-400 rounded-lg border border-slate-600 hover:border-red-500/40 transition-colors">{t('delete')||'حذف'}</button>}
               </div>
@@ -5204,7 +5215,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className={`text-xs px-2.5 py-1 rounded-full border ${ps?.badge}`}>{ps?sl(ps,t):''}</span>
+                            {ps&&<span className={`text-xs inline-flex items-center gap-1.5 font-medium ${ps.badge}`}><span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${ps.dot}`}/>{sl(ps,t)}</span>}
                             <div className="text-left">
                               <div className="font-semibold text-white">${gt.toFixed(2)}</div>
                               {anyPaid&&<div className="text-xs text-emerald-400">{t('proj_inv_paid')} ${paid.toFixed(2)}</div>}
@@ -5392,7 +5403,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
                         </td>
                         <td className="px-4 py-3 text-slate-300">{cl?.name||<span className="text-slate-600">—</span>}</td>
                         <td className="px-4 py-3 text-slate-400 text-xs">{proj.service_requested}</td>
-                        <td className="px-4 py-3">{dl&&<span className={`text-xs px-2.5 py-1 rounded-full border flex items-center gap-1.5 w-fit ${dl.badge}`}><span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dl.dot}`}/>{sl(dl, t)}</span>}</td>
+                        <td className="px-4 py-3">{dl&&<span className={`text-xs inline-flex items-center gap-1.5 font-medium w-fit ${dl.badge}`}><span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dl.dot}`}/>{sl(dl, t)}</span>}</td>
                         <td className="px-4 py-3"><span className="text-xs bg-slate-700/60 text-slate-400 px-2 py-0.5 rounded-full">{invCount} {t('prj_invoice_count')}</span></td>
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-1">
@@ -5434,7 +5445,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
                         <td className="px-4 py-3 text-slate-200 font-medium">{inv.inv_no}</td>
                         <td className="px-4 py-3"><div className="text-slate-300">{cl?.name||'—'}</div><div className="text-xs text-slate-600">{proj?.name||'—'}</div></td>
                         <td className="px-4 py-3 text-slate-500 text-xs">{inv.due_date||'—'}</td>
-                        <td className="px-4 py-3">{ps&&<span className={`text-xs px-2.5 py-1 rounded-full border ${ps.badge}`}>{sl(ps,t)}</span>}</td>
+                        <td className="px-4 py-3">{ps&&<span className={`text-xs inline-flex items-center gap-1.5 font-medium ${ps.badge}`}><span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${ps.dot}`}/>{sl(ps,t)}</span>}</td>
                         <td className="px-4 py-3 text-slate-200 font-semibold text-left">${gt.toFixed(2)}</td>
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-1">
@@ -7360,7 +7371,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
                           <td className="px-4 py-3 text-slate-200 font-medium">{inv.inv_no}</td>
                           <td className="px-4 py-3"><div className="text-slate-300">{cl?.name||'—'}</div><div className="text-xs text-slate-600">{proj?.name||'—'}</div></td>
                           <td className="px-4 py-3 text-slate-500 text-xs">{inv.due_date||'—'}</td>
-                          <td className="px-4 py-3">{ps&&<span className={`text-xs px-2.5 py-1 rounded-full border ${ps.badge}`}>{sl(ps,t)}</span>}</td>
+                          <td className="px-4 py-3">{ps&&<span className={`text-xs inline-flex items-center gap-1.5 font-medium ${ps.badge}`}><span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${ps.dot}`}/>{sl(ps,t)}</span>}</td>
                           <td className="px-4 py-3 text-slate-200 font-semibold text-left">${gt.toFixed(2)}</td>
                           <td className="px-3 py-3">
                             <button onClick={()=>setEditInv(inv)} className="p-1.5 rounded-lg text-slate-600 hover:text-blue-400 hover:bg-blue-500/10 transition-all" title={t('edit')}><Ic name="edit2" size={13}/></button>
