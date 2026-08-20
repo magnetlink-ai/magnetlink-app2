@@ -4789,70 +4789,139 @@
       const displayAmt = mode==='single'
         ? grandTotal * (invoice.payments[paymentIdx]?.pct||0) / 100
         : grandTotal;
+      const grandLabel = mode==='single' ? `Payment ${paymentIdx+1} Due` : 'Grand Total';
 
-      const itemRows = invoice.items.map(it=>`
-        <tr><td style="padding:9px 14px">${it.desc}</td>
-        <td style="padding:9px 14px;text-align:center">${it.qty}</td>
-        <td style="padding:9px 14px;text-align:center">$${Number(it.unit_price).toFixed(2)}</td>
-        <td style="padding:9px 14px;text-align:center">$${(it.qty*it.unit_price).toFixed(2)}</td></tr>`).join('');
+      const itemRows = invoice.items.map((it,i)=>`
+        <tr><td class="c-no">${String(i+1).padStart(2,'0')}</td>
+        <td class="c-desc">${it.desc||''}</td>
+        <td class="c-mid">$${Number(it.unit_price).toFixed(2)}</td>
+        <td class="c-mid">${it.qty}</td>
+        <td class="c-mid">$${(it.qty*it.unit_price).toFixed(2)}</td></tr>`).join('');
 
       const pmtsToShow = mode==='full' ? invoice.payments : [invoice.payments[paymentIdx]];
       const pmtRows = pmtsToShow.map((p,i)=>{
         const ri = mode==='full' ? i : paymentIdx;
-        return `<tr><td style="padding:8px 14px">Payment ${ri+1}</td>
-          <td style="padding:8px 14px;text-align:center">${p.pct}%</td>
-          <td style="padding:8px 14px;text-align:center">$${(grandTotal*p.pct/100).toFixed(2)}</td>
-          <td style="padding:8px 14px;text-align:center">${p.status==='paid'?'✓ مدفوع':'معلّق'}</td></tr>`;
+        return `<tr><td class="c-desc">Payment ${ri+1}</td>
+          <td class="c-mid">${p.pct}%</td>
+          <td class="c-mid">$${(grandTotal*p.pct/100).toFixed(2)}</td>
+          <td class="c-mid">${p.status==='paid'?'Paid':'Pending'}</td></tr>`;
       }).join('');
 
-      const html=`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>${invoice.inv_no}</title>
-<style>*{font-family:'Segoe UI',Arial,sans-serif;margin:0;padding:0;box-sizing:border-box}
-body{background:#fff;color:#111;padding:36px 44px;font-size:13px}
-.hdr{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:3px solid #7c3aed;margin-bottom:28px}
-.logo{display:flex;align-items:center;gap:12px}.logo-box{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#2563eb);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:900}
-.logo-name{font-size:18px;font-weight:700}.logo-sub{font-size:10px;color:#888;margin-top:2px}
-.inv-box{text-align:left}.inv-no{font-size:20px;font-weight:700;color:#7c3aed}.inv-meta{font-size:11px;color:#666;margin-top:3px}
-.pill{display:inline-block;background:#ede9fe;color:#7c3aed;border:1px solid #c4b5fd;padding:2px 10px;border-radius:20px;font-size:10px;margin-top:4px}
-.bill-to{background:#faf7ff;border:1px solid #e9d5ff;border-radius:10px;padding:14px 18px;margin-bottom:22px}
-.bill-label{font-size:10px;color:#7c3aed;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}
-.bill-name{font-size:14px;font-weight:600}.bill-sub{font-size:11px;color:#666;margin-top:2px}
-table{width:100%;border-collapse:collapse;margin-bottom:16px}thead tr{background:#7c3aed;color:#fff}
-th{padding:9px 14px;text-align:right;font-size:11px;font-weight:600}
-tbody tr:nth-child(even){background:#faf5ff}tbody tr{border-bottom:1px solid #ede9fe}td{font-size:12px;color:#333}
-.totals{display:flex;flex-direction:column;align-items:flex-end;gap:5px;margin-bottom:20px}
-.t-row{display:flex;justify-content:space-between;min-width:240px;font-size:12px;color:#555;padding:3px 0}
-.t-grand{font-size:15px;font-weight:700;color:#111;border-top:2px solid #7c3aed;padding-top:6px;margin-top:2px}
-.pmt-title{font-size:12px;font-weight:600;margin-bottom:8px;color:#333}
-.footer{margin-top:36px;border-top:1px solid #e5e7eb;padding-top:14px;text-align:center;color:#aaa;font-size:10px}
+      const clientLines = client ? [client.name, client.company_name, client.email, client.phone].filter(Boolean) : ['—'];
+
+      const html=`<!DOCTYPE html><html dir="ltr"><head><meta charset="UTF-8"><title>${invoice.inv_no}</title>
+<meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
+<style>
+*{font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;margin:0;padding:0;box-sizing:border-box}
+a,a:link,a:visited{color:inherit!important;text-decoration:none!important}
+:root{--navy:#0e3a56}
+body{background:#fff;color:#1a1a1a;font-size:13px}
+.sheet{padding:34px 44px 0}
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.logo-name{font-size:26px;font-weight:400;color:#1a1a1a;font-family:'Segoe UI',Arial,sans-serif;margin-top:6px}
+.addr-box{text-align:right}
+.addr-label{font-size:15px;font-weight:800;color:var(--navy)}
+.addr-val{font-size:11px;color:#333;margin-top:4px;line-height:1.5}
+.meta-row{display:flex;justify-content:space-between;align-items:flex-end;margin:26px 0 14px}
+.bill-label{font-size:17px;font-weight:800;color:var(--navy)}
+.bill-val{font-size:12px;color:#333;margin-top:5px;line-height:1.6}
+.inv-meta{text-align:right}
+.inv-meta div{font-size:14px;font-weight:800;color:var(--navy);margin-bottom:6px}
+.inv-meta span{font-weight:400;color:#333;font-size:12px;margin-left:6px}
+.inv-meta .pill{display:inline-block;background:var(--navy);color:#fff!important;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;margin-top:4px}
+table{width:100%;border-collapse:collapse}
+.items thead tr{background:var(--navy);color:#fff}
+.items th{padding:11px 16px;text-align:left;font-size:12px;font-weight:700}
+.items th.c-mid{text-align:center}
+.items td{padding:10px 16px;font-size:12px;color:#222;border-bottom:1px solid #eef1ef}
+.items td.c-mid{text-align:center}.items td.c-no{color:#888;width:34px}
+.items tbody tr:nth-child(even){background:#e9eee8}
+.lower{display:flex;justify-content:space-between;gap:30px;margin-top:26px}
+.pay-info{flex:1}
+.pay-title{font-size:16px;font-weight:800;color:var(--navy);margin-bottom:12px}
+.pay-line{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px}
+.pay-line span{font-weight:400;color:#333;margin-left:6px}
+.totals-box{width:290px}
+.t-row{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:var(--navy);padding:3px 0}
+.t-grand{display:flex;margin-top:14px;border:1px solid var(--navy)}
+.t-grand-label{background:var(--navy);color:#fff;font-weight:800;font-size:13px;padding:11px 16px;flex:1}
+.t-grand-val{padding:11px 16px;font-weight:800;font-size:13px;color:var(--navy);min-width:100px;text-align:right}
+.pmt-title{font-size:12px;font-weight:700;color:var(--navy);margin:22px 0 8px}
+.sign-row{display:flex;justify-content:space-between;align-items:flex-end;margin-top:40px}
+.corp-title{font-size:14px;font-weight:800;color:var(--navy)}
+.corp-val{font-size:12px;color:#333;margin-top:3px}
+.sign-box{text-align:right}
+.sign-title{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:6px}
+.sign-mark{font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:700;color:#1a1a1a;letter-spacing:1px;text-decoration:line-through;text-decoration-thickness:2px}
+.footer{margin-top:26px;background:var(--navy);color:#fff;padding:16px 44px;display:flex;justify-content:space-between;gap:20px}
+.f-item{display:flex;align-items:center;gap:10px;font-size:11px;line-height:1.4}
+.f-ic{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px}
+@media print{.sheet{padding:20px 30px 0}}
 </style></head><body>
+<div class="sheet">
 <div class="hdr">
-  <div class="logo"><div class="logo-box">M</div>
-    <div><div class="logo-name">Magnet Link</div><div class="logo-sub">Social Media · Design · Web · Ads</div></div>
+  <div>
+    <svg width="150" height="72" viewBox="0 0 200 96" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="lg1" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#7fc7ea"/><stop offset="1" stop-color="#2a7ba8"/>
+      </linearGradient></defs>
+      <rect x="8" y="14" width="96" height="58" rx="29" fill="none" stroke="url(#lg1)" stroke-width="15"/>
+      <rect x="80" y="14" width="96" height="58" rx="29" fill="none" stroke="url(#lg1)" stroke-width="15"/>
+    </svg>
+    <div class="logo-name">Magnet Link</div>
   </div>
-  <div class="inv-box"><div class="inv-no">${invoice.inv_no}</div>
-    <div class="inv-meta">تاريخ الاستحقاق: ${invoice.due_date||'—'}</div>
-    <div class="inv-meta">الإنجاز: ${invoice.progress}%</div>
-    ${mode==='single'?`<div class="pill">Payment ${paymentIdx+1} فقط</div>`:''}
+  <div class="addr-box">
+    <div class="addr-label">Address</div>
+    <div class="addr-val">4230 Sherwoodtowne Blvd<br/>Mississauga, ON L4Z 2G6</div>
   </div>
 </div>
-<div class="bill-to">
-  <div class="bill-label">فاتورة إلى</div>
-  <div class="bill-name">${client?client.name:'—'}</div>
-  <div class="bill-sub">${client?(client.email||client.phone||''):''}</div>
+<div class="meta-row">
+  <div>
+    <div class="bill-label">Invoice To :</div>
+    <div class="bill-val">${clientLines.join('<br/>')}</div>
+  </div>
+  <div class="inv-meta">
+    <div>Invoice No : <span>${invoice.inv_no}</span></div>
+    <div>Date : <span>${invoice.due_date||'—'}</span></div>
+    ${mode==='single'?`<div class="pill">Payment ${paymentIdx+1} Only</div>`:''}
+  </div>
 </div>
-<table><thead><tr><th>البيان</th><th style="text-align:center">الكمية</th><th style="text-align:center">سعر الوحدة</th><th style="text-align:center">المجموع</th></tr></thead>
+<table class="items"><thead><tr><th style="width:40px">No.</th><th>Item Description</th><th class="c-mid">Price</th><th class="c-mid">Qty.</th><th class="c-mid">Total</th></tr></thead>
 <tbody>${itemRows}</tbody></table>
-<div class="totals">
-  <div class="t-row"><span>المجموع الفرعي</span><span>$${subtotal.toFixed(2)}</span></div>
-  ${(invoice.tax||0)>0?`<div class="t-row"><span>الضريبة (${invoice.tax}%)</span><span>$${taxAmt.toFixed(2)}</span></div>`:''}
-  <div class="t-row t-grand"><span>${mode==='single'?`Payment ${paymentIdx+1} (${invoice.payments[paymentIdx]?.pct}%)`:'الإجمالي'}</span><span>$${displayAmt.toFixed(2)}</span></div>
-</div>
-${pmtsToShow.length>0?`<div class="pmt-title">${mode==='full'?'جدول الدفعات':`تفاصيل Payment ${paymentIdx+1}`}</div>
-<table><thead><tr><th>الدفعة</th><th style="text-align:center">النسبة</th><th style="text-align:center">المبلغ</th><th style="text-align:center">الحالة</th></tr></thead>
+${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'Payment Breakdown':`Payment ${paymentIdx+1} Detail`}</div>
+<table class="items"><thead><tr><th>Payment</th><th class="c-mid">%</th><th class="c-mid">Amount</th><th class="c-mid">Status</th></tr></thead>
 <tbody>${pmtRows}</tbody></table>`:''}
-<div class="footer"><p>Magnet Link Agency · شكراً لتعاملكم معنا</p><p style="margin-top:3px">magnetlink24@gmail.com</p></div>
+<div class="lower">
+  <div class="pay-info">
+    <div class="pay-title">Payment info :</div>
+    <div class="pay-line">Account No : <span></span></div>
+    <div class="pay-line">Transit No : <span></span></div>
+    <div class="pay-line">Institution No : <span></span></div>
+  </div>
+  <div class="totals-box">
+    <div class="t-row"><span>Sub Total :</span><span>$${subtotal.toFixed(2)}</span></div>
+    <div class="t-row"><span>Tax${(invoice.tax||0)>0?` (${invoice.tax}%)`:''} :</span><span>$${taxAmt.toFixed(2)}</span></div>
+    <div class="t-grand"><div class="t-grand-label">${grandLabel}</div><div class="t-grand-val">$${displayAmt.toFixed(2)}</div></div>
+  </div>
+</div>
+<div class="sign-row">
+  <div>
+    <div class="corp-title">Corporation Number</div>
+    <div class="corp-val">1000298584</div>
+  </div>
+  <div class="sign-box">
+    <div class="sign-title">Signature</div>
+    <div class="sign-mark">MAGNET</div>
+  </div>
+</div>
+</div>
+<div class="footer">
+  <div class="f-item"><span class="f-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span><span>+(1) 647 677 7005</span></div>
+  <div class="f-item"><span class="f-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="M22 6l-10 7L2 6"/></svg></span><span>www.MAGNET-LINK.CA<br/>CONTACT@MAGNET-LINK.CA</span></div>
+  <div class="f-item"><span class="f-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span><span>4230 Sherwoodtowne Blvd<br/>Mississauga, ON L4Z 2G6</span></div>
+</div>
 <script>window.onload=()=>window.print()<\/script></body></html>`;
-      const w=window.open('','_blank','width=820,height=960');
+      const w=window.open('','_blank','width=900,height=1000');
       if(w){w.document.write(html);w.document.close();}
     };
 
