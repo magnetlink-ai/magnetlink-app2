@@ -419,6 +419,7 @@
         close:'إغلاق', search:'بحث', filter:'تصفية', loading:'جارٍ التحميل...',
         confirm:'تأكيد', back:'رجوع', name:'الاسم', phone:'الهاتف',
         notes:'ملاحظات', date:'التاريخ', status:'الحالة', actions:'إجراءات',
+        all_invoices:'كل الفواتير', view_projects:'المشاريع',
         source:'المصدر', service:'الخدمة', price:'السعر', total:'الإجمالي',
         created:'تاريخ الإنشاء', no_data:'لا توجد بيانات', search_ph:'بحث...',
         all:'الكل', yes:'نعم', no:'لا', coming_soon:'قريباً',
@@ -1029,6 +1030,7 @@
         close:'Close', search:'Search', filter:'Filter', loading:'Loading...',
         confirm:'Confirm', back:'Back', name:'Name', phone:'Phone',
         notes:'Notes', date:'Date', status:'Status', actions:'Actions',
+        all_invoices:'All Invoices', view_projects:'Projects',
         source:'Source', service:'Service', price:'Price', total:'Total',
         created:'Created', no_data:'No data available', search_ph:'Search...',
         all:'All', yes:'Yes', no:'No', coming_soon:'Soon',
@@ -5330,6 +5332,9 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
       const [newModal,setNewModal]=useState(false);
       const [editProj,setEditProj]=useState(null);
       const [search,setSearch]=useState('');
+      const [subView,setSubView]=useState('projects');
+      const [editInv,setEditInv]=useState(null);
+      const [newInv,setNewInv]=useState(false);
       const viewProject=viewId?projects.find(p=>p.id===viewId):null;
       const viewClient=viewProject?clients.find(c=>c.id===viewProject.clientId):null;
       const filtered=projects.filter(p=>{
@@ -5340,22 +5345,31 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
         <ProjectDetailPage project={viewProject} client={viewClient} invoices={invoices} clients={clients}
           onBack={()=>setViewId(null)} onSaveInvoice={onSaveInvoice} onDeleteInvoice={onDeleteInvoice} onSaveProject={onSaveProject} onDeleteProject={onDeleteProject} showToast={showToast}/>
       );
+      const editInvProject = editInv ? projects.find(p=>p.id===editInv.projectId) : null;
       return (
         <div className="space-y-5">
           <div className="flex items-start justify-between">
             <div><h1 className="text-2xl font-bold text-white">{t('prj_title')}</h1>
               <p className="text-slate-500 text-sm mt-1">{projects.length} {t('crm_total')}</p></div>
-            <button onClick={()=>setNewModal(true)}
+            <button onClick={()=>subView==='projects'?setNewModal(true):setNewInv(true)}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors shadow-lg shadow-blue-500/20">
-              <Ic name="plus" size={14}/>{t('prj_new')}
+              <Ic name="plus" size={14}/>{subView==='projects'?t('prj_new'):t('inv_new')}
             </button>
           </div>
-          <div className="relative">
+          <div className="flex gap-1 border-b border-slate-700/60">
+            {[{id:'projects',label:t('view_projects')},{id:'invoices',label:t('all_invoices')}].map(sv=>(
+              <button key={sv.id} onClick={()=>setSubView(sv.id)}
+                className={`px-5 py-2.5 text-sm font-medium transition-all border-b-2 -mb-px ${subView===sv.id?'text-blue-300 border-blue-500':'text-slate-500 border-transparent hover:text-slate-300'}`}>
+                {sv.label}
+              </button>
+            ))}
+          </div>
+          {subView==='projects'&&<div className="relative">
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"><Ic name="search" size={13}/></span>
             <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={t('prj_search')}
               className="bg-slate-800 border border-slate-700 focus:border-blue-500 rounded-lg pr-9 pl-3 py-2 text-sm text-white placeholder-slate-500 outline-none w-64"/>
-          </div>
-          <div className="bg-slate-800/60 rounded-2xl border border-slate-700/40 overflow-hidden">
+          </div>}
+          {subView==='projects'&&<div className="bg-slate-800/60 rounded-2xl border border-slate-700/40 overflow-hidden">
             <div className="overflow-x-auto scroll-fade-x">
               <table className="w-full text-sm">
                 <thead><tr className="border-b border-slate-700/60 text-right">
@@ -5397,9 +5411,55 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
                 </tbody>
               </table>
             </div>
-          </div>
+          </div>}
+          {subView==='invoices'&&<div className="bg-slate-800/60 rounded-2xl border border-slate-700/40 overflow-hidden">
+            <div className="overflow-x-auto scroll-fade-x">
+              <table className="w-full text-sm">
+                <thead><tr className="border-b border-slate-700/60 text-right">
+                  <th className="px-4 py-3 text-xs font-medium text-slate-500">{t('fin_col_inv')}</th>
+                  <th className="px-4 py-3 text-xs font-medium text-slate-500 min-w-[180px]">{t('fin_col_client')}</th>
+                  <th className="px-4 py-3 text-xs font-medium text-slate-500">{t('fin_date')}</th>
+                  <th className="px-4 py-3 text-xs font-medium text-slate-500">{t('status')}</th>
+                  <th className="px-4 py-3 text-xs font-medium text-slate-500 text-left">{t('fin_col_amount')}</th>
+                  <th className="px-3 py-3 w-28"></th>
+                </tr></thead>
+                <tbody>
+                  {invoices.length===0&&<tr><td colSpan={6} className="text-center py-16 text-slate-600">{t('proj_no_invoices')}</td></tr>}
+                  {invoices.map(inv=>{
+                    const proj=projects.find(p=>p.id===inv.projectId);
+                    const cl=clients.find(c=>c.id===proj?.clientId);
+                    const st=inv.items.reduce((s,i)=>s+i.qty*i.unit_price,0);
+                    const gt=st*(1+(inv.tax||0)/100);
+                    const allPaid=inv.payments.every(p=>p.status==='paid');
+                    const anyPaid=inv.payments.some(p=>p.status==='paid');
+                    const ps=PAYMENT_STATUSES.find(s=>s.id===(allPaid?'paid':anyPaid?'partial':'pending'));
+                    return (
+                      <tr key={inv.id} className="border-b border-slate-700/30 hover:bg-white/[0.02] transition-colors">
+                        <td className="px-4 py-3 text-slate-200 font-medium">{inv.inv_no}</td>
+                        <td className="px-4 py-3"><div className="text-slate-300">{cl?.name||'—'}</div><div className="text-xs text-slate-600">{proj?.name||'—'}</div></td>
+                        <td className="px-4 py-3 text-slate-500 text-xs">{inv.due_date||'—'}</td>
+                        <td className="px-4 py-3">{ps&&<span className={`text-xs px-2.5 py-1 rounded-full border ${ps.badge}`}>{sl(ps,t)}</span>}</td>
+                        <td className="px-4 py-3 text-slate-200 font-semibold text-left">${gt.toFixed(2)}</td>
+                        <td className="px-3 py-3">
+                          <div className="flex items-center gap-1">
+                            <button onClick={()=>printInvoice(inv,proj,cl,'full')} className="p-1.5 rounded-lg text-slate-600 hover:text-blue-400 hover:bg-blue-500/10 transition-all" title={t('inv_print_full')}><Ic name="print" size={13}/></button>
+                            <button onClick={()=>setEditInv(inv)} className="p-1.5 rounded-lg text-slate-600 hover:text-blue-400 hover:bg-blue-500/10 transition-all" title={t('edit')}><Ic name="edit2" size={13}/></button>
+                            <button onClick={()=>{if(confirm(t('proj_del_inv_confirm')))onDeleteInvoice(inv.id);}} className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all" title={t('delete')}><Ic name="trash" size={13}/></button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>}
           {newModal&&<NewProjectModal clients={clients} onSave={p=>{onAddProject(p);showToast(`${p.name} ✓`);setNewModal(false);}} onClose={()=>setNewModal(false)}/>}
           {editProj&&<ProjectEditOverlay project={editProj} clients={clients} onSave={onSaveProject} onClose={()=>setEditProj(null)} showToast={showToast}/>}
+          {editInv&&<InvoiceFormOverlay invoice={editInv} project={editInvProject} allInvoices={invoices}
+            onSave={inv=>{onSaveInvoice(inv);setEditInv(null);showToast(`${inv.inv_no} ✓`);}} onClose={()=>setEditInv(null)}/>}
+          {newInv&&<InvoiceFormOverlay projects={projects} allInvoices={invoices}
+            onSave={inv=>{onSaveInvoice(inv);setNewInv(false);showToast(`${inv.inv_no} ✓`);}} onClose={()=>setNewInv(false)}/>}
         </div>
       );
     };
@@ -7069,13 +7129,14 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
     };
 
     /* ─── Finance Module ─── */
-    const FinanceModule = ({ invoices, projects, clients, teamMembers, expenses, salaries, deductions, bonuses, customRoles, onAddExpense, onUpdateExpense, onDeleteExpense, onAddSalary, onUpdateSalary, onDeleteSalary, onSaveInvoice, showToast }) => {
+    const FinanceModule = ({ invoices, projects, clients, teamMembers, expenses, salaries, deductions, bonuses, customRoles, onAddExpense, onUpdateExpense, onDeleteExpense, onAddSalary, onUpdateSalary, onDeleteSalary, onSaveInvoice, onDeleteInvoice, showToast }) => {
       const { t } = useLang();
       const [tab,      setTab]      = useState('money_in');
       const [month,    setMonth]    = useState(() => new Date().toISOString().slice(0,7));
       const [expModal, setExpModal] = useState(null);
       const [salModal, setSalModal] = useState(null);
       const [invModal, setInvModal] = useState(false);
+      const [editInv,  setEditInv]  = useState(null);
 
       const prevMonth = getPrevMonth(month);
 
@@ -7269,6 +7330,51 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
                   <td className="px-4 py-3 text-emerald-400 font-bold text-left">${moneyInTotal.toFixed(2)}</td>
                 </tr></tfoot>}
               </table>
+            </div>
+          )}
+
+          {/* ── All Invoices (incl. unpaid) ── */}
+          {tab==='money_in'&&(
+            <div className="bg-slate-800/60 rounded-2xl border border-slate-700/40 overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-3 border-b border-slate-700/40">
+                <span className="text-xs text-slate-400">{t('all_invoices')} ({invoices.length})</span>
+              </div>
+              <div className="overflow-x-auto scroll-fade-x">
+                <table className="w-full text-sm">
+                  <thead><tr className="border-b border-slate-700/60 text-right">
+                    <th className="px-4 py-3 text-xs font-medium text-slate-500">{t('fin_col_inv')}</th>
+                    <th className="px-4 py-3 text-xs font-medium text-slate-500 min-w-[180px]">{t('fin_col_client')}</th>
+                    <th className="px-4 py-3 text-xs font-medium text-slate-500">{t('fin_date')}</th>
+                    <th className="px-4 py-3 text-xs font-medium text-slate-500">{t('status')}</th>
+                    <th className="px-4 py-3 text-xs font-medium text-slate-500 text-left">{t('fin_col_amount')}</th>
+                    <th className="px-3 py-3 w-20"></th>
+                  </tr></thead>
+                  <tbody>
+                    {invoices.length===0&&<tr><td colSpan={6} className="text-center py-12 text-slate-600">{t('proj_no_invoices')}</td></tr>}
+                    {invoices.map(inv=>{
+                      const proj=projects.find(p=>p.id===inv.projectId);
+                      const cl=clients.find(c=>c.id===proj?.clientId);
+                      const st=inv.items.reduce((s,i)=>s+i.qty*i.unit_price,0);
+                      const gt=st*(1+(inv.tax||0)/100);
+                      const allPaid=inv.payments.every(p=>p.status==='paid');
+                      const anyPaid=inv.payments.some(p=>p.status==='paid');
+                      const ps=PAYMENT_STATUSES.find(s=>s.id===(allPaid?'paid':anyPaid?'partial':'pending'));
+                      return (
+                        <tr key={inv.id} className="border-b border-slate-700/30 hover:bg-white/[0.02]">
+                          <td className="px-4 py-3 text-slate-200 font-medium">{inv.inv_no}</td>
+                          <td className="px-4 py-3"><div className="text-slate-300">{cl?.name||'—'}</div><div className="text-xs text-slate-600">{proj?.name||'—'}</div></td>
+                          <td className="px-4 py-3 text-slate-500 text-xs">{inv.due_date||'—'}</td>
+                          <td className="px-4 py-3">{ps&&<span className={`text-xs px-2.5 py-1 rounded-full border ${ps.badge}`}>{sl(ps,t)}</span>}</td>
+                          <td className="px-4 py-3 text-slate-200 font-semibold text-left">${gt.toFixed(2)}</td>
+                          <td className="px-3 py-3">
+                            <button onClick={()=>setEditInv(inv)} className="p-1.5 rounded-lg text-slate-600 hover:text-blue-400 hover:bg-blue-500/10 transition-all" title={t('edit')}><Ic name="edit2" size={13}/></button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
@@ -7622,6 +7728,8 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
           {expModal&&<ExpenseModal expense={expModal.edit} onSave={exp=>{expModal.edit?onUpdateExpense(exp):onAddExpense(exp);showToast(t('fin_col_expense')+' ✓');setExpModal(null);}} onClose={()=>setExpModal(null)}/>}
           {salModal&&<SalaryModal salary={salModal.edit} teamMembers={teamMembers} onSave={sal=>{salModal.edit?onUpdateSalary(sal):onAddSalary(sal);showToast(t('fin_tab_salary')+' ✓');setSalModal(null);}} onClose={()=>setSalModal(null)}/>}
           {invModal&&<InvoiceFormOverlay projects={projects} allInvoices={invoices} onSave={inv=>{onSaveInvoice(inv);showToast(`${inv.inv_no} ✓`);setInvModal(false);}} onClose={()=>setInvModal(false)}/>}
+          {editInv&&<InvoiceFormOverlay invoice={editInv} project={projects.find(p=>p.id===editInv.projectId)} allInvoices={invoices}
+            onSave={inv=>{onSaveInvoice(inv);setEditInv(null);showToast(`${inv.inv_no} ✓`);}} onClose={()=>setEditInv(null)}/>}
         </div>
       );
     };
@@ -14464,7 +14572,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
               expenses={expenses} salaries={salaries} deductions={deductions} bonuses={bonuses} customRoles={customRoles}
               onAddExpense={handleAddExpense} onUpdateExpense={handleUpdateExpense} onDeleteExpense={handleDeleteExpense}
               onAddSalary={handleAddSalary} onUpdateSalary={handleUpdateSalary} onDeleteSalary={handleDeleteSalary}
-              onSaveInvoice={handleSaveInvoice}
+              onSaveInvoice={handleSaveInvoice} onDeleteInvoice={handleDeleteInvoice}
               showToast={showToast}/>
           );
           case 'social': return (
