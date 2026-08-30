@@ -4881,7 +4881,7 @@
 a,a:link,a:visited{color:inherit!important;text-decoration:none!important}
 :root{--navy:#0e3a56}
 body{background:#fff;color:#1a1a1a;font-size:13px}
-.sheet{padding:34px 44px 0}
+.sheet{padding:34px 44px 120px}
 .hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
 .logo-name{font-size:26px;font-weight:400;color:#1a1a1a;font-family:'Segoe UI',Arial,sans-serif;margin-top:6px}
 .addr-box{text-align:right}
@@ -4918,10 +4918,11 @@ table{width:100%;border-collapse:collapse}
 .sign-box{text-align:right}
 .sign-title{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:6px}
 .sign-mark{font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:700;color:#1a1a1a;letter-spacing:1px;text-decoration:line-through;text-decoration-thickness:2px}
-.footer{margin-top:26px;background:var(--navy);color:#fff;padding:16px 44px;display:flex;justify-content:space-between;gap:20px}
+.footer{position:fixed;left:0;right:0;bottom:0;background:var(--navy);color:#fff;padding:16px 44px;display:flex;justify-content:space-between;gap:20px}
 .f-item{display:flex;align-items:center;gap:10px;font-size:11px;line-height:1.4}
 .f-ic{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px}
-@media print{.sheet{padding:20px 30px 0}}
+@page{margin:0}
+@media print{.sheet{padding:30px 34px 120px}}
 </style></head><body>
 <div class="sheet">
 <div class="hdr">
