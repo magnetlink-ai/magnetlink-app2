@@ -640,6 +640,17 @@
         fin_base_salaries:'الرواتب الأساسية', fin_ded_neg:'الخصومات (−)',
         fin_bon_pos:'المكافآت (+)', fin_net_salaries:'صافي الرواتب',
         fin_rev_dist:'توزيع الإيرادات',
+        fin_tab_stats:'الإحصائيات',
+        fin_rng_1:'آخر شهر', fin_rng_3:'آخر 3 أشهر', fin_rng_6:'آخر 6 أشهر',
+        fin_rng_12:'آخر 12 شهر', fin_rng_year:'سنة كاملة', fin_rng_custom:'مخصّص',
+        fin_rng_months:'شهر', fin_stats_period:'الفترة',
+        fin_stat_total_in:'إجمالي الدخل', fin_stat_total_out:'إجمالي المصاريف',
+        fin_stat_total_sal:'صافي الرواتب', fin_stat_total_cost:'إجمالي التكاليف',
+        fin_stat_total_rev:'صافي الربح', fin_stat_avg_mo:'متوسط شهري',
+        fin_stat_monthly:'التفصيل الشهري', fin_stat_month:'الشهر',
+        fin_stat_exp_break:'تفصيل المصاريف', fin_stat_sal_break:'تفصيل الرواتب',
+        fin_stat_times:'عدد المرات', fin_stat_share:'النسبة',
+        fin_stat_months_cnt:'أشهر', fin_stat_no_data:'لا توجد بيانات في هذه الفترة',
         /* Team */
         tm_title:'الفريق', tm_members:'الموظفون', tm_clients:'العملاء',
         tm_roles:'الرتب', tm_attendance:'الحضور',
@@ -1252,6 +1263,17 @@
         fin_base_salaries:'Base Salaries', fin_ded_neg:'Deductions (−)',
         fin_bon_pos:'Bonuses (+)', fin_net_salaries:'Net Salaries',
         fin_rev_dist:'Revenue Distribution',
+        fin_tab_stats:'Statistics',
+        fin_rng_1:'Last month', fin_rng_3:'Last 3 months', fin_rng_6:'Last 6 months',
+        fin_rng_12:'Last 12 months', fin_rng_year:'Full year', fin_rng_custom:'Custom',
+        fin_rng_months:'months', fin_stats_period:'Period',
+        fin_stat_total_in:'Total Income', fin_stat_total_out:'Total Expenses',
+        fin_stat_total_sal:'Net Salaries', fin_stat_total_cost:'Total Costs',
+        fin_stat_total_rev:'Net Profit', fin_stat_avg_mo:'Monthly avg',
+        fin_stat_monthly:'Monthly Breakdown', fin_stat_month:'Month',
+        fin_stat_exp_break:'Expenses Breakdown', fin_stat_sal_break:'Salaries Breakdown',
+        fin_stat_times:'Occurrences', fin_stat_share:'Share',
+        fin_stat_months_cnt:'months', fin_stat_no_data:'No data for this period',
         /* Team */
         tm_title:'Team', tm_members:'Members', tm_clients:'Clients',
         tm_roles:'Roles', tm_attendance:'Attendance',
@@ -7178,6 +7200,9 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
       const [salModal, setSalModal] = useState(null);
       const [invModal, setInvModal] = useState(false);
       const [editInv,  setEditInv]  = useState(null);
+      const [statRange,  setStatRange]  = useState('6');
+      const [statCustom, setStatCustom] = useState(6);
+      const [statYear,   setStatYear]   = useState(() => new Date().getFullYear());
 
       const prevMonth = getPrevMonth(month);
 
@@ -7283,7 +7308,80 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
         {id:'money_out', labelKey:'fin_tab_out'},
         {id:'salary',    labelKey:'fin_tab_salary'},
         {id:'revenue',   labelKey:'fin_tab_revenue'},
+        {id:'stats',     labelKey:'fin_tab_stats'},
       ];
+
+      /* ── Statistics: aggregate income & costs over a chosen period ── */
+      const nowMonthStr = (d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`)(new Date());
+      const statMonthList = useMemo(() => {
+        if (statRange === 'year')
+          return Array.from({length:12}, (_,i)=>`${statYear}-${String(i+1).padStart(2,'0')}`);
+        const n = statRange === 'custom'
+          ? Math.max(1, Math.min(60, Number(statCustom)||1))
+          : Number(statRange);
+        const [by, bm] = month.split('-').map(Number);
+        const base = by*12 + (bm-1);
+        const arr = [];
+        for (let i = n-1; i >= 0; i--) {
+          const tot = base - i;
+          arr.push(`${Math.floor(tot/12)}-${String(tot%12 + 1).padStart(2,'0')}`);
+        }
+        return arr;
+      }, [statRange, statCustom, statYear, month]);
+
+      const genSalForMonth = (sal, m) => {
+        if (!sal.recurring || !sal.start_date) return (sal.month===m) ? [sal] : [];
+        return (sal.start_date.slice(0,7) <= m && m <= nowMonthStr) ? [sal] : [];
+      };
+      const statMonthData = (m) => {
+        let mIn = 0;
+        invoices.forEach(inv => {
+          const st = inv.items.reduce((s,i)=>s+i.qty*i.unit_price,0);
+          const gt = st*(1+(inv.tax||0)/100);
+          inv.payments.forEach(p => {
+            if (p.status==='paid' && (p.paid_date||inv.due_date||'').startsWith(m)) mIn += gt*p.pct/100;
+          });
+        });
+        const occ = allOcc.filter(e=>e.gen_date.startsWith(m));
+        const mOut = occ.reduce((s,e)=>s+Number(e.amount),0);
+        const autoS = teamMembers
+          .filter(mm => Number(mm.salary) > 0 && (!mm.join_date || mm.join_date.slice(0,7) <= m))
+          .map(mm => ({ name: mm.name, amount: Number(mm.salary) }));
+        const manS = salaries.flatMap(s=>genSalForMonth(s,m))
+          .map(s => ({ name: s.employee_name||t('unknown'), amount: Number(s.amount) }));
+        const salRows = [...autoS, ...manS];
+        const salTot = salRows.reduce((s,x)=>s+x.amount,0);
+        const ded = (deductions||[]).filter(d=>(d.date||'').startsWith(m)).reduce((s,d)=>s+Number(d.amount),0);
+        const bon = (bonuses||[]).filter(b=>(b.date||'').startsWith(m)).reduce((s,b)=>s+Number(b.amount),0);
+        const netSal = salTot - ded + bon;
+        return { m, mIn, mOut, occ, salRows, salTot, ded, bon, netSal, revenue: mIn - mOut - netSal };
+      };
+      const statRows = statMonthList.map(statMonthData);
+      const statAgg = statRows.reduce((a,r)=>({
+        mIn:a.mIn+r.mIn, mOut:a.mOut+r.mOut, salTot:a.salTot+r.salTot,
+        ded:a.ded+r.ded, bon:a.bon+r.bon, netSal:a.netSal+r.netSal, revenue:a.revenue+r.revenue,
+      }), {mIn:0,mOut:0,salTot:0,ded:0,bon:0,netSal:0,revenue:0});
+      const statCount     = statRows.length || 1;
+      const statTotalCost = statAgg.mOut + statAgg.netSal;
+      const statMaxRev    = Math.max(1, ...statRows.map(r=>Math.abs(r.revenue)));
+      const statExpList = (() => {
+        const map = {};
+        statRows.forEach(r => r.occ.forEach(o => {
+          const k = o.desc || '—';
+          (map[k] = map[k] || { desc:k, total:0, count:0, recurrence:o.recurrence });
+          map[k].total += Number(o.amount); map[k].count += 1;
+        }));
+        return Object.values(map).sort((a,b)=>b.total-a.total);
+      })();
+      const statSalList = (() => {
+        const map = {};
+        statRows.forEach(r => r.salRows.forEach(s => {
+          const k = s.name || t('unknown');
+          (map[k] = map[k] || { name:k, total:0, months:0 });
+          map[k].total += s.amount; map[k].months += 1;
+        }));
+        return Object.values(map).sort((a,b)=>b.total-a.total);
+      })();
 
       return (
         <div className="space-y-5">
@@ -7762,6 +7860,159 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
                 ):(
                   <div className="text-slate-600 text-sm text-center py-8">{t('no_data')}</div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Statistics ── */}
+          {tab==='stats'&&(
+            <div className="space-y-4">
+              {/* Period selector */}
+              <div className="bg-slate-800/60 rounded-2xl border border-slate-700/40 px-5 py-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-slate-500 ml-1">{t('fin_stats_period')}:</span>
+                  {[['1','fin_rng_1'],['3','fin_rng_3'],['6','fin_rng_6'],['12','fin_rng_12'],['year','fin_rng_year'],['custom','fin_rng_custom']].map(([v,k])=>(
+                    <button key={v} onClick={()=>setStatRange(v)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${statRange===v?'bg-blue-600 text-white shadow-lg shadow-blue-500/20':'bg-slate-700/60 text-slate-400 hover:text-slate-200'}`}>
+                      {t(k)}
+                    </button>
+                  ))}
+                  {statRange==='custom'&&(
+                    <span className="flex items-center gap-1.5">
+                      <input type="number" min="1" max="60" value={statCustom} onChange={e=>setStatCustom(e.target.value)}
+                        className="w-16 bg-slate-700 border border-slate-600 focus:border-blue-500 rounded-lg px-2 py-1.5 text-xs text-white outline-none"/>
+                      <span className="text-xs text-slate-500">{t('fin_rng_months')}</span>
+                    </span>
+                  )}
+                  {statRange==='year'&&(
+                    <input type="number" min="2000" max="2100" value={statYear} onChange={e=>setStatYear(Number(e.target.value)||statYear)}
+                      className="w-24 bg-slate-700 border border-slate-600 focus:border-blue-500 rounded-lg px-2 py-1.5 text-xs text-white outline-none"/>
+                  )}
+                  <span className="text-[11px] text-slate-600 mr-auto">{statMonthList[0]} → {statMonthList[statMonthList.length-1]} · {statMonthList.length} {t('fin_stat_months_cnt')}</span>
+                </div>
+              </div>
+
+              {/* Summary cards */}
+              <div className="grid grid-cols-5 gap-3">
+                {[
+                  {label:t('fin_stat_total_in'),   v:statAgg.mIn,     c:'text-emerald-400'},
+                  {label:t('fin_stat_total_out'),  v:statAgg.mOut,    c:'text-orange-400'},
+                  {label:t('fin_stat_total_sal'),  v:statAgg.netSal,  c:'text-blue-300'},
+                  {label:t('fin_stat_total_cost'), v:statTotalCost,   c:'text-rose-400'},
+                  {label:t('fin_stat_total_rev'),  v:statAgg.revenue, c:statAgg.revenue>=0?'text-emerald-400':'text-red-400'},
+                ].map((r,i)=>(
+                  <div key={i} className="bg-slate-800/60 rounded-2xl p-4 border border-slate-700/40">
+                    <div className={`text-xl font-bold ${r.c}`}>${r.v.toFixed(0)}</div>
+                    <div className="text-slate-500 text-xs mt-1">{r.label}</div>
+                    <div className="text-slate-600 text-[10px] mt-0.5">{t('fin_stat_avg_mo')}: ${(r.v/statCount).toFixed(0)}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Monthly breakdown */}
+              <div className="bg-slate-800/60 rounded-2xl border border-slate-700/40 overflow-hidden">
+                <div className="px-5 py-3 border-b border-slate-700/40 text-xs text-slate-400">{t('fin_stat_monthly')}</div>
+                <div className="overflow-x-auto scroll-fade-x">
+                  <table className="w-full text-sm">
+                    <thead><tr className="border-b border-slate-700/60 text-right">
+                      <th className="px-4 py-3 text-xs font-medium text-slate-500">{t('fin_stat_month')}</th>
+                      <th className="px-4 py-3 text-xs font-medium text-slate-500 text-left">{t('fin_tab_in')}</th>
+                      <th className="px-4 py-3 text-xs font-medium text-slate-500 text-left">{t('fin_tab_out')}</th>
+                      <th className="px-4 py-3 text-xs font-medium text-slate-500 text-left">{t('fin_net_salaries')}</th>
+                      <th className="px-4 py-3 text-xs font-medium text-slate-500 text-left">{t('fin_stat_total_rev')}</th>
+                      <th className="px-4 py-3 w-32"></th>
+                    </tr></thead>
+                    <tbody>
+                      {statRows.map(r=>(
+                        <tr key={r.m} className="border-b border-slate-700/30 hover:bg-white/[0.02]">
+                          <td className="px-4 py-2.5 text-slate-300 font-medium">{r.m}</td>
+                          <td className="px-4 py-2.5 text-emerald-400 text-left">${r.mIn.toFixed(0)}</td>
+                          <td className="px-4 py-2.5 text-orange-400 text-left">${r.mOut.toFixed(0)}</td>
+                          <td className="px-4 py-2.5 text-blue-300 text-left">${r.netSal.toFixed(0)}</td>
+                          <td className={`px-4 py-2.5 font-semibold text-left ${r.revenue>=0?'text-emerald-400':'text-red-400'}`}>${r.revenue.toFixed(0)}</td>
+                          <td className="px-4 py-2.5">
+                            <div className="h-1.5 rounded-full bg-slate-700/60 overflow-hidden">
+                              <div className={`h-full ${r.revenue>=0?'bg-emerald-500':'bg-red-500'}`} style={{width:`${Math.abs(r.revenue)/statMaxRev*100}%`}}/>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot><tr className="border-t border-slate-700 bg-slate-800/40">
+                      <td className="px-4 py-3 text-slate-400 text-sm font-medium">{t('fin_total')}</td>
+                      <td className="px-4 py-3 text-emerald-400 font-bold text-left">${statAgg.mIn.toFixed(0)}</td>
+                      <td className="px-4 py-3 text-orange-400 font-bold text-left">${statAgg.mOut.toFixed(0)}</td>
+                      <td className="px-4 py-3 text-blue-300 font-bold text-left">${statAgg.netSal.toFixed(0)}</td>
+                      <td className={`px-4 py-3 font-bold text-left ${statAgg.revenue>=0?'text-emerald-400':'text-red-400'}`}>${statAgg.revenue.toFixed(0)}</td>
+                      <td/>
+                    </tr></tfoot>
+                  </table>
+                </div>
+              </div>
+
+              {/* Expenses + Salaries breakdown */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-800/60 rounded-2xl border border-slate-700/40 overflow-hidden">
+                  <div className="px-5 py-3 border-b border-slate-700/40 text-xs text-slate-400 flex items-center justify-between">
+                    <span>{t('fin_stat_exp_break')}</span><span className="text-orange-400 font-semibold">${statAgg.mOut.toFixed(0)}</span>
+                  </div>
+                  <table className="w-full text-sm">
+                    <thead><tr className="border-b border-slate-700/60 text-right">
+                      <th className="px-4 py-2.5 text-xs font-medium text-slate-500">{t('fin_col_expense')}</th>
+                      <th className="px-4 py-2.5 text-xs font-medium text-slate-500">{t('fin_stat_times')}</th>
+                      <th className="px-4 py-2.5 text-xs font-medium text-slate-500 text-left">{t('fin_total')}</th>
+                      <th className="px-4 py-2.5 text-xs font-medium text-slate-500 text-left">{t('fin_stat_share')}</th>
+                    </tr></thead>
+                    <tbody>
+                      {statExpList.length===0&&<tr><td colSpan={4} className="text-center py-8 text-slate-600 text-xs">{t('fin_stat_no_data')}</td></tr>}
+                      {statExpList.map((e,i)=>(
+                        <tr key={i} className="border-b border-slate-700/30 hover:bg-white/[0.02]">
+                          <td className="px-4 py-2.5 text-slate-200">{e.desc}
+                            <span className="text-slate-600 text-[10px] mr-1">{t(RECURRENCE_LABELS[e.recurrence]||'')}</span>
+                          </td>
+                          <td className="px-4 py-2.5 text-slate-400 text-xs">{e.count}</td>
+                          <td className="px-4 py-2.5 text-orange-400 font-semibold text-left">${e.total.toFixed(0)}</td>
+                          <td className="px-4 py-2.5 text-slate-500 text-xs text-left">{statAgg.mOut>0?(e.total/statAgg.mOut*100).toFixed(0):0}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="bg-slate-800/60 rounded-2xl border border-slate-700/40 overflow-hidden">
+                  <div className="px-5 py-3 border-b border-slate-700/40 text-xs text-slate-400 flex items-center justify-between">
+                    <span>{t('fin_stat_sal_break')}</span><span className="text-blue-300 font-semibold">${statAgg.salTot.toFixed(0)}</span>
+                  </div>
+                  <table className="w-full text-sm">
+                    <thead><tr className="border-b border-slate-700/60 text-right">
+                      <th className="px-4 py-2.5 text-xs font-medium text-slate-500">{t('fin_employee')}</th>
+                      <th className="px-4 py-2.5 text-xs font-medium text-slate-500">{t('fin_stat_months_cnt')}</th>
+                      <th className="px-4 py-2.5 text-xs font-medium text-slate-500 text-left">{t('fin_total')}</th>
+                      <th className="px-4 py-2.5 text-xs font-medium text-slate-500 text-left">{t('fin_stat_avg_mo')}</th>
+                    </tr></thead>
+                    <tbody>
+                      {statSalList.length===0&&<tr><td colSpan={4} className="text-center py-8 text-slate-600 text-xs">{t('fin_stat_no_data')}</td></tr>}
+                      {statSalList.map((s,i)=>(
+                        <tr key={i} className="border-b border-slate-700/30 hover:bg-white/[0.02]">
+                          <td className="px-4 py-2.5 text-slate-200">{s.name}</td>
+                          <td className="px-4 py-2.5 text-slate-400 text-xs">{s.months}</td>
+                          <td className="px-4 py-2.5 text-blue-300 font-semibold text-left">${s.total.toFixed(0)}</td>
+                          <td className="px-4 py-2.5 text-slate-500 text-xs text-left">${(s.total/s.months).toFixed(0)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    {(statAgg.ded>0||statAgg.bon>0)&&(
+                      <tfoot><tr className="border-t border-slate-700">
+                        <td colSpan={2} className="px-4 py-2.5 text-slate-400 text-xs">{t('fin_net_adj')}</td>
+                        <td className="px-4 py-2.5 text-left text-xs">
+                          {statAgg.ded>0&&<span className="text-rose-400 ml-2">−${statAgg.ded.toFixed(0)}</span>}
+                          {statAgg.bon>0&&<span className="text-emerald-400">+${statAgg.bon.toFixed(0)}</span>}
+                        </td>
+                        <td className="px-4 py-2.5 text-blue-400 font-bold text-left">${statAgg.netSal.toFixed(0)}</td>
+                      </tr></tfoot>
+                    )}
+                  </table>
+                </div>
               </div>
             </div>
           )}
