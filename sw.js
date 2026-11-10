@@ -1,4 +1,4 @@
-const CACHE = 'bms-shell-v1';
+const CACHE = 'bms-shell-v2';
 const SHELL_URLS = ['/', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', (event) => {

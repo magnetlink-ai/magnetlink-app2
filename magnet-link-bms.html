@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Magnet Link — BMS</title>
   <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#5b9bd1" />
+  <meta name="theme-color" content="#1b4a8c" />
   <link rel="icon" href="/icons/icon-192.png" />
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -32,8 +32,8 @@
 
     /* ── Base ── */
     :root {
-      --blue:   #5b9bd1;
-      --accent: #5b9bd1;
+      --blue:   #2b6fc6;
+      --accent: #2b6fc6;
     }
 
     /* the off-canvas sidebar is translated past the viewport edge when closed;
@@ -46,28 +46,28 @@
        instead of an abrupt cut, and disappears once fully scrolled that direction. */
     .scroll-fade-x {
       background:
-        linear-gradient(to right, #1e293b 30%, rgba(30,41,59,0)) left,
-        linear-gradient(to left,  #1e293b 30%, rgba(30,41,59,0)) right,
+        linear-gradient(to right, #0b1424 30%, rgba(11,20,36,0)) left,
+        linear-gradient(to left,  #0b1424 30%, rgba(11,20,36,0)) right,
         linear-gradient(to right, rgba(0,0,0,.35), rgba(0,0,0,0)) left,
         linear-gradient(to left,  rgba(0,0,0,.35), rgba(0,0,0,0)) right;
       background-repeat: no-repeat;
-      background-color: #1e293b;
+      background-color: #0b1424;
       background-size: 24px 100%, 24px 100%, 12px 100%, 12px 100%;
       background-attachment: local, local, scroll, scroll;
     }
 
     body {
-      background-color: #09090b;
+      background-color: #060b16;
       background-image:
-        repeating-linear-gradient(rgba(255,255,255,0.018) 0px,rgba(255,255,255,0.018) 1px,transparent 1px,transparent 40px),
-        repeating-linear-gradient(90deg,rgba(255,255,255,0.018) 0px,rgba(255,255,255,0.018) 1px,transparent 1px,transparent 40px);
+        repeating-linear-gradient(rgba(79,195,240,0.03) 0px,rgba(79,195,240,0.03) 1px,transparent 1px,transparent 40px),
+        repeating-linear-gradient(90deg,rgba(79,195,240,0.03) 0px,rgba(79,195,240,0.03) 1px,transparent 1px,transparent 40px);
     }
 
     /* ── Scrollbar ── */
     ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: #09090b; }
-    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 8px; }
-    ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+    ::-webkit-scrollbar-track { background: #060b16; }
+    ::-webkit-scrollbar-thumb { background: #1e3050; border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: #2c4268; }
 
     /* ── Animations ── */
     @keyframes slideUp {
@@ -86,7 +86,7 @@
     /* ── Primary button hover ── */
     .bg-blue-600:not(:disabled):hover,
     .bg-blue-500:not(:disabled):hover {
-      box-shadow: 0 2px 10px rgba(91,155,209,0.30) !important;
+      box-shadow: 0 2px 10px rgba(43,111,198,0.30) !important;
       transform: translateY(-1px);
     }
 
@@ -101,7 +101,7 @@
 
     /* ── Progress glow ── */
     [class*="from-blue"][class*="rounded-full"] {
-      box-shadow: 0 0 6px rgba(91,155,209,0.35);
+      box-shadow: 0 0 6px rgba(43,111,198,0.35);
     }
 
     /* ── JetBrains Mono for numbers ── */
@@ -180,9 +180,9 @@
     [data-theme="light"] .placeholder-slate-500::placeholder { color: #94a3b8 !important; }
 
     /* ── Accent text: darken light shades (-200/-300/-400) for readability on white ── */
-    [data-theme="light"] .text-blue-200   { color: #3d6f9e !important; }
-    [data-theme="light"] .text-blue-300   { color: #4a86bc !important; }
-    [data-theme="light"] .text-blue-400   { color: #3d6f9e !important; }
+    [data-theme="light"] .text-blue-200   { color: #1b4a8c !important; }
+    [data-theme="light"] .text-blue-300   { color: #1f5aa6 !important; }
+    [data-theme="light"] .text-blue-400   { color: #1b4a8c !important; }
     [data-theme="light"] .text-emerald-200 { color: #059669 !important; }
     [data-theme="light"] .text-emerald-300 { color: #059669 !important; }
     [data-theme="light"] .text-emerald-400 { color: #047857 !important; }
@@ -253,107 +253,107 @@
     [data-theme="light"] input,
     [data-theme="light"] textarea,
     [data-theme="light"] select { color: #0f172a !important; caret-color: #0f172a; }
-    [data-theme="light"] .focus\:border-blue-500:focus { border-color: #4a86bc !important; }
-    [data-theme="light"] .border-blue-500\/30 { border-color: rgba(91,155,209,0.35) !important; }
-    [data-theme="light"] .bg-blue-500\/15 { background-color: rgba(91,155,209,0.12) !important; }
+    [data-theme="light"] .focus\:border-blue-500:focus { border-color: #1f5aa6 !important; }
+    [data-theme="light"] .border-blue-500\/30 { border-color: rgba(43,111,198,0.35) !important; }
+    [data-theme="light"] .bg-blue-500\/15 { background-color: rgba(43,111,198,0.12) !important; }
 
     /* ══════════════════════════════════════════════════
        SaaS Design Tokens — Dark Mode Overrides
     ══════════════════════════════════════════════════ */
 
     /* ── Zinc remapping: remove blue-cast from slate ── */
-    .bg-slate-950 { background-color: #09090b !important; }
-    .bg-slate-900 { background-color: #18181b !important; }
-    .bg-slate-900\/96 { background-color: rgba(24,24,27,0.96) !important; }
-    .bg-slate-900\/80 { background-color: rgba(24,24,27,0.80) !important; }
-    .bg-slate-900\/60 { background-color: rgba(24,24,27,0.60) !important; }
-    .bg-slate-900\/50 { background-color: rgba(24,24,27,0.50) !important; }
-    .bg-slate-900\/40 { background-color: rgba(24,24,27,0.40) !important; }
-    .bg-slate-900\/30 { background-color: rgba(24,24,27,0.30) !important; }
+    .bg-slate-950 { background-color: #060b16 !important; }
+    .bg-slate-900 { background-color: #0b1424 !important; }
+    .bg-slate-900\/96 { background-color: rgba(11,20,36,0.96) !important; }
+    .bg-slate-900\/80 { background-color: rgba(11,20,36,0.80) !important; }
+    .bg-slate-900\/60 { background-color: rgba(11,20,36,0.60) !important; }
+    .bg-slate-900\/50 { background-color: rgba(11,20,36,0.50) !important; }
+    .bg-slate-900\/40 { background-color: rgba(11,20,36,0.40) !important; }
+    .bg-slate-900\/30 { background-color: rgba(11,20,36,0.30) !important; }
 
     /* cards: mostly solid, a touch of blur for depth */
     .bg-slate-800\/60 {
-      background-color: rgba(24,24,27,0.65) !important;
+      background-color: rgba(11,20,36,0.65) !important;
       backdrop-filter: blur(8px) !important;
       -webkit-backdrop-filter: blur(8px) !important;
       border-radius: 18px !important;
     }
-    .bg-slate-800\/80 { background-color: rgba(24,24,27,0.70) !important; }
-    .bg-slate-800\/50 { background-color: rgba(24,24,27,0.40) !important; }
-    .bg-slate-800\/40 { background-color: rgba(24,24,27,0.32) !important; }
-    .bg-slate-800\/30 { background-color: rgba(24,24,27,0.25) !important; }
-    .bg-slate-800\/20 { background-color: rgba(24,24,27,0.18) !important; }
-    .bg-slate-800    { background-color: #27272a !important; }
+    .bg-slate-800\/80 { background-color: rgba(11,20,36,0.70) !important; }
+    .bg-slate-800\/50 { background-color: rgba(11,20,36,0.40) !important; }
+    .bg-slate-800\/40 { background-color: rgba(11,20,36,0.32) !important; }
+    .bg-slate-800\/30 { background-color: rgba(11,20,36,0.25) !important; }
+    .bg-slate-800\/20 { background-color: rgba(11,20,36,0.18) !important; }
+    .bg-slate-800    { background-color: #13213a !important; }
 
-    .bg-slate-700    { background-color: #3f3f46 !important; }
-    .bg-slate-700\/70 { background-color: rgba(63,63,70,0.70) !important; }
-    .bg-slate-700\/60 { background-color: rgba(63,63,70,0.60) !important; }
-    .bg-slate-700\/50 { background-color: rgba(63,63,70,0.50) !important; }
-    .bg-slate-700\/40 { background-color: rgba(63,63,70,0.40) !important; }
-    .bg-slate-700\/30 { background-color: rgba(63,63,70,0.30) !important; }
-    .bg-slate-700\/20 { background-color: rgba(63,63,70,0.20) !important; }
+    .bg-slate-700    { background-color: #1e3050 !important; }
+    .bg-slate-700\/70 { background-color: rgba(30,48,80,0.70) !important; }
+    .bg-slate-700\/60 { background-color: rgba(30,48,80,0.60) !important; }
+    .bg-slate-700\/50 { background-color: rgba(30,48,80,0.50) !important; }
+    .bg-slate-700\/40 { background-color: rgba(30,48,80,0.40) !important; }
+    .bg-slate-700\/30 { background-color: rgba(30,48,80,0.30) !important; }
+    .bg-slate-700\/20 { background-color: rgba(30,48,80,0.20) !important; }
 
     /* ── Zinc text ── */
     .text-slate-100 { color: #f4f4f5 !important; }
     .text-slate-200 { color: #e4e4e7 !important; }
     .text-slate-300 { color: #d4d4d8 !important; }
-    .text-slate-400 { color: #a1a1aa !important; }
-    .text-slate-500 { color: #71717a !important; }
-    .text-slate-600 { color: #52525b !important; }
+    .text-slate-400 { color: #98a6bd !important; }
+    .text-slate-500 { color: #6a7a96 !important; }
+    .text-slate-600 { color: #4a5b7a !important; }
 
     /* ── Zinc borders ── */
     .border-slate-800,
     .border-slate-800\/60,
-    .border-slate-800\/50 { border-color: #27272a !important; }
+    .border-slate-800\/50 { border-color: #13213a !important; }
     .border-slate-700,
     .border-slate-700\/60,
     .border-slate-700\/50,
     .border-slate-700\/40,
-    .border-slate-700\/30 { border-color: #3f3f46 !important; }
-    .border-slate-600 { border-color: #52525b !important; }
-    .divide-slate-800 > * + * { border-color: #27272a !important; }
+    .border-slate-700\/30 { border-color: #1e3050 !important; }
+    .border-slate-600 { border-color: #2c4268 !important; }
+    .divide-slate-800 > * + * { border-color: #13213a !important; }
 
     /* ── Brand blue primary accent — soft/light tuning ── */
-    .bg-blue-600     { background-color: #5b9bd1 !important; }
-    .bg-blue-500     { background-color: #74acd9 !important; }
-    .bg-blue-700     { background-color: #4a86bc !important; }
-    .bg-blue-800     { background-color: #3d6f9e !important; }
-    .hover\:bg-blue-600:hover { background-color: #4a86bc !important; }
-    .hover\:bg-blue-500:hover { background-color: #5b9bd1 !important; }
-    .hover\:bg-blue-700:hover { background-color: #3d6f9e !important; }
+    .bg-blue-600     { background-color: #2b6fc6 !important; }
+    .bg-blue-500     { background-color: #3a86d6 !important; }
+    .bg-blue-700     { background-color: #1f5aa6 !important; }
+    .bg-blue-800     { background-color: #1b4a8c !important; }
+    .hover\:bg-blue-600:hover { background-color: #1f5aa6 !important; }
+    .hover\:bg-blue-500:hover { background-color: #2b6fc6 !important; }
+    .hover\:bg-blue-700:hover { background-color: #1b4a8c !important; }
 
-    .text-blue-400 { color: #8fbce0 !important; }
-    .text-blue-300 { color: #b0d0e8 !important; }
-    .text-blue-200 { color: #d3e6f4 !important; }
-    .hover\:text-blue-400:hover { color: #8fbce0 !important; }
+    .text-blue-400 { color: #5fb6ea !important; }
+    .text-blue-300 { color: #8ccdf2 !important; }
+    .text-blue-200 { color: #c4e6fa !important; }
+    .hover\:text-blue-400:hover { color: #5fb6ea !important; }
 
-    .border-blue-500\/30 { border-color: rgba(91,155,209,0.35) !important; }
-    .border-blue-500\/40 { border-color: rgba(91,155,209,0.45) !important; }
-    .bg-blue-500\/15 { background-color: rgba(91,155,209,0.14) !important; }
-    .bg-blue-500\/20 { background-color: rgba(91,155,209,0.20) !important; }
-    .bg-blue-500\/10 { background-color: rgba(91,155,209,0.09) !important; }
-    .bg-blue-600\/80 { background-color: rgba(91,155,209,0.80) !important; }
+    .border-blue-500\/30 { border-color: rgba(43,111,198,0.35) !important; }
+    .border-blue-500\/40 { border-color: rgba(43,111,198,0.45) !important; }
+    .bg-blue-500\/15 { background-color: rgba(43,111,198,0.14) !important; }
+    .bg-blue-500\/20 { background-color: rgba(43,111,198,0.20) !important; }
+    .bg-blue-500\/10 { background-color: rgba(43,111,198,0.09) !important; }
+    .bg-blue-600\/80 { background-color: rgba(43,111,198,0.80) !important; }
 
-    .from-blue-600   { --tw-gradient-from: #5b9bd1 !important; }
-    .to-blue-600     { --tw-gradient-to:   #5b9bd1 !important; }
-    .to-blue-700     { --tw-gradient-to:   #4a86bc !important; }
-    .to-blue-800     { --tw-gradient-to:   #3d6f9e !important; }
-    .shadow-blue-500\/20 { box-shadow: 0 0 0 1px rgba(91,155,209,0.15), 0 4px 14px rgba(91,155,209,0.15) !important; }
-    .shadow-blue-500\/30 { box-shadow: 0 3px 14px rgba(91,155,209,0.22) !important; }
+    .from-blue-600   { --tw-gradient-from: #2b6fc6 !important; }
+    .to-blue-600     { --tw-gradient-to:   #2b6fc6 !important; }
+    .to-blue-700     { --tw-gradient-to:   #1f5aa6 !important; }
+    .to-blue-800     { --tw-gradient-to:   #1b4a8c !important; }
+    .shadow-blue-500\/20 { box-shadow: 0 0 0 1px rgba(43,111,198,0.15), 0 4px 14px rgba(43,111,198,0.15) !important; }
+    .shadow-blue-500\/30 { box-shadow: 0 3px 14px rgba(43,111,198,0.22) !important; }
 
     /* ring accent */
-    .ring-blue-500   { --tw-ring-color: rgba(91,155,209,0.50) !important; }
-    .focus\:ring-blue-500:focus { --tw-ring-color: rgba(91,155,209,0.40) !important; }
+    .ring-blue-500   { --tw-ring-color: rgba(43,111,198,0.50) !important; }
+    .focus\:ring-blue-500:focus { --tw-ring-color: rgba(43,111,198,0.40) !important; }
 
     /* ── Input: brand-blue focus ── */
     input:focus, textarea:focus, select:focus {
-      border-color: rgba(91,155,209,0.65) !important;
-      box-shadow: 0 0 0 3px rgba(91,155,209,0.12) !important;
+      border-color: rgba(43,111,198,0.65) !important;
+      box-shadow: 0 0 0 3px rgba(43,111,198,0.12) !important;
       outline: none !important;
     }
     .focus\:border-blue-500:focus {
-      border-color: rgba(91,155,209,0.65) !important;
-      box-shadow: 0 0 0 3px rgba(91,155,209,0.12) !important;
+      border-color: rgba(43,111,198,0.65) !important;
+      box-shadow: 0 0 0 3px rgba(43,111,198,0.12) !important;
     }
 
     /* ── Pill-shaped status badges ── */
@@ -366,14 +366,14 @@
 
     /* ── Card hover: subtle border lift ── */
     .bg-slate-800\/60:hover {
-      border-color: rgba(91,155,209,0.16) !important;
-      box-shadow: 0 0 0 1px rgba(91,155,209,0.08),
+      border-color: rgba(43,111,198,0.16) !important;
+      box-shadow: 0 0 0 1px rgba(43,111,198,0.08),
                   0 8px 24px rgba(0,0,0,0.45) !important;
     }
 
     /* ── Primary button hover ── */
     .bg-blue-600:not(:disabled):hover {
-      box-shadow: 0 3px 14px rgba(91,155,209,0.35) !important;
+      box-shadow: 0 3px 14px rgba(43,111,198,0.35) !important;
       transform: translateY(-1px) !important;
     }
 
@@ -390,16 +390,16 @@
 
     /* ── Softer, hairline card borders ── */
     .border-slate-700\/40,
-    .border-slate-700\/30 { border-color: rgba(63,63,70,0.28) !important; }
+    .border-slate-700\/30 { border-color: rgba(30,48,80,0.28) !important; }
 
     /* ── Hover bg zinc ── */
-    .hover\:bg-slate-800:hover { background-color: #27272a !important; }
-    .hover\:bg-slate-900:hover { background-color: #18181b !important; }
-    .hover\:bg-slate-700:hover { background-color: #3f3f46 !important; }
+    .hover\:bg-slate-800:hover { background-color: #13213a !important; }
+    .hover\:bg-slate-900:hover { background-color: #0b1424 !important; }
+    .hover\:bg-slate-700:hover { background-color: #1e3050 !important; }
 
     /* ── Placeholders ── */
-    .placeholder-slate-500::placeholder { color: #71717a !important; }
-    .placeholder-slate-400::placeholder { color: #a1a1aa !important; }
+    .placeholder-slate-500::placeholder { color: #6a7a96 !important; }
+    .placeholder-slate-400::placeholder { color: #98a6bd !important; }
 
     /* ── Micro-label utility ── */
     .micro-label {
@@ -407,15 +407,69 @@
       font-weight: 700;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: #71717a;
+      color: #6a7a96;
     }
+  
+    /* ══════════ Magnet Link brand layer (logo: navy → blue → cyan) ══════════ */
+    :root { --ml-navy:#1b4a8c; --ml-blue:#2b6fc6; --ml-cyan:#4fc3f0; --ml-grad:linear-gradient(120deg,#1b4a8c 0%,#2b6fc6 55%,#4fc3f0 100%); }
+    body { background-image:
+        radial-gradient(900px 500px at 100% -10%, rgba(43,111,198,0.14), transparent 60%),
+        radial-gradient(700px 400px at -10% 110%, rgba(79,195,240,0.07), transparent 60%),
+        repeating-linear-gradient(rgba(79,195,240,0.03) 0px,rgba(79,195,240,0.03) 1px,transparent 1px,transparent 40px),
+        repeating-linear-gradient(90deg,rgba(79,195,240,0.03) 0px,rgba(79,195,240,0.03) 1px,transparent 1px,transparent 40px) !important;
+      background-attachment: fixed; }
+    .bg-blue-600\/20 { background-color: rgba(43,111,198,0.20) !important; }
+    .bg-brand-grad   { background-image: var(--ml-grad) !important; }
+    .brand-bar       { height: 3px; background: var(--ml-grad); }
+    /* primary buttons pick up the logo gradient */
+    .bg-blue-600 { background-image: linear-gradient(120deg,#1f5aa6 0%,#2b6fc6 60%,#3a9ce0 100%); }
+    /* active nav item: cyan edge, like the logo highlight */
+    .nav-active-l { box-shadow: inset 3px 0 0 #4fc3f0; }
+    .nav-active-r { box-shadow: inset -3px 0 0 #4fc3f0; }
+    [data-theme="light"] body { background-image:
+        radial-gradient(900px 500px at 100% -10%, rgba(43,111,198,0.10), transparent 60%),
+        repeating-linear-gradient(rgba(27,74,140,0.04) 0px,rgba(27,74,140,0.04) 1px,transparent 1px,transparent 40px),
+        repeating-linear-gradient(90deg,rgba(27,74,140,0.04) 0px,rgba(27,74,140,0.04) 1px,transparent 1px,transparent 40px) !important; }
+    [data-theme="light"] .text-blue-300 { color: #1f5aa6 !important; }
+    [data-theme="light"] .bg-blue-600\/20 { background-color: rgba(43,111,198,0.12) !important; }
+    [data-theme="light"] .nav-active-l { box-shadow: inset 3px 0 0 #2b6fc6; }
+    [data-theme="light"] .nav-active-r { box-shadow: inset -3px 0 0 #2b6fc6; }
   </style>
 </head>
-<body class="dark bg-slate-950 text-white" style="background-color:#09090b;">
+<body class="dark bg-slate-950 text-white" style="background-color:#060b16;">
   <div id="root"></div>
 
   <script type="text/babel">
     const { useState, useEffect, useRef, useCallback, createContext, useContext, useMemo } = React;
+
+    /* ═══════════════════════════ BRAND LOGO ═══════════════════════════
+       Two interlocked chain links (navy → blue → cyan) + signal waves.
+       Returns an SVG string so it works in React AND in print/PDF windows.
+       variant: 'color' (on dark/light UI) | 'white' (on brand-gradient bg) */
+    let __mlLogoSeq = 0;
+    const brandLogoSvg = ({ size = 32, variant = 'color' } = {}) => {
+      const id = 'mlg' + (++__mlLogoSeq);
+      const w = Math.round(size * 120 / 64);
+      const stops = variant === 'white'
+        ? '<stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#bcd3f2"/>'
+        : '<stop offset="0" stop-color="#1b4a8c"/><stop offset=".55" stop-color="#2b6fc6"/><stop offset="1" stop-color="#4fc3f0"/>';
+      const wave = variant === 'white' ? '#ffffff' : '#4fc3f0';
+      const L = 'x="7" y="9" width="64" height="46" rx="23"', R = 'x="49" y="9" width="64" height="46" rx="23"';
+      return `<svg width="${w}" height="${size}" viewBox="0 0 120 64" xmlns="http://www.w3.org/2000/svg" aria-label="Magnet Link">
+<defs><linearGradient id="${id}g" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="120" y2="64">${stops}</linearGradient>
+<clipPath id="${id}t"><rect x="44" y="0" width="32" height="30"/></clipPath>
+<clipPath id="${id}b"><rect x="44" y="34" width="32" height="30"/></clipPath>
+<mask id="${id}mL" maskUnits="userSpaceOnUse" x="0" y="0" width="120" height="64"><rect width="120" height="64" fill="#fff"/><rect ${R} fill="none" stroke="#000" stroke-width="15" clip-path="url(#${id}t)"/></mask>
+<mask id="${id}mR" maskUnits="userSpaceOnUse" x="0" y="0" width="120" height="64"><rect width="120" height="64" fill="#fff"/><rect ${L} fill="none" stroke="#000" stroke-width="15" clip-path="url(#${id}b)"/></mask></defs>
+<rect ${L} fill="none" stroke="url(#${id}g)" stroke-width="9.5" mask="url(#${id}mL)"/>
+<rect ${R} fill="none" stroke="url(#${id}g)" stroke-width="9.5" mask="url(#${id}mR)"/>
+<g fill="none" stroke="${wave}" stroke-width="2.6" stroke-linecap="round" opacity=".9">
+<path d="M37 26 Q33 32 37 38"/><path d="M31 22 Q25 32 31 42"/><path d="M83 26 Q87 32 83 38"/><path d="M89 22 Q95 32 89 42"/></g></svg>`;
+    };
+    const BrandLogo = ({ size = 28, variant = 'color', className = '' }) => {
+      const html = useMemo(() => brandLogoSvg({ size, variant }), [size, variant]);
+      return <span className={`inline-flex shrink-0 ${className}`} dangerouslySetInnerHTML={{ __html: html }} />;
+    };
 
     /* ═══════════════════════════ TRANSLATIONS ═══════════════════════════ */
     const TRANSLATIONS = {
@@ -2354,8 +2408,8 @@
       return (
         <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-8" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
           <div className="mb-10 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white font-black text-2xl shadow-2xl shadow-blue-500/30 mx-auto mb-4">M</div>
-            <h1 className="text-2xl font-bold text-white">Magnet Link</h1>
+            <div className="flex justify-center mb-4"><BrandLogo size={64} /></div>
+            <h1 className="text-3xl font-semibold text-white tracking-tight" style={{fontFamily:"'IBM Plex Sans Arabic', sans-serif"}}>Magnet Link</h1>
             <p className="text-slate-500 text-sm mt-1">BMS — {t('login_title')}</p>
           </div>
           <div className="w-full max-w-sm space-y-4">
@@ -2960,12 +3014,13 @@
           pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]
           ${lang === 'ar' ? 'right-0 border-l border-slate-800' : 'left-0 border-r border-slate-800'}
           ${mobileTrans}`}>
-          <div className="px-4 py-5 border-b border-slate-800">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-600 flex items-center justify-center text-white font-black text-base shadow-lg shadow-blue-500/20">M</div>
-              <div>
-                <div className="font-bold text-white text-sm">Magnet Link</div>
-                <div className="text-slate-500 text-xs">BMS v1.0</div>
+          <div className="brand-bar" />
+          <div className="px-4 py-4 border-b border-slate-800">
+            <div className="flex items-center gap-2.5">
+              <BrandLogo size={24} />
+              <div className="leading-tight">
+                <div className="font-semibold text-white text-[15px] tracking-tight">Magnet Link</div>
+                <div className="text-slate-500 text-[10px] tracking-[0.14em] uppercase">Business Suite</div>
               </div>
             </div>
           </div>
@@ -2974,7 +3029,7 @@
               <button key={item.id}
                 onClick={() => !item.soon && setPage(item.id)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all
-                  ${page === item.id ? 'bg-blue-600/20 text-blue-300 font-medium'
+                  ${page === item.id ? `bg-blue-600/20 text-blue-300 font-medium ${lang === 'ar' ? 'nav-active-r' : 'nav-active-l'}`
                     : item.soon ? 'text-slate-600 cursor-default'
                     : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
                 <span className={page === item.id ? 'text-blue-400' : item.soon ? 'text-slate-700' : 'text-slate-500'}>
@@ -4884,7 +4939,7 @@
 <style>
 *{font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;margin:0;padding:0;box-sizing:border-box}
 a,a:link,a:visited{color:inherit!important;text-decoration:none!important}
-:root{--navy:#0e3a56}
+:root{--navy:#1b4a8c}
 html,body{height:100%}
 body{background:#fff;color:#1a1a1a;font-size:13px;display:flex;flex-direction:column;min-height:100vh}
 .page{flex:1 0 auto;display:flex;flex-direction:column;width:100%}
@@ -4935,13 +4990,7 @@ table{width:100%;border-collapse:collapse}
 <div class="sheet">
 <div class="hdr">
   <div>
-    <svg width="150" height="72" viewBox="0 0 200 96" xmlns="http://www.w3.org/2000/svg">
-      <defs><linearGradient id="lg1" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#7fc7ea"/><stop offset="1" stop-color="#2a7ba8"/>
-      </linearGradient></defs>
-      <rect x="8" y="14" width="96" height="58" rx="29" fill="none" stroke="url(#lg1)" stroke-width="15"/>
-      <rect x="80" y="14" width="96" height="58" rx="29" fill="none" stroke="url(#lg1)" stroke-width="15"/>
-    </svg>
+    ${brandLogoSvg({ size: 64 })}
     <div class="logo-name">Magnet Link</div>
   </div>
   <div class="addr-box">
@@ -9772,7 +9821,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
 *{font-family:'Tajawal',Tahoma,sans-serif;margin:0;padding:0;box-sizing:border-box}
 body{background:#fff;color:#1e293b;padding:32px;font-size:13px}
 .hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #6d28d9}
-.logo{display:flex;align-items:center;gap:10px}.logo-box{width:38px;height:38px;background:linear-gradient(135deg,#7c3aed,#2563eb);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:18px}
+.logo{display:flex;align-items:center;gap:10px}.logo-box{display:flex;align-items:center}
 .logo-name{font-weight:700;font-size:15px;color:#1e293b}.logo-sub{font-size:10px;color:#64748b}
 .rpt-title{text-align:left;color:#6d28d9;font-size:12px;font-weight:600}
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
@@ -9789,7 +9838,7 @@ th{background:#f8fafc;padding:7px 10px;text-align:right;font-weight:600;color:#6
 td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
 .footer{text-align:center;color:#94a3b8;font-size:10px;margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0}
 </style></head><body>
-<div class="hdr"><div class="logo"><div class="logo-box">M</div><div><div class="logo-name">Magnet Link</div><div class="logo-sub">Social Media · Design · Web · Ads</div></div></div>
+<div class="hdr"><div class="logo"><div class="logo-box">${brandLogoSvg({ size: 30 })}</div><div><div class="logo-name">Magnet Link</div><div class="logo-sub">Social Media · Design · Web · Ads</div></div></div>
 <div class="rpt-title">تقرير سوشيال ميديا — ${monthLabel}<br/><span style="color:#94a3b8;font-weight:400">${client?.name||project?.name||'—'}</span></div></div>
 <div class="kpi-grid">
   <div class="kpi"><div class="kpi-val">${fmtK(totalF)}</div><div class="kpi-label">إجمالي المتابعين</div></div>
@@ -9927,7 +9976,7 @@ ${best.length>0?`<h3>أفضل المنشورات — ${monthLabel}</h3><table><t
 *{font-family:'Tajawal',Tahoma,sans-serif;margin:0;padding:0;box-sizing:border-box}
 body{background:#fff;color:#1e293b;padding:32px;font-size:13px}
 .hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #6d28d9}
-.logo{display:flex;align-items:center;gap:10px}.logo-box{width:38px;height:38px;background:linear-gradient(135deg,#7c3aed,#2563eb);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:18px}
+.logo{display:flex;align-items:center;gap:10px}.logo-box{display:flex;align-items:center}
 .logo-name{font-weight:700;font-size:15px}.logo-sub{font-size:10px;color:#64748b}
 .rpt-title{text-align:left;color:#6d28d9;font-size:12px;font-weight:600}
 .kpi{display:inline-block;border:1px solid #e2e8f0;border-radius:10px;padding:14px 20px;text-align:center;margin:0 8px 12px 0}
@@ -9938,7 +9987,7 @@ th{background:#f8fafc;padding:7px 10px;text-align:right;font-weight:600;color:#6
 td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
 .footer{text-align:center;color:#94a3b8;font-size:10px;margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0}
 </style></head><body>
-<div class="hdr"><div class="logo"><div class="logo-box">M</div><div><div class="logo-name">Magnet Link</div><div class="logo-sub">Social Media · Design · Web · Ads</div></div></div>
+<div class="hdr"><div class="logo"><div class="logo-box">${brandLogoSvg({ size: 30 })}</div><div><div class="logo-name">Magnet Link</div><div class="logo-sub">Social Media · Design · Web · Ads</div></div></div>
 <div class="rpt-title">تقرير Ads Manager — ${monthLabel}<br/><span style="color:#94a3b8;font-weight:400">${client?.name||project?.name||'—'}</span></div></div>
 <div class="kpi"><div class="kpi-val">$${fmtK(totalSpend)}</div><div class="kpi-label">إجمالي الإنفاق</div></div>
 <h3 style="margin-top:16px">أداء المنصات</h3>
