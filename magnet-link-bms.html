@@ -1011,6 +1011,8 @@
         app_notif_tasks_activity:'نشاط في المهام',
         app_notif_web_activity:'نشاط في خدمات الويب',
         app_notif_announcement:'إعلان جديد',
+        app_notif_payment_due:'استحقاق دفعة قريب',
+        app_notif_payment_due_body:'فاتورة {{inv}} — {{client}} تستحق خلال {{n}} يوم ({{date}})',
         /* Initial data strings */
         d_lead1_name:'شركة النور للتجارة',
         d_lead1_notes:'مهتم جداً بإدارة انستغرام وتيك توك، ينتظر العرض النهائي',
@@ -1634,6 +1636,8 @@
         app_notif_tasks_activity:'Tasks activity',
         app_notif_web_activity:'Web Services activity',
         app_notif_announcement:'New announcement',
+        app_notif_payment_due:'Payment due soon',
+        app_notif_payment_due_body:'Invoice {{inv}} — {{client}} is due in {{n}} day(s) ({{date}})',
         /* Initial data */
         d_lead1_name:'Al-Noor Trading Co.',
         d_lead1_notes:'Very interested in Instagram & TikTok management, awaiting final proposal',
@@ -2831,6 +2835,7 @@
       project_activity:  { color:'text-emerald-400', bg:'bg-emerald-500/10', icon:'projects' },
       team_activity:     { color:'text-blue-400',    bg:'bg-blue-500/10',    icon:'users'    },
       finance_activity:  { color:'text-purple-400',  bg:'bg-purple-500/10',  icon:'finance'  },
+      payment_due:       { color:'text-amber-400',   bg:'bg-amber-500/10',   icon:'finance'  },
       design_activity:   { color:'text-pink-400',    bg:'bg-pink-500/10',    icon:'design'   },
       social_activity:   { color:'text-cyan-400',    bg:'bg-cyan-500/10',    icon:'social'   },
       tasks_activity:    { color:'text-blue-400',    bg:'bg-blue-500/10',    icon:'tasks'    },
@@ -14277,6 +14282,42 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
         if (alreadyNotified) return;
         pushNotif({ userId: currentUser.id, type:'report_reminder', title:t('app_notif_report_reminder'), body:`${t('rep_week_of')} ${weekStart}`, section:'reports', weekStart });
       }, [currentUser, weeklyReports, notifications]);
+
+      /* Payment-due reminders: for every invoice with a due date that still has an unpaid
+         payment, notify finance-capable members exactly 3, 2 and 1 days before the due date
+         — once per (invoice, day-offset, user). */
+      useEffect(() => {
+        if (!currentUser || !invoices || !invoices.length) return;
+        const MS_DAY = 86400000;
+        const todayUTC = Date.parse(new Date().toISOString().slice(0, 10));
+        const recipients = teamMembers.filter(u => canSee(u, 'finance', customRoles));
+        if (!recipients.length) return;
+        invoices.forEach(inv => {
+          if (!inv.due_date) return;
+          if (!inv.payments || !inv.payments.some(p => p.status !== 'paid')) return;
+          const dueUTC = Date.parse(inv.due_date);
+          if (isNaN(dueUTC)) return;
+          const daysUntil = Math.round((dueUTC - todayUTC) / MS_DAY);
+          if (daysUntil !== 1 && daysUntil !== 2 && daysUntil !== 3) return;
+          const proj = projects.find(p => p.id === inv.projectId);
+          const cl   = clients.find(c => c.id === proj?.clientId);
+          recipients.forEach(u => {
+            const dup = notifications.some(n =>
+              n.userId === u.id && n.type === 'payment_due' && n.invId === inv.id && n.daysBefore === daysUntil);
+            if (dup) return;
+            pushNotif({
+              userId: u.id, type: 'payment_due',
+              title: t('app_notif_payment_due'),
+              body: t('app_notif_payment_due_body')
+                .replace('{{inv}}', inv.inv_no || '—')
+                .replace('{{client}}', cl?.name || '—')
+                .replace('{{n}}', daysUntil)
+                .replace('{{date}}', inv.due_date),
+              section: 'finance', invId: inv.id, daysBefore: daysUntil,
+            });
+          });
+        });
+      }, [currentUser, invoices, notifications, teamMembers, customRoles]);
 
       const saveAnnouncements = (list) => {
         try { localStorage.setItem('bms_announcements', JSON.stringify(list)); } catch(_) {}
