@@ -22,7 +22,21 @@
   <script>
     tailwind.config = {
       darkMode: 'class',
-      theme: { extend: { fontFamily: { sans: ['IBM Plex Sans Arabic', 'sans-serif'] } } }
+      theme: { extend: {
+        fontFamily: { sans: ['IBM Plex Sans Arabic', 'sans-serif'] },
+        /* Brand-only palette: the system speaks blue & white. Every other Tailwind
+           family is redirected so no off-brand color can render anywhere —
+           "positive" families take the logo's light cyan, the rest the brand blue. */
+        colors: (() => {
+          const blue = { 50:'#eef5fc',100:'#dbe9f8',200:'#bcd6f2',300:'#8fbbe9',400:'#5f9fe0',500:'#3a86d6',600:'#2b6fc6',700:'#1f5aa6',800:'#1b4a8c',900:'#153a6e',950:'#0c2549' };
+          const cyan = { 50:'#ecf8fe',100:'#d3effc',200:'#ade2f9',300:'#7fd2f5',400:'#4fc3f0',500:'#2aaee2',600:'#1b93c7',700:'#1876a3',800:'#175f84',900:'#164f6d',950:'#0d3349' };
+          const navy = { 50:'#f6f9fd',100:'#eef3fa',200:'#dfe8f5',300:'#c5d4ea',400:'#9db3d6',500:'#6683b3',600:'#2f5791',700:'#1c3f73',800:'#12305c',900:'#0c2246',950:'#081a36' };
+          const out = { blue, slate: navy, gray: navy };
+          ['red','rose','pink','fuchsia','purple','violet','indigo','orange','amber','yellow'].forEach(k => out[k] = blue);
+          ['emerald','green','teal','lime','cyan','sky'].forEach(k => out[k] = cyan);
+          return out;
+        })()
+      } }
     }
   </script>
   <style>
@@ -46,18 +60,18 @@
        instead of an abrupt cut, and disappears once fully scrolled that direction. */
     .scroll-fade-x {
       background:
-        linear-gradient(to right, #0b1424 30%, rgba(11,20,36,0)) left,
-        linear-gradient(to left,  #0b1424 30%, rgba(11,20,36,0)) right,
-        linear-gradient(to right, rgba(0,0,0,.35), rgba(0,0,0,0)) left,
-        linear-gradient(to left,  rgba(0,0,0,.35), rgba(0,0,0,0)) right;
+        linear-gradient(to right, var(--tbl-bg) 30%, transparent) left,
+        linear-gradient(to left,  var(--tbl-bg) 30%, transparent) right,
+        linear-gradient(to right, var(--tbl-shade), transparent) left,
+        linear-gradient(to left,  var(--tbl-shade), transparent) right;
       background-repeat: no-repeat;
-      background-color: #0b1424;
+      background-color: var(--tbl-bg);
       background-size: 24px 100%, 24px 100%, 12px 100%, 12px 100%;
       background-attachment: local, local, scroll, scroll;
     }
 
     body {
-      background-color: #060b16;
+      background-color: #081a36;
       background-image:
         repeating-linear-gradient(rgba(79,195,240,0.03) 0px,rgba(79,195,240,0.03) 1px,transparent 1px,transparent 40px),
         repeating-linear-gradient(90deg,rgba(79,195,240,0.03) 0px,rgba(79,195,240,0.03) 1px,transparent 1px,transparent 40px);
@@ -65,9 +79,9 @@
 
     /* ── Scrollbar ── */
     ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: #060b16; }
-    ::-webkit-scrollbar-thumb { background: #1e3050; border-radius: 8px; }
-    ::-webkit-scrollbar-thumb:hover { background: #2c4268; }
+    ::-webkit-scrollbar-track { background: #081a36; }
+    ::-webkit-scrollbar-thumb { background: #1c3f73; border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: #2f5791; }
 
     /* ── Animations ── */
     @keyframes slideUp {
@@ -108,14 +122,14 @@
     .text-2xl, .text-3xl, .text-4xl, .text-xl { font-family: 'JetBrains Mono', 'IBM Plex Sans Arabic', monospace; }
 
     /* ══════════════ Light Mode ══════════════ */
-    [data-theme="light"] { background-color: #dde6f0; color: #111827; }
+    [data-theme="light"] { background-color: #eaf1fa; color: #111827; }
     [data-theme="light"] body {
-      background-color: #dde6f0;
+      background-color: #eaf1fa;
       background-image:
         repeating-linear-gradient(rgba(0,0,0,0.03) 0px,rgba(0,0,0,0.03) 1px,transparent 1px,transparent 40px),
         repeating-linear-gradient(90deg,rgba(0,0,0,0.03) 0px,rgba(0,0,0,0.03) 1px,transparent 1px,transparent 40px);
     }
-    [data-theme="light"] ::-webkit-scrollbar-track { background: #dde6f0; }
+    [data-theme="light"] ::-webkit-scrollbar-track { background: #eaf1fa; }
     [data-theme="light"] ::-webkit-scrollbar-thumb { background: #94a3b8; }
     [data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
@@ -130,16 +144,16 @@
     .presence-online-dot { animation: presencePulse 2.5s ease-in-out infinite; }
 
     /* ── Backgrounds ── */
-    [data-theme="light"] .bg-slate-950  { background-color: #dde6f0 !important; }
+    [data-theme="light"] .bg-slate-950  { background-color: #eaf1fa !important; }
     /* sidebar / panels */
-    [data-theme="light"] .bg-slate-900  { background-color: #eef2f7 !important; }
+    [data-theme="light"] .bg-slate-900  { background-color: #f5f8fd !important; }
     [data-theme="light"] .bg-slate-900\/96 { background-color: rgba(238,242,247,0.97) !important; }
     [data-theme="light"] .bg-slate-900\/80 { background-color: rgba(238,242,247,0.88) !important; }
     [data-theme="light"] .bg-slate-900\/60 { background-color: rgba(238,242,247,0.75) !important; }
     [data-theme="light"] .bg-slate-900\/50 { background-color: rgba(238,242,247,0.65) !important; }
     [data-theme="light"] .bg-slate-900\/40 { background-color: rgba(238,242,247,0.55) !important; }
     [data-theme="light"] .bg-slate-900\/30 { background-color: rgba(238,242,247,0.45) !important; }
-    /* cards — white with shadow for contrast against #dde6f0 bg */
+    /* cards — white with shadow for contrast against #eaf1fa bg */
     [data-theme="light"] .bg-slate-800     { background-color: #f8fafc !important; }
     [data-theme="light"] .bg-slate-800\/80 { background-color: rgba(255,255,255,0.95) !important; }
     [data-theme="light"] .bg-slate-800\/60 { background-color: #ffffff !important; }
@@ -158,9 +172,9 @@
     /* modal backdrop */
     [data-theme="light"] .bg-black\/60     { background-color: rgba(15,23,42,0.55) !important; }
     /* gradients */
-    [data-theme="light"] .from-slate-950   { --tw-gradient-from: #dde6f0 !important; }
-    [data-theme="light"] .to-slate-900     { --tw-gradient-to:   #eef2f7 !important; }
-    [data-theme="light"] .via-slate-900    { --tw-gradient-via:  #eef2f7 !important; }
+    [data-theme="light"] .from-slate-950   { --tw-gradient-from: #eaf1fa !important; }
+    [data-theme="light"] .to-slate-900     { --tw-gradient-to:   #f5f8fd !important; }
+    [data-theme="light"] .via-slate-900    { --tw-gradient-via:  #f5f8fd !important; }
 
     /* cards: shadow to separate from page bg */
     [data-theme="light"] .bg-slate-900,
@@ -183,28 +197,28 @@
     [data-theme="light"] .text-blue-200   { color: #1b4a8c !important; }
     [data-theme="light"] .text-blue-300   { color: #1f5aa6 !important; }
     [data-theme="light"] .text-blue-400   { color: #1b4a8c !important; }
-    [data-theme="light"] .text-emerald-200 { color: #059669 !important; }
-    [data-theme="light"] .text-emerald-300 { color: #059669 !important; }
-    [data-theme="light"] .text-emerald-400 { color: #047857 !important; }
-    [data-theme="light"] .text-emerald-500 { color: #065f46 !important; }
-    [data-theme="light"] .text-green-400   { color: #16a34a !important; }
-    [data-theme="light"] .text-amber-200   { color: #b45309 !important; }
-    [data-theme="light"] .text-amber-300   { color: #d97706 !important; }
-    [data-theme="light"] .text-amber-400   { color: #b45309 !important; }
-    [data-theme="light"] .text-amber-500   { color: #92400e !important; }
-    [data-theme="light"] .text-orange-200  { color: #c2410c !important; }
-    [data-theme="light"] .text-orange-300  { color: #ea580c !important; }
-    [data-theme="light"] .text-orange-400  { color: #c2410c !important; }
-    [data-theme="light"] .text-red-200     { color: #b91c1c !important; }
-    [data-theme="light"] .text-red-300     { color: #dc2626 !important; }
-    [data-theme="light"] .text-red-400     { color: #b91c1c !important; }
-    [data-theme="light"] .text-rose-200    { color: #be123c !important; }
-    [data-theme="light"] .text-rose-300    { color: #e11d48 !important; }
-    [data-theme="light"] .text-rose-400    { color: #be123c !important; }
-    [data-theme="light"] .text-rose-500    { color: #9f1239 !important; }
-    [data-theme="light"] .text-cyan-200    { color: #0891b2 !important; }
-    [data-theme="light"] .text-cyan-400    { color: #0e7490 !important; }
-    [data-theme="light"] .text-teal-200    { color: #0f766e !important; }
+    [data-theme="light"] .text-emerald-200 { color: #1876a3 !important; }
+    [data-theme="light"] .text-emerald-300 { color: #1876a3 !important; }
+    [data-theme="light"] .text-emerald-400 { color: #1876a3 !important; }
+    [data-theme="light"] .text-emerald-500 { color: #1876a3 !important; }
+    [data-theme="light"] .text-green-400   { color: #1876a3 !important; }
+    [data-theme="light"] .text-amber-200   { color: #1f5aa6 !important; }
+    [data-theme="light"] .text-amber-300   { color: #1f5aa6 !important; }
+    [data-theme="light"] .text-amber-400   { color: #1f5aa6 !important; }
+    [data-theme="light"] .text-amber-500   { color: #1f5aa6 !important; }
+    [data-theme="light"] .text-orange-200  { color: #1f5aa6 !important; }
+    [data-theme="light"] .text-orange-300  { color: #1f5aa6 !important; }
+    [data-theme="light"] .text-orange-400  { color: #1f5aa6 !important; }
+    [data-theme="light"] .text-red-200     { color: #1b4a8c !important; }
+    [data-theme="light"] .text-red-300     { color: #1b4a8c !important; }
+    [data-theme="light"] .text-red-400     { color: #1b4a8c !important; }
+    [data-theme="light"] .text-rose-200    { color: #1b4a8c !important; }
+    [data-theme="light"] .text-rose-300    { color: #1b4a8c !important; }
+    [data-theme="light"] .text-rose-400    { color: #1b4a8c !important; }
+    [data-theme="light"] .text-rose-500    { color: #1b4a8c !important; }
+    [data-theme="light"] .text-cyan-200    { color: #1876a3 !important; }
+    [data-theme="light"] .text-cyan-400    { color: #1876a3 !important; }
+    [data-theme="light"] .text-teal-200    { color: #1876a3 !important; }
 
     /* restore white text INSIDE solid colored containers */
     [data-theme="light"] .bg-emerald-600 .text-white,
@@ -262,56 +276,56 @@
     ══════════════════════════════════════════════════ */
 
     /* ── Zinc remapping: remove blue-cast from slate ── */
-    .bg-slate-950 { background-color: #060b16 !important; }
-    .bg-slate-900 { background-color: #0b1424 !important; }
-    .bg-slate-900\/96 { background-color: rgba(11,20,36,0.96) !important; }
-    .bg-slate-900\/80 { background-color: rgba(11,20,36,0.80) !important; }
-    .bg-slate-900\/60 { background-color: rgba(11,20,36,0.60) !important; }
-    .bg-slate-900\/50 { background-color: rgba(11,20,36,0.50) !important; }
-    .bg-slate-900\/40 { background-color: rgba(11,20,36,0.40) !important; }
-    .bg-slate-900\/30 { background-color: rgba(11,20,36,0.30) !important; }
+    .bg-slate-950 { background-color: #081a36 !important; }
+    .bg-slate-900 { background-color: #0c2246 !important; }
+    .bg-slate-900\/96 { background-color: rgba(12,34,70,0.96) !important; }
+    .bg-slate-900\/80 { background-color: rgba(12,34,70,0.80) !important; }
+    .bg-slate-900\/60 { background-color: rgba(12,34,70,0.60) !important; }
+    .bg-slate-900\/50 { background-color: rgba(12,34,70,0.50) !important; }
+    .bg-slate-900\/40 { background-color: rgba(12,34,70,0.40) !important; }
+    .bg-slate-900\/30 { background-color: rgba(12,34,70,0.30) !important; }
 
     /* cards: mostly solid, a touch of blur for depth */
     .bg-slate-800\/60 {
-      background-color: rgba(11,20,36,0.65) !important;
+      background-color: rgba(12,34,70,0.65) !important;
       backdrop-filter: blur(8px) !important;
       -webkit-backdrop-filter: blur(8px) !important;
       border-radius: 18px !important;
     }
-    .bg-slate-800\/80 { background-color: rgba(11,20,36,0.70) !important; }
-    .bg-slate-800\/50 { background-color: rgba(11,20,36,0.40) !important; }
-    .bg-slate-800\/40 { background-color: rgba(11,20,36,0.32) !important; }
-    .bg-slate-800\/30 { background-color: rgba(11,20,36,0.25) !important; }
-    .bg-slate-800\/20 { background-color: rgba(11,20,36,0.18) !important; }
-    .bg-slate-800    { background-color: #13213a !important; }
+    .bg-slate-800\/80 { background-color: rgba(12,34,70,0.70) !important; }
+    .bg-slate-800\/50 { background-color: rgba(12,34,70,0.40) !important; }
+    .bg-slate-800\/40 { background-color: rgba(12,34,70,0.32) !important; }
+    .bg-slate-800\/30 { background-color: rgba(12,34,70,0.25) !important; }
+    .bg-slate-800\/20 { background-color: rgba(12,34,70,0.18) !important; }
+    .bg-slate-800    { background-color: #12305c !important; }
 
-    .bg-slate-700    { background-color: #1e3050 !important; }
-    .bg-slate-700\/70 { background-color: rgba(30,48,80,0.70) !important; }
-    .bg-slate-700\/60 { background-color: rgba(30,48,80,0.60) !important; }
-    .bg-slate-700\/50 { background-color: rgba(30,48,80,0.50) !important; }
-    .bg-slate-700\/40 { background-color: rgba(30,48,80,0.40) !important; }
-    .bg-slate-700\/30 { background-color: rgba(30,48,80,0.30) !important; }
-    .bg-slate-700\/20 { background-color: rgba(30,48,80,0.20) !important; }
+    .bg-slate-700    { background-color: #1c3f73 !important; }
+    .bg-slate-700\/70 { background-color: rgba(28,63,115,0.70) !important; }
+    .bg-slate-700\/60 { background-color: rgba(28,63,115,0.60) !important; }
+    .bg-slate-700\/50 { background-color: rgba(28,63,115,0.50) !important; }
+    .bg-slate-700\/40 { background-color: rgba(28,63,115,0.40) !important; }
+    .bg-slate-700\/30 { background-color: rgba(28,63,115,0.30) !important; }
+    .bg-slate-700\/20 { background-color: rgba(28,63,115,0.20) !important; }
 
     /* ── Zinc text ── */
     .text-slate-100 { color: #f4f4f5 !important; }
     .text-slate-200 { color: #e4e4e7 !important; }
     .text-slate-300 { color: #d4d4d8 !important; }
-    .text-slate-400 { color: #98a6bd !important; }
-    .text-slate-500 { color: #6a7a96 !important; }
-    .text-slate-600 { color: #4a5b7a !important; }
+    .text-slate-400 { color: #a9bfe0 !important; }
+    .text-slate-500 { color: #7d98c4 !important; }
+    .text-slate-600 { color: #5a78a8 !important; }
 
     /* ── Zinc borders ── */
     .border-slate-800,
     .border-slate-800\/60,
-    .border-slate-800\/50 { border-color: #13213a !important; }
+    .border-slate-800\/50 { border-color: #12305c !important; }
     .border-slate-700,
     .border-slate-700\/60,
     .border-slate-700\/50,
     .border-slate-700\/40,
-    .border-slate-700\/30 { border-color: #1e3050 !important; }
-    .border-slate-600 { border-color: #2c4268 !important; }
-    .divide-slate-800 > * + * { border-color: #13213a !important; }
+    .border-slate-700\/30 { border-color: #1c3f73 !important; }
+    .border-slate-600 { border-color: #2f5791 !important; }
+    .divide-slate-800 > * + * { border-color: #12305c !important; }
 
     /* ── Brand blue primary accent — soft/light tuning ── */
     .bg-blue-600     { background-color: #2b6fc6 !important; }
@@ -390,16 +404,16 @@
 
     /* ── Softer, hairline card borders ── */
     .border-slate-700\/40,
-    .border-slate-700\/30 { border-color: rgba(30,48,80,0.28) !important; }
+    .border-slate-700\/30 { border-color: rgba(28,63,115,0.28) !important; }
 
     /* ── Hover bg zinc ── */
-    .hover\:bg-slate-800:hover { background-color: #13213a !important; }
-    .hover\:bg-slate-900:hover { background-color: #0b1424 !important; }
-    .hover\:bg-slate-700:hover { background-color: #1e3050 !important; }
+    .hover\:bg-slate-800:hover { background-color: #12305c !important; }
+    .hover\:bg-slate-900:hover { background-color: #0c2246 !important; }
+    .hover\:bg-slate-700:hover { background-color: #1c3f73 !important; }
 
     /* ── Placeholders ── */
-    .placeholder-slate-500::placeholder { color: #6a7a96 !important; }
-    .placeholder-slate-400::placeholder { color: #98a6bd !important; }
+    .placeholder-slate-500::placeholder { color: #7d98c4 !important; }
+    .placeholder-slate-400::placeholder { color: #a9bfe0 !important; }
 
     /* ── Micro-label utility ── */
     .micro-label {
@@ -407,7 +421,7 @@
       font-weight: 700;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: #6a7a96;
+      color: #7d98c4;
     }
   
     /* ══════════ Magnet Link brand layer (logo: navy → blue → cyan) ══════════ */
@@ -434,9 +448,194 @@
     [data-theme="light"] .bg-blue-600\/20 { background-color: rgba(43,111,198,0.12) !important; }
     [data-theme="light"] .nav-active-l { box-shadow: inset 3px 0 0 #2b6fc6; }
     [data-theme="light"] .nav-active-r { box-shadow: inset -3px 0 0 #2b6fc6; }
+  
+    /* ══════════ Identity layer: envelope motifs ══════════ */
+    body::before {
+      content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+      background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='300' viewBox='0 0 560 300'><g fill='none' stroke='%234fc3f0' stroke-opacity='.07'><rect x='20' y='40' width='300' height='180' rx='90'/><rect x='27' y='47' width='286' height='166' rx='83'/><rect x='34' y='54' width='272' height='152' rx='76'/><rect x='41' y='61' width='258' height='138' rx='69'/><rect x='48' y='68' width='244' height='124' rx='62'/><rect x='55' y='75' width='230' height='110' rx='55'/><rect x='240' y='80' width='300' height='180' rx='90'/><rect x='247' y='87' width='286' height='166' rx='83'/><rect x='254' y='94' width='272' height='152' rx='76'/><rect x='261' y='101' width='258' height='138' rx='69'/><rect x='268' y='108' width='244' height='124' rx='62'/><rect x='275' y='115' width='230' height='110' rx='55'/></g></svg>") right -120px top -60px / 760px auto no-repeat,
+                  url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='300' viewBox='0 0 560 300'><g fill='none' stroke='%234fc3f0' stroke-opacity='.07'><rect x='20' y='40' width='300' height='180' rx='90'/><rect x='27' y='47' width='286' height='166' rx='83'/><rect x='34' y='54' width='272' height='152' rx='76'/><rect x='41' y='61' width='258' height='138' rx='69'/><rect x='48' y='68' width='244' height='124' rx='62'/><rect x='55' y='75' width='230' height='110' rx='55'/><rect x='240' y='80' width='300' height='180' rx='90'/><rect x='247' y='87' width='286' height='166' rx='83'/><rect x='254' y='94' width='272' height='152' rx='76'/><rect x='261' y='101' width='258' height='138' rx='69'/><rect x='268' y='108' width='244' height='124' rx='62'/><rect x='275' y='115' width='230' height='110' rx='55'/></g></svg>") left -160px bottom -90px / 640px auto no-repeat;
+    }
+    #root { position:relative; z-index:1; }
+    [data-theme="light"] body::before { opacity:.9; filter: hue-rotate(10deg) saturate(1.4) brightness(.55); }
+    /* sidebar: deep navy gradient, like the envelope's dark edge */
+    aside.bg-slate-900 { background-image: linear-gradient(180deg,#0e2750 0%,#0a1f40 55%,#081a36 100%) !important; }
+    [data-theme="light"] aside.bg-slate-900 { background-image: linear-gradient(180deg,#ffffff 0%,#f2f7fd 100%) !important; }
+    /* envelope bottom band: angled navy / blue / cyan stripes */
+    .brand-band { position:relative; height:56px; overflow:hidden; background:#1b4a8c; }
+    .brand-band::before { content:''; position:absolute; inset:0 0 18px 0;
+      background: linear-gradient(110deg,#163f7a 0 32%,transparent 32.2%),
+                  linear-gradient(110deg,transparent 30%,#2b6fc6 30.2% 60%,transparent 60.2%),
+                  linear-gradient(110deg,transparent 58%,#4fc3f0 58.2%); }
+    .brand-panel { background: linear-gradient(150deg,#163f7a 0%,#1f5aa6 45%,#2b6fc6 70%,#3fa6e2 100%); }
+  
+    /* ── Light mode, brand-only: readable blue text + white text on any solid fill ── */
+    [data-theme="light"] .text-red-200,
+    [data-theme="light"] .text-red-300,
+    [data-theme="light"] .text-red-400,
+    [data-theme="light"] .text-red-500,
+    [data-theme="light"] .text-rose-200,
+    [data-theme="light"] .text-rose-300,
+    [data-theme="light"] .text-rose-400,
+    [data-theme="light"] .text-rose-500,
+    [data-theme="light"] .text-pink-200,
+    [data-theme="light"] .text-pink-300,
+    [data-theme="light"] .text-pink-400,
+    [data-theme="light"] .text-pink-500,
+    [data-theme="light"] .text-fuchsia-200,
+    [data-theme="light"] .text-fuchsia-300,
+    [data-theme="light"] .text-fuchsia-400,
+    [data-theme="light"] .text-fuchsia-500,
+    [data-theme="light"] .text-purple-200,
+    [data-theme="light"] .text-purple-300,
+    [data-theme="light"] .text-purple-400,
+    [data-theme="light"] .text-purple-500,
+    [data-theme="light"] .text-violet-200,
+    [data-theme="light"] .text-violet-300,
+    [data-theme="light"] .text-violet-400,
+    [data-theme="light"] .text-violet-500,
+    [data-theme="light"] .text-indigo-200,
+    [data-theme="light"] .text-indigo-300,
+    [data-theme="light"] .text-indigo-400,
+    [data-theme="light"] .text-indigo-500,
+    [data-theme="light"] .text-orange-200,
+    [data-theme="light"] .text-orange-300,
+    [data-theme="light"] .text-orange-400,
+    [data-theme="light"] .text-orange-500,
+    [data-theme="light"] .text-amber-200,
+    [data-theme="light"] .text-amber-300,
+    [data-theme="light"] .text-amber-400,
+    [data-theme="light"] .text-amber-500,
+    [data-theme="light"] .text-yellow-200,
+    [data-theme="light"] .text-yellow-300,
+    [data-theme="light"] .text-yellow-400,
+    [data-theme="light"] .text-yellow-500,
+    [data-theme="light"] .text-blue-200,
+    [data-theme="light"] .text-blue-300,
+    [data-theme="light"] .text-blue-400,
+    [data-theme="light"] .text-blue-500 { color: #1f5aa6 !important; }
+    [data-theme="light"] .text-emerald-200,
+    [data-theme="light"] .text-emerald-300,
+    [data-theme="light"] .text-emerald-400,
+    [data-theme="light"] .text-emerald-500,
+    [data-theme="light"] .text-green-200,
+    [data-theme="light"] .text-green-300,
+    [data-theme="light"] .text-green-400,
+    [data-theme="light"] .text-green-500,
+    [data-theme="light"] .text-teal-200,
+    [data-theme="light"] .text-teal-300,
+    [data-theme="light"] .text-teal-400,
+    [data-theme="light"] .text-teal-500,
+    [data-theme="light"] .text-lime-200,
+    [data-theme="light"] .text-lime-300,
+    [data-theme="light"] .text-lime-400,
+    [data-theme="light"] .text-lime-500,
+    [data-theme="light"] .text-cyan-200,
+    [data-theme="light"] .text-cyan-300,
+    [data-theme="light"] .text-cyan-400,
+    [data-theme="light"] .text-cyan-500,
+    [data-theme="light"] .text-sky-200,
+    [data-theme="light"] .text-sky-300,
+    [data-theme="light"] .text-sky-400,
+    [data-theme="light"] .text-sky-500 { color: #1876a3 !important; }
+    [data-theme="light"] .bg-red-500 .text-white, [data-theme="light"] .bg-red-500.text-white,
+    [data-theme="light"] .bg-red-600 .text-white, [data-theme="light"] .bg-red-600.text-white,
+    [data-theme="light"] .bg-red-700 .text-white, [data-theme="light"] .bg-red-700.text-white,
+    [data-theme="light"] .bg-red-800 .text-white, [data-theme="light"] .bg-red-800.text-white,
+    [data-theme="light"] .bg-rose-500 .text-white, [data-theme="light"] .bg-rose-500.text-white,
+    [data-theme="light"] .bg-rose-600 .text-white, [data-theme="light"] .bg-rose-600.text-white,
+    [data-theme="light"] .bg-rose-700 .text-white, [data-theme="light"] .bg-rose-700.text-white,
+    [data-theme="light"] .bg-rose-800 .text-white, [data-theme="light"] .bg-rose-800.text-white,
+    [data-theme="light"] .bg-pink-500 .text-white, [data-theme="light"] .bg-pink-500.text-white,
+    [data-theme="light"] .bg-pink-600 .text-white, [data-theme="light"] .bg-pink-600.text-white,
+    [data-theme="light"] .bg-pink-700 .text-white, [data-theme="light"] .bg-pink-700.text-white,
+    [data-theme="light"] .bg-pink-800 .text-white, [data-theme="light"] .bg-pink-800.text-white,
+    [data-theme="light"] .bg-fuchsia-500 .text-white, [data-theme="light"] .bg-fuchsia-500.text-white,
+    [data-theme="light"] .bg-fuchsia-600 .text-white, [data-theme="light"] .bg-fuchsia-600.text-white,
+    [data-theme="light"] .bg-fuchsia-700 .text-white, [data-theme="light"] .bg-fuchsia-700.text-white,
+    [data-theme="light"] .bg-fuchsia-800 .text-white, [data-theme="light"] .bg-fuchsia-800.text-white,
+    [data-theme="light"] .bg-purple-500 .text-white, [data-theme="light"] .bg-purple-500.text-white,
+    [data-theme="light"] .bg-purple-600 .text-white, [data-theme="light"] .bg-purple-600.text-white,
+    [data-theme="light"] .bg-purple-700 .text-white, [data-theme="light"] .bg-purple-700.text-white,
+    [data-theme="light"] .bg-purple-800 .text-white, [data-theme="light"] .bg-purple-800.text-white,
+    [data-theme="light"] .bg-violet-500 .text-white, [data-theme="light"] .bg-violet-500.text-white,
+    [data-theme="light"] .bg-violet-600 .text-white, [data-theme="light"] .bg-violet-600.text-white,
+    [data-theme="light"] .bg-violet-700 .text-white, [data-theme="light"] .bg-violet-700.text-white,
+    [data-theme="light"] .bg-violet-800 .text-white, [data-theme="light"] .bg-violet-800.text-white,
+    [data-theme="light"] .bg-indigo-500 .text-white, [data-theme="light"] .bg-indigo-500.text-white,
+    [data-theme="light"] .bg-indigo-600 .text-white, [data-theme="light"] .bg-indigo-600.text-white,
+    [data-theme="light"] .bg-indigo-700 .text-white, [data-theme="light"] .bg-indigo-700.text-white,
+    [data-theme="light"] .bg-indigo-800 .text-white, [data-theme="light"] .bg-indigo-800.text-white,
+    [data-theme="light"] .bg-orange-500 .text-white, [data-theme="light"] .bg-orange-500.text-white,
+    [data-theme="light"] .bg-orange-600 .text-white, [data-theme="light"] .bg-orange-600.text-white,
+    [data-theme="light"] .bg-orange-700 .text-white, [data-theme="light"] .bg-orange-700.text-white,
+    [data-theme="light"] .bg-orange-800 .text-white, [data-theme="light"] .bg-orange-800.text-white,
+    [data-theme="light"] .bg-amber-500 .text-white, [data-theme="light"] .bg-amber-500.text-white,
+    [data-theme="light"] .bg-amber-600 .text-white, [data-theme="light"] .bg-amber-600.text-white,
+    [data-theme="light"] .bg-amber-700 .text-white, [data-theme="light"] .bg-amber-700.text-white,
+    [data-theme="light"] .bg-amber-800 .text-white, [data-theme="light"] .bg-amber-800.text-white,
+    [data-theme="light"] .bg-yellow-500 .text-white, [data-theme="light"] .bg-yellow-500.text-white,
+    [data-theme="light"] .bg-yellow-600 .text-white, [data-theme="light"] .bg-yellow-600.text-white,
+    [data-theme="light"] .bg-yellow-700 .text-white, [data-theme="light"] .bg-yellow-700.text-white,
+    [data-theme="light"] .bg-yellow-800 .text-white, [data-theme="light"] .bg-yellow-800.text-white,
+    [data-theme="light"] .bg-blue-500 .text-white, [data-theme="light"] .bg-blue-500.text-white,
+    [data-theme="light"] .bg-blue-600 .text-white, [data-theme="light"] .bg-blue-600.text-white,
+    [data-theme="light"] .bg-blue-700 .text-white, [data-theme="light"] .bg-blue-700.text-white,
+    [data-theme="light"] .bg-blue-800 .text-white, [data-theme="light"] .bg-blue-800.text-white,
+    [data-theme="light"] .bg-emerald-500 .text-white, [data-theme="light"] .bg-emerald-500.text-white,
+    [data-theme="light"] .bg-emerald-600 .text-white, [data-theme="light"] .bg-emerald-600.text-white,
+    [data-theme="light"] .bg-emerald-700 .text-white, [data-theme="light"] .bg-emerald-700.text-white,
+    [data-theme="light"] .bg-emerald-800 .text-white, [data-theme="light"] .bg-emerald-800.text-white,
+    [data-theme="light"] .bg-green-500 .text-white, [data-theme="light"] .bg-green-500.text-white,
+    [data-theme="light"] .bg-green-600 .text-white, [data-theme="light"] .bg-green-600.text-white,
+    [data-theme="light"] .bg-green-700 .text-white, [data-theme="light"] .bg-green-700.text-white,
+    [data-theme="light"] .bg-green-800 .text-white, [data-theme="light"] .bg-green-800.text-white,
+    [data-theme="light"] .bg-teal-500 .text-white, [data-theme="light"] .bg-teal-500.text-white,
+    [data-theme="light"] .bg-teal-600 .text-white, [data-theme="light"] .bg-teal-600.text-white,
+    [data-theme="light"] .bg-teal-700 .text-white, [data-theme="light"] .bg-teal-700.text-white,
+    [data-theme="light"] .bg-teal-800 .text-white, [data-theme="light"] .bg-teal-800.text-white,
+    [data-theme="light"] .bg-lime-500 .text-white, [data-theme="light"] .bg-lime-500.text-white,
+    [data-theme="light"] .bg-lime-600 .text-white, [data-theme="light"] .bg-lime-600.text-white,
+    [data-theme="light"] .bg-lime-700 .text-white, [data-theme="light"] .bg-lime-700.text-white,
+    [data-theme="light"] .bg-lime-800 .text-white, [data-theme="light"] .bg-lime-800.text-white,
+    [data-theme="light"] .bg-cyan-500 .text-white, [data-theme="light"] .bg-cyan-500.text-white,
+    [data-theme="light"] .bg-cyan-600 .text-white, [data-theme="light"] .bg-cyan-600.text-white,
+    [data-theme="light"] .bg-cyan-700 .text-white, [data-theme="light"] .bg-cyan-700.text-white,
+    [data-theme="light"] .bg-cyan-800 .text-white, [data-theme="light"] .bg-cyan-800.text-white,
+    [data-theme="light"] .bg-sky-500 .text-white, [data-theme="light"] .bg-sky-500.text-white,
+    [data-theme="light"] .bg-sky-600 .text-white, [data-theme="light"] .bg-sky-600.text-white,
+    [data-theme="light"] .bg-sky-700 .text-white, [data-theme="light"] .bg-sky-700.text-white,
+    [data-theme="light"] .bg-sky-800 .text-white, [data-theme="light"] .bg-sky-800.text-white { color: #ffffff !important; }
+  
+    /* ══════════ Data tables (every .scroll-fade-x table) — soft blue, professional ══════════ */
+    :root {
+      --tbl-bg:#0d2448; --tbl-shade:rgba(0,0,0,.30);
+      --tbl-head:rgba(43,111,198,.16); --tbl-head-fg:#9fc3ec;
+      --tbl-line:rgba(95,159,224,.12); --tbl-zebra:rgba(143,187,233,.025); --tbl-hover:rgba(43,111,198,.13);
+    }
+    [data-theme="light"] {
+      --tbl-bg:#ffffff; --tbl-shade:rgba(27,74,140,.10);
+      --tbl-head:#eaf2fc; --tbl-head-fg:#1b4a8c;
+      --tbl-line:#e3ecf7; --tbl-zebra:#f8fbfe; --tbl-hover:#eef5fd;
+    }
+    .scroll-fade-x table thead tr { background: var(--tbl-head); border-bottom: 1px solid var(--tbl-line) !important; }
+    .scroll-fade-x table th {
+      color: var(--tbl-head-fg) !important; font-size: 11px !important; font-weight: 600 !important;
+      letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
+      padding-top: 13px !important; padding-bottom: 13px !important;
+    }
+    /* header follows reading direction so it lines up with its cells (was right-aligned in LTR) */
+    .scroll-fade-x table th:not(.text-center):not(.text-left):not(.text-right) { text-align: start; }
+    .scroll-fade-x table tbody tr { border-bottom: 1px solid var(--tbl-line) !important; transition: background-color 120ms ease; }
+    .scroll-fade-x table tbody tr:last-child { border-bottom: 0 !important; }
+    .scroll-fade-x table tbody tr:nth-child(even) { background-color: var(--tbl-zebra); }
+    .scroll-fade-x table tbody tr:hover { background-color: var(--tbl-hover) !important; }
+    .scroll-fade-x table td { padding-top: 14px; padding-bottom: 14px; vertical-align: middle; }
+    .ml-avatar { background: linear-gradient(135deg,#1b4a8c 0%,#2b6fc6 60%,#4fc3f0 100%); color:#fff !important; }
+    .ml-prob-track { height: 4px; border-radius: 999px; background: var(--tbl-line); overflow: hidden; }
+    .ml-prob-fill  { height: 100%; border-radius: 999px; background: linear-gradient(90deg,#2b6fc6,#4fc3f0); }
   </style>
 </head>
-<body class="dark bg-slate-950 text-white" style="background-color:#060b16;">
+<body class="dark bg-slate-950 text-white" style="background-color:#081a36;">
   <div id="root"></div>
 
   <script type="text/babel">
@@ -2032,12 +2231,12 @@
     };
 
     const LEAD_STATUSES = [
-      { id:'hot',     tKey:'s_hot',     label:'Hot',     active:true,  dot:'bg-red-400',     badge:'bg-red-500/15 text-red-300 border-red-500/30' },
-      { id:'warm',    tKey:'s_warm',    label:'Warm',    active:true,  dot:'bg-amber-400',   badge:'bg-amber-500/15 text-amber-300 border-amber-500/30' },
-      { id:'cold',    tKey:'s_cold',    label:'Cold',    active:true,  dot:'bg-sky-400',     badge:'bg-sky-500/15 text-sky-300 border-sky-500/30' },
+      { id:'hot',     tKey:'s_hot',     label:'Hot',     active:true,  dot:'bg-white',       badge:'bg-blue-600 text-white border-blue-600' },
+      { id:'warm',    tKey:'s_warm',    label:'Warm',    active:true,  dot:'bg-blue-400',    badge:'bg-blue-500/20 text-blue-300 border-blue-500/40' },
+      { id:'cold',    tKey:'s_cold',    label:'Cold',    active:true,  dot:'bg-cyan-300',    badge:'bg-cyan-500/10 text-cyan-300 border-cyan-500/30' },
       { id:'pending', tKey:'s_pending', label:'Pending', active:true,  dot:'bg-slate-400',   badge:'bg-slate-500/15 text-slate-300 border-slate-500/30' },
-      { id:'won',     tKey:'s_won',     label:'Won ✓',   active:false, dot:'bg-emerald-400', badge:'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
-      { id:'lost',    tKey:'s_lost',    label:'Lost',    active:false, dot:'bg-rose-400',    badge:'bg-rose-500/15 text-rose-300 border-rose-500/30' },
+      { id:'won',     tKey:'s_won',     label:'Won ✓',   active:false, dot:'bg-white',       badge:'bg-cyan-600 text-white border-cyan-600' },
+      { id:'lost',    tKey:'s_lost',    label:'Lost',    active:false, dot:'bg-slate-500',   badge:'bg-transparent text-slate-400 border-slate-500 border-dashed' },
     ];
 
     const SOURCES  = ['Instagram','Facebook','Website','Referral','WhatsApp','Other'];
@@ -2406,11 +2605,22 @@
       };
       const inp = "w-full bg-slate-800/80 border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white outline-none placeholder-slate-500 transition-colors";
       return (
-        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-8" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-          <div className="mb-10 text-center">
-            <div className="flex justify-center mb-4"><BrandLogo size={64} /></div>
-            <h1 className="text-3xl font-semibold text-white tracking-tight" style={{fontFamily:"'IBM Plex Sans Arabic', sans-serif"}}>Magnet Link</h1>
-            <p className="text-slate-500 text-sm mt-1">BMS — {t('login_title')}</p>
+        <div className="min-h-screen bg-slate-950 flex flex-col md:flex-row" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+          {/* Brand panel — envelope front: gradient, white logo, ring pattern, angled band */}
+          <div className="brand-panel relative overflow-hidden md:w-1/2 flex flex-col">
+            <div className="absolute inset-0 pointer-events-none" style={{opacity:.18, backgroundImage:`url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='340' viewBox='0 0 600 340'><g fill='none' stroke='%23ffffff' stroke-opacity='.5'>${[0,1,2,3,4,5,6].map(i=>`<rect x='${30+i*8}' y='${60+i*8}' width='${320-i*16}' height='${200-i*16}' rx='${100-i*8}'/><rect x='${250+i*8}' y='${60+i*8}' width='${320-i*16}' height='${200-i*16}' rx='${100-i*8}'/>`).join('')}</g></svg>")`, backgroundSize:'640px auto', backgroundPosition:'center 40%', backgroundRepeat:'no-repeat'}}/>
+            <div className="relative flex-1 flex flex-col items-center justify-center text-center px-8 py-12 md:py-0">
+              <BrandLogo size={84} variant="white" />
+              <h1 className="mt-5 text-4xl font-semibold tracking-tight" style={{color:'#fff', fontFamily:"'IBM Plex Sans Arabic', sans-serif"}}>Magnet Link</h1>
+              <p className="mt-2 text-sm tracking-[0.18em] uppercase" style={{color:'rgba(255,255,255,.75)'}}>Social · Design · Web · Ads</p>
+            </div>
+            <div className="brand-band relative hidden md:block" />
+          </div>
+          {/* Form side — white on dark blue */}
+          <div className="flex-1 flex flex-col items-center justify-center p-8">
+          <div className="mb-8 text-center">
+            <h2 className="text-2xl font-semibold text-white">{t('login_title')}</h2>
+            <p className="text-slate-400 text-sm mt-1">Business Suite</p>
           </div>
           <div className="w-full max-w-sm space-y-4">
             <div>
@@ -2436,6 +2646,7 @@
               className="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-3 text-sm font-semibold transition-colors shadow-lg shadow-blue-500/20 mt-2">
               {t('login_btn')}
             </button>
+          </div>
           </div>
         </div>
       );
@@ -2828,7 +3039,7 @@
                 <div className="px-6 py-5 space-y-4">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                      <svg viewBox="0 0 23 23" width="16" height="16"><rect x="1" y="1" width="10" height="10" fill="#f25022"/><rect x="12" y="1" width="10" height="10" fill="#7fba00"/><rect x="1" y="12" width="10" height="10" fill="#00a4ef"/><rect x="12" y="12" width="10" height="10" fill="#ffb900"/></svg>
+                      <svg viewBox="0 0 23 23" width="16" height="16"><rect x="1" y="1" width="10" height="10" fill="#1b4a8c"/><rect x="12" y="1" width="10" height="10" fill="#2b6fc6"/><rect x="1" y="12" width="10" height="10" fill="#4fc3f0"/><rect x="12" y="12" width="10" height="10" fill="#8fbbe9"/></svg>
                     </div>
                     <div>
                       <div className="text-sm font-medium text-white">Microsoft Account</div>
@@ -4746,7 +4957,7 @@
             <button
               onClick={() => setFilterStatus('all')}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all
-                ${filterStatus === 'all' ? 'bg-slate-600 text-white border-slate-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-600'}`}>
+                ${filterStatus === 'all' ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-600'}`}>
               {t('all')} ({leads.length})
             </button>
             {LEAD_STATUSES.map(s => {
@@ -4793,11 +5004,11 @@
                       {/* Name */}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/25 to-blue-500/25 flex items-center justify-center text-sm font-bold text-blue-300 flex-shrink-0">
+                          <div className="ml-avatar w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0 shadow-sm">
                             {lead.name.charAt(0)}
                           </div>
                           <div className="min-w-0">
-                            <div className="text-slate-200 font-medium">
+                            <div className="text-white font-semibold">
                               <InlineEdit value={lead.name}
                                 onChange={v => onUpdate(lead.id,'name',v)} />
                             </div>
@@ -4835,8 +5046,11 @@
                       {/* Probability (optional) */}
                       {cols.probability && (
                         <td className="px-4 py-3 text-slate-300">
-                          <InlineEdit value={lead.probability} type="percent"
-                            onChange={v => onUpdate(lead.id,'probability', Math.min(100, Math.max(0, v)))} />
+                          <div className="min-w-[72px]">
+                            <InlineEdit value={lead.probability} type="percent"
+                              onChange={v => onUpdate(lead.id,'probability', Math.min(100, Math.max(0, v)))} />
+                            <div className="ml-prob-track mt-1.5"><div className="ml-prob-fill" style={{width:`${Math.min(100, Math.max(0, Number(lead.probability)||0))}%`}}/></div>
+                          </div>
                         </td>
                       )}
 
@@ -4870,11 +5084,11 @@
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-1">
                           <button onClick={() => setViewLead(lead)}
-                            className="p-1.5 rounded-lg text-slate-600 hover:text-blue-400 hover:bg-blue-500/10 transition-all" title={t('crm_view')}>
+                            className="p-2 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-blue-500/15 transition-all" title={t('crm_view')}>
                             <Ic name="eye" size={13} />
                           </button>
                           <button onClick={() => onDelete(lead.id)}
-                            className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all" title={t('delete')}>
+                            className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/15 transition-all" title={t('delete')}>
                             <Ic name="trash" size={13} />
                           </button>
                         </div>
@@ -4960,9 +5174,9 @@ table{width:100%;border-collapse:collapse}
 .items thead tr{background:var(--navy);color:#fff}
 .items th{padding:11px 16px;text-align:left;font-size:12px;font-weight:700}
 .items th.c-mid{text-align:center}
-.items td{padding:10px 16px;font-size:12px;color:#222;border-bottom:1px solid #eef1ef}
+.items td{padding:10px 16px;font-size:12px;color:#222;border-bottom:1px solid #e3ecf7}
 .items td.c-mid{text-align:center}.items td.c-no{color:#888;width:34px}
-.items tbody tr:nth-child(even){background:#e9eee8}
+.items tbody tr:nth-child(even){background:#eef4fb}
 .lower{display:flex;justify-content:space-between;gap:30px;margin-top:26px}
 .pay-info{flex:1}
 .pay-title{font-size:16px;font-weight:800;color:var(--navy);margin-bottom:12px}
@@ -7897,9 +8111,9 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
                     <div style={{
                       width:170,height:170,borderRadius:'50%',
                       background:`conic-gradient(
-                        #f97316 0deg ${moneyOutTotal/moneyInTotal*360}deg,
-                        #8b5cf6 ${moneyOutTotal/moneyInTotal*360}deg ${(moneyOutTotal+netSalary)/moneyInTotal*360}deg,
-                        #10b981 ${(moneyOutTotal+netSalary)/moneyInTotal*360}deg 360deg
+                        #1b4a8c 0deg ${moneyOutTotal/moneyInTotal*360}deg,
+                        #2b6fc6 ${moneyOutTotal/moneyInTotal*360}deg ${(moneyOutTotal+netSalary)/moneyInTotal*360}deg,
+                        #4fc3f0 ${(moneyOutTotal+netSalary)/moneyInTotal*360}deg 360deg
                       )`,
                     }} className="shadow-2xl"/>
                     <div className="mt-5 space-y-2 w-full text-xs">
@@ -9272,7 +9486,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
               {!spUser ? (
                 <div className="flex flex-col items-center justify-center py-24 gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center">
-                    <svg viewBox="0 0 23 23" width="28" height="28"><rect x="1" y="1" width="10" height="10" fill="#f25022"/><rect x="12" y="1" width="10" height="10" fill="#7fba00"/><rect x="1" y="12" width="10" height="10" fill="#00a4ef"/><rect x="12" y="12" width="10" height="10" fill="#ffb900"/></svg>
+                    <svg viewBox="0 0 23 23" width="28" height="28"><rect x="1" y="1" width="10" height="10" fill="#1b4a8c"/><rect x="12" y="1" width="10" height="10" fill="#2b6fc6"/><rect x="1" y="12" width="10" height="10" fill="#4fc3f0"/><rect x="12" y="12" width="10" height="10" fill="#8fbbe9"/></svg>
                   </div>
                   <p className="text-slate-400 text-sm">{t('des_browse_connect_hint')}</p>
                 </div>
@@ -9488,7 +9702,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full mt-1" style={{height:height}}>
           <path d={toD(fb)} stroke="#1877F2" strokeWidth="2" fill="none" strokeLinejoin="round"/>
           <path d={toD(ig)} stroke="#E1306C" strokeWidth="2" fill="none" strokeLinejoin="round"/>
-          <path d={toD(tt)} stroke="#888"    strokeWidth="2" fill="none" strokeLinejoin="round"/>
+          <path d={toD(tt)} stroke="#6683b3"    strokeWidth="2" fill="none" strokeLinejoin="round"/>
         </svg>
       );
     };
@@ -9820,10 +10034,10 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
       const html=`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير سوشيال ميديا - ${monthLabel}</title><style>
 *{font-family:'Tajawal',Tahoma,sans-serif;margin:0;padding:0;box-sizing:border-box}
 body{background:#fff;color:#1e293b;padding:32px;font-size:13px}
-.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #6d28d9}
+.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #1b4a8c}
 .logo{display:flex;align-items:center;gap:10px}.logo-box{display:flex;align-items:center}
 .logo-name{font-weight:700;font-size:15px;color:#1e293b}.logo-sub{font-size:10px;color:#64748b}
-.rpt-title{text-align:left;color:#6d28d9;font-size:12px;font-weight:600}
+.rpt-title{text-align:left;color:#1b4a8c;font-size:12px;font-weight:600}
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
 .kpi{border:1px solid #e2e8f0;border-radius:10px;padding:14px;text-align:center}
 .kpi-val{font-size:22px;font-weight:800;color:#1e293b}.kpi-label{font-size:10px;color:#64748b;margin-top:4px}
@@ -9975,10 +10189,10 @@ ${best.length>0?`<h3>أفضل المنشورات — ${monthLabel}</h3><table><t
       const html=`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير Ads Manager - ${monthLabel}</title><style>
 *{font-family:'Tajawal',Tahoma,sans-serif;margin:0;padding:0;box-sizing:border-box}
 body{background:#fff;color:#1e293b;padding:32px;font-size:13px}
-.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #6d28d9}
+.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #1b4a8c}
 .logo{display:flex;align-items:center;gap:10px}.logo-box{display:flex;align-items:center}
 .logo-name{font-weight:700;font-size:15px}.logo-sub{font-size:10px;color:#64748b}
-.rpt-title{text-align:left;color:#6d28d9;font-size:12px;font-weight:600}
+.rpt-title{text-align:left;color:#1b4a8c;font-size:12px;font-weight:600}
 .kpi{display:inline-block;border:1px solid #e2e8f0;border-radius:10px;padding:14px 20px;text-align:center;margin:0 8px 12px 0}
 .kpi-val{font-size:22px;font-weight:800}.kpi-label{font-size:10px;color:#64748b;margin-top:4px}
 h3{font-size:13px;font-weight:700;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e2e8f0}
