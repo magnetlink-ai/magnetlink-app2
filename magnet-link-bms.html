@@ -725,6 +725,7 @@
         des_move:'نقل ↕', des_subtitle:'الأصول البصرية والمكتوبة',
         des_sp_connected:'تم الاتصال بـ SharePoint ✓', des_sp_connect_err:'فشل الاتصال: ',
         des_sp_session_expired:'انتهت جلسة SharePoint، الرجاء الاتصال من جديد',
+        des_sp_auth_err:'تعذّر الوصول إلى SharePoint — تأكد من حسابك وصلاحياتك', des_sp_server_tip:'متصل عبر خادم الموقع — لا حاجة لحساب Microsoft',
         des_sp_folders_ok:'تم إنشاء مجلدات "{{name}}" بـ SharePoint ✓',
         des_err_prefix:'خطأ: ', des_sp_err_move:'خطأ SP: ', des_sp_err_delete:'خطأ حذف SP: ', des_sp_err_restore:'خطأ الاسترجاع: ',
         des_sync_loading:'⏳ جاري...', des_sync_btn:'🔄 مزامنة', des_sync_action:'مزامنة',
@@ -1354,6 +1355,7 @@
         des_move:'Move ↕', des_subtitle:'Visual & Written Assets',
         des_sp_connected:'Connected to SharePoint ✓', des_sp_connect_err:'Connection failed: ',
         des_sp_session_expired:'SharePoint session expired, please reconnect',
+        des_sp_auth_err:'Could not access SharePoint — check your account and permissions', des_sp_server_tip:'Connected through the BMS server — no Microsoft account needed',
         des_sp_folders_ok:'Created folders for "{{name}}" in SharePoint ✓',
         des_err_prefix:'Error: ', des_sp_err_move:'SP Error: ', des_sp_err_delete:'SP Delete Error: ', des_sp_err_restore:'Restore error: ',
         des_sync_loading:'⏳ Loading...', des_sync_btn:'🔄 Sync', des_sync_action:'Sync',
@@ -1945,6 +1947,7 @@
 
     let _msalInstance      = null;
     let _currentBmsUserId  = null;
+    let _currentBmsUserEmail = null;
     let _msAutoLinkPromise = Promise.resolve();
 
     const getMsAccountForUser = (userId) => {
@@ -2004,35 +2007,60 @@
       }
     };
 
-    const getToken = async () => {
-      const msal = getMsal();
-      let account = getMsAccountForUser(_currentBmsUserId);
-      if (!account) {
-        const res = await msalLoginPopup({ scopes: SP_SCOPES });
-        saveMsAccountLink(_currentBmsUserId, res.account);
-        account = res.account;
+    /* ══ SharePoint via server proxy (Supabase Edge Function "sharepoint") ══
+       No Microsoft sign-in: the function holds an app-only token for the WebApp site and
+       checks the BMS user (email/password, active status, Design permission) before
+       forwarding a request. Auth failures surface as code SP_SESSION_EXPIRED so the existing
+       error handlers keep working. */
+    const SP_FN = () => `${SUPABASE_URL}/functions/v1/sharepoint`;
+    let _spSession = null;   // { token, exp, email }
+    const spError = (msg, code) => { const e = new Error(msg); if (code) e.code = code; return e; };
+    const SP_AUTH_MSG = {
+      bad_credentials: 'SharePoint: account password not found on the server — re-save your password from Profile',
+      inactive_user:   'SharePoint: your account is not active',
+      no_permission:   'SharePoint: you do not have access to Design & Content',
+    };
+
+    const spAuthToken = async (force = false) => {
+      const email = (_currentBmsUserEmail || '').toLowerCase().trim();
+      if (!email) throw spError('SharePoint: not signed in', 'SP_SESSION_EXPIRED');
+      if (!force && _spSession && _spSession.email === email && _spSession.exp > Date.now() + 60000) return _spSession.token;
+      const ps = JSON.parse(localStorage.getItem('bms_passwords') || '{}');
+      const res = await fetch(`${SP_FN()}?action=login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY },
+        body: JSON.stringify({ email, password: ps[email] || '' }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        _spSession = null;
+        throw spError(SP_AUTH_MSG[data.error] || `SharePoint auth ${res.status}: ${data.error || ''}`,
+                      res.status === 401 || res.status === 403 ? 'SP_AUTH' : undefined);
       }
-      try {
-        const res = await msal.acquireTokenSilent({ scopes: SP_SCOPES, account });
-        return res.accessToken;
-      } catch (e) {
-        /* Silent renewal failed — don't auto-open a popup here: by the time we're
-           this deep in an async chain (upload/sync/etc.) it's no longer inside the
-           original click's user-gesture, so browsers block it (empty_window_error).
-           Drop the stale link and ask the user to press "Connect" again instead. */
-        removeMsAccountLink(_currentBmsUserId);
-        const err = new Error('SP_SESSION_EXPIRED');
-        err.code = 'SP_SESSION_EXPIRED';
-        throw err;
-      }
+      _spSession = { token: data.token, exp: data.exp, email };
+      return data.token;
+    };
+
+    /* raw call through the proxy — returns the Graph Response (status/body passed through) */
+    const spProxy = async (method, path, body, contentType = 'application/json') => {
+      const send = async (force) => fetch(`${SP_FN()}?action=graph`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          'x-sp-token':  await spAuthToken(force),
+          'x-sp-method': method,
+          'x-sp-path':   encodeURIComponent(path),
+          'Content-Type': contentType,
+        },
+        body: body === undefined ? undefined : body,
+      });
+      let res = await send(false);
+      if (res.status === 401) res = await send(true);   // session token expired → re-login once
+      return res;
     };
 
     const graphFetch = async (url, opts={}) => {
-      const token = await getToken();
-      const res = await fetch(`https://graph.microsoft.com/v1.0${url}`, {
-        ...opts,
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type':'application/json', ...(opts.headers||{}) },
-      });
+      const res = await spProxy((opts.method || 'GET').toUpperCase(), url, opts.body);
       if (!res.ok) throw new Error(`Graph error ${res.status}: ${await res.text()}`);
       return res.headers.get('content-type')?.includes('json') ? res.json() : res;
     };
@@ -2067,17 +2095,33 @@
       return data.value;
     };
 
-    /* ── Upload file (≤4MB simple upload) — folderPath may be empty (uploads to drive root) ── */
+    /* ── Upload file — folderPath may be empty (uploads to drive root) ──
+       ≤4MB: one PUT through the proxy. Larger: Graph upload session; chunks go straight to the
+       pre-authenticated uploadUrl (no token needed in the browser). */
     const spUploadFile = async (folderPath, fileName, fileContent) => {
       const driveId = await getDriveId();
-      const token = await getToken();
       const path = folderPath ? `${folderPath}/${fileName}` : fileName;
-      const res = await fetch(
-        `https://graph.microsoft.com/v1.0/drives/${driveId}/root:/${path}:/content`,
-        { method:'PUT', headers:{ Authorization:`Bearer ${token}`, 'Content-Type':'application/octet-stream' }, body: fileContent }
-      );
-      if (!res.ok) throw new Error(`Upload error ${res.status}`);
-      return res.json();
+      const blob = fileContent instanceof Blob ? fileContent : new Blob([fileContent]);
+      if (blob.size <= 4 * 1024 * 1024) {
+        const res = await spProxy('PUT', `/drives/${driveId}/root:/${path}:/content`, blob, 'application/octet-stream');
+        if (!res.ok) throw new Error(`Upload error ${res.status}: ${await res.text()}`);
+        return res.json();
+      }
+      const sess = await graphFetch(`/drives/${driveId}/root:/${path}:/createUploadSession`, {
+        method: 'POST', body: JSON.stringify({ item: { '@microsoft.graph.conflictBehavior': 'replace' } }),
+      });
+      const CHUNK = 32 * 327680;   // 10 MiB — must be a multiple of 320 KiB
+      for (let start = 0; start < blob.size; start += CHUNK) {
+        const end = Math.min(start + CHUNK, blob.size);
+        const res = await fetch(sess.uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Range': `bytes ${start}-${end - 1}/${blob.size}` },
+          body: blob.slice(start, end),
+        });
+        if (!res.ok && res.status !== 202) throw new Error(`Upload error ${res.status}: ${await res.text()}`);
+        if (res.status === 200 || res.status === 201) return res.json();
+      }
+      throw new Error('Upload error: session ended without a file');
     };
 
     /* ── Get download URL ── */
@@ -8337,11 +8381,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
         const load = async () => {
           try {
             const driveId = await getDriveId();
-            const token   = await getToken();
-            const res = await fetch(
-              `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${itemId}/thumbnails/0/medium/content`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const res = await spProxy('GET', `/drives/${driveId}/items/${itemId}/thumbnails/0/medium/content`);
             if (!res.ok) throw new Error('thumb ' + res.status);
             const blob = await res.blob();
             objUrl = URL.createObjectURL(blob);
@@ -8399,7 +8439,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
             saved.sp_web_url      = uploaded.webUrl || '';
             showToast && showToast(t('asset_sp_ok'));
           } catch(err) {
-            if (err.code === 'SP_SESSION_EXPIRED') { onAuthExpired && onAuthExpired(); }
+            if (err.code === 'SP_SESSION_EXPIRED' || err.code === 'SP_AUTH') { onAuthExpired && onAuthExpired(err); }
             else { showToast && showToast(t('asset_sp_err') + err.message); }
             setUploading(false);
             return;
@@ -8505,7 +8545,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
             saved.sp_web_url      = uploaded.webUrl || '';
             showToast && showToast(t('asset_sp_ok'));
           } catch(err) {
-            if (err.code === 'SP_SESSION_EXPIRED') { onAuthExpired && onAuthExpired(); }
+            if (err.code === 'SP_SESSION_EXPIRED' || err.code === 'SP_AUTH') { onAuthExpired && onAuthExpired(err); }
             else { showToast && showToast(t('asset_sp_err') + err.message); }
             setUploading(false); return;
           }
@@ -8743,7 +8783,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
       const [detailAsset,  setDetailAsset]  = useState(null);
       const [addModal,     setAddModal]     = useState(null);
       const [addCatModal,  setAddCatModal]  = useState(null);
-      const [spUser,       setSpUser]       = useState(null);
+      const [spUser,       setSpUser]       = useState({ name: 'SharePoint · WebApp' });   // server-side connection, always on
       const [spLoading,    setSpLoading]    = useState(false);
       const [spRootPath,   setSpRootPath]   = useState('');
       const [showPathInput,setShowPathInput]= useState(false);
@@ -8781,40 +8821,15 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
       /* ── SP paths for current project ── */
       const spPaths = project ? getSpPaths(project.name) : null;
 
-      /* ── Auto-restore session on mount ── */
-      useEffect(() => {
-        const account = getMsAccountForUser(_currentBmsUserId);
-        if (account) setSpUser(account);
-      }, []);
 
       /* ── Auto-load live SP files when tab/project/auth changes ── */
       useEffect(() => { loadCurrentTab(); }, [spUser, selProjectId, activeTab]);
 
-      /* ── Login to SharePoint ── */
-      const handleSpLogin = async () => {
-        setSpLoading(true);
-        try {
-          const msal = getMsal();
-          const res = await msalLoginPopup({ scopes: SP_SCOPES });
-          saveMsAccountLink(_currentBmsUserId, res.account);
-          setSpUser(res.account);
-          showToast(t('des_sp_connected'));
-        } catch(e) { showToast(t('des_sp_connect_err') + e.message); }
-        setSpLoading(false);
+      /* ── SharePoint auth problem (server rejected the BMS user) — explain, don't disconnect ── */
+      const handleSpSessionExpired = (e) => {
+        showToast((e && e.message) || t('des_sp_auth_err'));
       };
-
-      /* ── Logout ── */
-      const handleSpLogout = () => {
-        removeMsAccountLink(_currentBmsUserId);
-        setSpUser(null);
-      };
-
-      /* ── Session expired mid-flow: drop the stale link, show a clear "reconnect" message ── */
-      const handleSpSessionExpired = () => {
-        setSpUser(null);
-        showToast(t('des_sp_session_expired'));
-      };
-      const isSpSessionExpired = e => e && e.code === 'SP_SESSION_EXPIRED';
+      const isSpSessionExpired = e => e && (e.code === 'SP_SESSION_EXPIRED' || e.code === 'SP_AUTH');
 
       /* ── Live SP loading for Design/From Client/Documents tabs ── */
       const TAB_SP_FOLDER = { design:'Design', from_client:'From Client', documents:'Documents' };
@@ -8838,7 +8853,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
             return (sfData.value || []).filter(i => !i.folder).map(i => ({ ...i, _cat: sf.name }));
           }));
           setSpLive([...rootFiles, ...subFolders.flat()]);
-        } catch(e) { setSpLive([]); if (isSpSessionExpired(e)) handleSpSessionExpired(); }
+        } catch(e) { setSpLive([]); if (isSpSessionExpired(e)) handleSpSessionExpired(e); }
         setSpLiveLoad(false);
       };
 
@@ -8870,7 +8885,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
           const data = await graphFetch(url);
           setSpBrowseItems(data.value || []);
           setSpBrowsePath(breadcrumb);
-        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast('SharePoint error: ' + e.message); }
+        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast('SharePoint error: ' + e.message); }
         setSpBrowseLoad(false);
       };
 
@@ -8918,7 +8933,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
           }
           showToast(t('des_toast_asset_added'));
           await refreshBrowse();
-        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_err_prefix') + e.message); }
+        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_err_prefix') + e.message); }
         setSpBrowseUploading(false);
       };
 
@@ -8930,7 +8945,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
           await spCreateFolder(browseFolderPath ? `${browseFolderPath}/${name}` : name);
           showToast(t('des_toast_cat_added'));
           await refreshBrowse();
-        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_err_prefix') + e.message); }
+        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_err_prefix') + e.message); }
       };
 
       /* ── Browser tab: rename a file or folder — renames the real SharePoint item + syncs the local title if tracked ── */
@@ -8941,7 +8956,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
         try {
           await spRenameItem(item.id, newName);
         } catch(e) {
-          isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_err_prefix') + e.message);
+          isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_err_prefix') + e.message);
           return;
         }
         if (!item.folder) {
@@ -8956,7 +8971,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
       const handleBrowseDelete = async (item) => {
         if (!confirm(item.folder ? t('des_confirm_delete_folder') : t('des_confirm_delete_asset'))) return;
         try { await spDeleteFile(item.id); }
-        catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_sp_err_delete') + e.message); return; }
+        catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_sp_err_delete') + e.message); return; }
         const found = !item.folder ? findLocalBySpId(item.id) : null;
         if (found) syncLocalDelete(found);
         await refreshBrowse();
@@ -8964,7 +8979,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
           undoLabel: t('des_undo'),
           onUndo: async () => {
             try { await spRestoreFile(item.id); await refreshBrowse(); showToast(t('des_toast_restored')); }
-            catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_sp_err_restore') + e.message); }
+            catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_sp_err_restore') + e.message); }
           },
         });
       };
@@ -8975,7 +8990,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
         try {
           const destPath = browseFolderPath ? `${browseFolderPath}/${destFolder.name}` : destFolder.name;
           await spMoveItem(dragged.id, destPath);
-        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_sp_err_move') + e.message); return; }
+        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_sp_err_move') + e.message); return; }
         if (!dragged.folder) {
           const found = findLocalBySpId(dragged.id);
           if (found) syncLocalSave(found, { category: destFolder.name });
@@ -8994,7 +9009,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
             for (const cat of cfg.cats)
               await spCreateFolder(`${cfg.root}/${cat}`);
           showToast(t('des_sp_folders_ok').replace('{{name}}', project.name));
-        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_err_prefix') + e.message); }
+        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_err_prefix') + e.message); }
         setSpLoading(false);
       };
 
@@ -9044,7 +9059,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
             });
           }
           showToast(t('des_toast_sync').replace('{{name}}',project.name).replace('{{n}}',addedCount));
-        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_err_prefix') + e.message); console.error(e); }
+        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_err_prefix') + e.message); console.error(e); }
         setSpLoading(false);
       };
 
@@ -9057,7 +9072,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
         /* Move in SharePoint */
         if (asset.sp_item_id && spUser) {
           try { await spMoveItem(asset.sp_item_id, `${destCfg.root}/${destCat}`); }
-          catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_sp_err_move') + e.message); return; }
+          catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_sp_err_move') + e.message); return; }
         }
         /* Remove from source */
         if (fromTab==='design')      onDeleteDesignAsset(asset.id);
@@ -9076,7 +9091,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
       const deleteWithUndo = async (item, { deleteLocal, saveLocal }) => {
         if (item.sp_item_id && spUser) {
           try { await spDeleteFile(item.sp_item_id); }
-          catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_sp_err_delete') + e.message); return; }
+          catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_sp_err_delete') + e.message); return; }
           setSpLive(prev => prev.filter(f => f.id !== item.sp_item_id));
         }
         deleteLocal(item.id);
@@ -9086,7 +9101,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
             saveLocal(item);
             if (item.sp_item_id && spUser) {
               try { await spRestoreFile(item.sp_item_id); await loadCurrentTab(); showToast(t('des_toast_restored')); }
-              catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_sp_err_restore') + e.message); }
+              catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_sp_err_restore') + e.message); }
             }
           },
         });
@@ -9101,7 +9116,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
         if (asset.sp_item_id && spUser && spPaths) {
           const tabKey = fromTab==='from_client' ? 'from_client' : fromTab==='documents' ? 'documents' : 'design';
           try { await spMoveItem(asset.sp_item_id, `${spPaths[tabKey].root}/${toCat}`); }
-          catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired() : showToast(t('des_sp_err_move') + e.message); return; }
+          catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_sp_err_move') + e.message); return; }
         }
         const updated = { ...asset, category: toCat };
         if (fromTab==='design')       onSaveDesignAsset(updated);
@@ -9127,9 +9142,9 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
             <div className="flex items-center gap-2">
               {spUser ? (
                 <>
-                  <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400"/>
-                    <span className="text-emerald-300 text-xs font-medium">{spUser.username||spUser.name}</span>
+                  <div className="flex items-center gap-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg px-3 py-1.5" title={t('des_sp_server_tip')}>
+                    <span className="w-2 h-2 rounded-full bg-cyan-400"/>
+                    <span className="text-cyan-300 text-xs font-medium">{spUser.name}</span>
                   </div>
                   <button onClick={loadCurrentTab} disabled={spLiveLoad}
                     className="text-xs px-2 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg disabled:opacity-50" title="Refresh">
@@ -9139,14 +9154,8 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
                     className="text-xs px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg disabled:opacity-50" title={t('des_setup_title')}>
                     {t('des_setup_btn')}
                   </button>
-                  <button onClick={handleSpLogout} className="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg">{t('des_sp_logout')}</button>
                 </>
-              ) : (
-                <button onClick={handleSpLogin} disabled={spLoading}
-                  className="flex items-center gap-2 text-sm px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50">
-                  {spLoading ? t('des_sp_connecting') : t('des_sp_connect_btn')}
-                </button>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -14859,6 +14868,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
 
       const handleLogin = (user, skipPageReset) => {
         _currentBmsUserId = user.id;
+        _currentBmsUserEmail = user.email || null;
         setCurrentUser(user);
         localStorage.setItem('bms_session_user', user.id);
         tryAutoLinkMicrosoft(user.id);
