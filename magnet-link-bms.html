@@ -446,6 +446,7 @@
         repeating-linear-gradient(90deg,rgba(27,74,140,0.04) 0px,rgba(27,74,140,0.04) 1px,transparent 1px,transparent 40px) !important; }
     [data-theme="light"] .text-blue-300 { color: #1f5aa6 !important; }
     [data-theme="light"] .bg-blue-600\/20 { background-color: rgba(43,111,198,0.12) !important; }
+    [data-theme="light"] .bg-gradient-to-br.text-white, [data-theme="light"] .bg-gradient-to-br .text-white { color: #ffffff !important; }
     [data-theme="light"] .nav-active-l { box-shadow: inset 3px 0 0 #2b6fc6; }
     [data-theme="light"] .nav-active-r { box-shadow: inset -3px 0 0 #2b6fc6; }
   
@@ -915,6 +916,8 @@
         tm_title:'الفريق', tm_members:'الموظفون', tm_clients:'العملاء',
         tm_roles:'الرتب', tm_attendance:'الحضور',
         tm_add_member:'إضافة موظف', tm_add_client:'إضافة عميل',
+        tm_call:'اتصال', tm_reset_pass:'كلمة مرور جديدة', tm_salary_card:'الرواتب', tm_salary_people:'{{n}} موظف براتب',
+        tm_salary_base:'الأساسي', tm_salary_ded:'خصومات', tm_salary_bonus:'مكافآت', tm_open_salaries:'فتح الرواتب ←', tm_portal_clients:'بوابة العملاء',
         tm_add_role:'إضافة رتبة', tm_col_name:'الاسم', tm_col_role:'الرتبة',
         tm_col_salary:'الراتب', tm_col_joined:'تاريخ الانضمام',
         tm_col_status:'الحالة', tm_col_perms:'الصلاحيات',
@@ -1547,6 +1550,8 @@
         tm_title:'Team', tm_members:'Members', tm_clients:'Clients',
         tm_roles:'Roles', tm_attendance:'Attendance',
         tm_add_member:'Add Member', tm_add_client:'Add Client',
+        tm_call:'Call', tm_reset_pass:'New password', tm_salary_card:'Salaries', tm_salary_people:'{{n}} paid employees',
+        tm_salary_base:'Base', tm_salary_ded:'Deductions', tm_salary_bonus:'Bonuses', tm_open_salaries:'Open salaries →', tm_portal_clients:'Client portal',
         tm_add_role:'Add Role', tm_col_name:'Name', tm_col_role:'Role',
         tm_col_salary:'Salary', tm_col_joined:'Join Date',
         tm_col_status:'Status', tm_col_perms:'Permissions',
@@ -7046,9 +7051,11 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
       );
     };
 
-    const TeamModule = ({ teamMembers, teamClients, customRoles, currentUser, onUpdateMember, onDeleteMember, onAddMember, onUpdateClient, onDeleteClient, onAddClient, onAddCustomRole, onUpdateCustomRole, onDeleteCustomRole, attendanceRecords, offDays, deductions, bonuses, overtime, onAddDeduction, onAddOffDay, onUpdateOffDay, onAddBonus, onAddOvertime, onResetSession, onUpdateAttendance, onAddAttendance, showToast }) => {
-      const { t } = useLang();
+    const TeamModule = ({ onOpenSalaries, teamMembers, teamClients, customRoles, currentUser, onUpdateMember, onDeleteMember, onAddMember, onUpdateClient, onDeleteClient, onAddClient, onAddCustomRole, onUpdateCustomRole, onDeleteCustomRole, attendanceRecords, offDays, deductions, bonuses, overtime, onAddDeduction, onAddOffDay, onUpdateOffDay, onAddBonus, onAddOvertime, onResetSession, onUpdateAttendance, onAddAttendance, showToast }) => {
+      const { t, lang } = useLang();
       const [tab,setTab]=useState('team');
+      const [detail,setDetail]=useState(null);
+      const [roleFilter,setRoleFilter]=useState(null);
       const [formOpen,setFormOpen]=useState(false);
       const [editMember,setEditMember]=useState(null);
       const [editClient,setEditClient]=useState(null);
@@ -7120,222 +7127,299 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
       ].filter(Boolean);
 
       const canAdminRoles = ['super_admin','admin'].includes(currentUser?.role);
+      const canAddPeople  = canDoAction(currentUser,customRoles,'manage_members');
 
-      return (
-        <div className="space-y-5">
-          <div className="flex items-start justify-between">
-            <div><h1 className="text-2xl font-bold text-white">{t('nav_team')}</h1>
-              <p className="text-slate-500 text-sm mt-1">
-                {teamMembers.filter(m=>m.status==='active').length} {t('dash_active_sub')} &nbsp;·&nbsp;
-                {teamClients.filter(c=>c.status==='active').length} client portal &nbsp;·&nbsp;
-                {customRoles.length} {t('tm_col_role')}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              {tab==='roles'&&canAdminRoles&&(
-                <button onClick={()=>{setEditRole(null);setRoleFormOpen(true);}}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors shadow-lg shadow-blue-500/20">
-                  <Ic name="plus" size={14}/>{t('tm_add_role')}
-                </button>
-              )}
-              {tab!=='roles'&&canDoAction(currentUser,customRoles,'manage_members')&&(
-                <button onClick={()=>{setEditMember(null);setEditClient(null);setFormOpen(true);}}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors shadow-lg shadow-blue-500/20">
-                  <Ic name="plus" size={14}/>{isTeam?t('tm_add_member'):t('tm_add_client')}
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="flex gap-1 border-b border-slate-700/60 flex-wrap">
-            {[
-              {id:'team',       label:`${t('nav_team')} (${teamMembers.length})`},
-              {id:'clients',    label:`Clients Portal (${teamClients.length})`},
-              {id:'attendance', label:t('prf_att_salary')},
-              {id:'roles',      label:`${t('tm_col_role')} (${customRoles.length+3})`},
-            ].map(ti=>(
-              <button key={ti.id} onClick={()=>{setTab(ti.id);setSearch('');}}
-                className={`px-5 py-2.5 text-sm font-medium transition-all border-b-2 -mb-px ${tab===ti.id?'text-blue-300 border-blue-500':'text-slate-500 border-transparent hover:text-slate-300'}`}>
-                {ti.label}
+      /* ── Salary card: this month's team salaries (same basis as Finance → auto salaries) ── */
+      const curMonth   = new Date().toISOString().slice(0,7);
+      const paidPeople = teamMembers.filter(m => Number(m.salary) > 0 && (!m.join_date || m.join_date.slice(0,7) <= curMonth));
+      const salBase    = paidPeople.reduce((s,m) => s + Number(m.salary), 0);
+      const salDed     = (deductions||[]).filter(d => (d.date||'').startsWith(curMonth)).reduce((s,d) => s + Number(d.amount||0), 0);
+      const salBon     = (bonuses||[]).filter(b => (b.date||'').startsWith(curMonth)).reduce((s,b) => s + Number(b.amount||0), 0);
+      const salNet     = salBase - salDed + salBon;
+      const money      = n => '$' + Math.round(n).toLocaleString('en-US');
+      const monthLabel = new Date().toLocaleDateString(lang==='ar'?'ar':'en-US', { month:'long', year:'numeric' });
+
+      /* ── list (numbered, highest rank first), optional role filter ── */
+      const rows = filtered
+        .filter(m => !roleFilter || m.role === roleFilter)
+        .sort((a,b) => getRank(b.role,customRoles) - getRank(a.role,customRoles));
+      const roleFilterInfo = roleFilter ? getRoleInfo(roleFilter, customRoles) : null;
+
+      const permChips = member => {
+        if (['super_admin','admin'].includes(member.role)) return null;
+        const perms = member.role === 'client' ? member.permissions : (customRoles.find(r=>r.id===member.role)?.permissions || member.permissions);
+        return DEPT_KEYS.filter(k => perms?.[k]?.access);
+      };
+
+      const openEdit = member => { if (isTeam) setEditMember(member); else setEditClient(member); setFormOpen(true); };
+
+      /* actions for a person — used on the row (hover) and in the detail panel */
+      const personActions = (member, big) => {
+        const btn = big
+          ? 'flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-slate-700/60 hover:bg-slate-700 text-slate-200 transition-colors'
+          : 'w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-slate-700/60 transition-colors';
+        const stop = fn => e => { e.stopPropagation(); fn(); };
+        if (!canManage(currentUser,member,customRoles)) {
+          return isTeam && member.id !== currentUser?.id && member.status === 'active' && !big ? (
+            <button onClick={stop(() => window._bmsStartCall?.(member))} className={btn} title={t('tm_call')}><Ic name="phone" size={14}/></button>
+          ) : (!big && <span className="w-8 h-8 flex items-center justify-center text-slate-600" title={t('tm_perm_deny')}><Ic name="shield2" size={14}/></span>);
+        }
+        return (
+          <>
+            {isTeam && member.id !== currentUser?.id && member.status === 'active' && (
+              <button onClick={stop(() => window._bmsStartCall?.(member))} className={btn} title={t('tm_call')}><Ic name="phone" size={14}/>{big && t('tm_call')}</button>
+            )}
+            <button onClick={stop(() => { setDetail(null); openEdit(member); })} className={btn} title={t('edit')}><Ic name="edit2" size={14}/>{big && t('edit')}</button>
+            {member.role !== 'super_admin' && <>
+              <button onClick={stop(() => { handlePause(member); setDetail(null); })} className={btn}
+                title={member.status==='paused' ? t('tm_reactivate') : t('tm_pause_btn')}>
+                <Ic name={member.status==='paused' ? 'play' : 'pause'} size={14}/>{big && (member.status==='paused' ? t('tm_reactivate') : t('tm_pause_btn'))}
               </button>
-            ))}
+              <button onClick={stop(() => { setDetail(null); setTimeoutTarget(member); })} className={btn} title={t('tm_timeout_btn')}><Ic name="clock2" size={14}/>{big && t('tm_timeout_btn')}</button>
+              <button onClick={stop(() => { setDetail(null); handleResetPass(member); })} className={btn} title={t('tm_reset_pass')}><Ic name="key2" size={14}/>{big && t('tm_reset_pass')}</button>
+              <button onClick={stop(() => { setDetail(null); handleDelete(member); })} className={`${btn} hover:!text-red-300`} title={t('tm_del_perm')}><Ic name="trash" size={14}/>{big && t('delete')}</button>
+            </>}
+          </>
+        );
+      };
+
+      const statusPill = member => {
+        const mst = TEAM_MEMBER_STATUSES.find(s => s.id === member.status);
+        return mst && (
+          <span className={`text-[11px] px-2.5 py-1 rounded-full border flex items-center gap-1.5 w-fit whitespace-nowrap ${mst.badge}`}>
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${mst.dot}`}/>{sl(mst,t)}
+          </span>
+        );
+      };
+
+      /* ── side panel: Salary card + Roles ── */
+      const sidePanel = (
+        <aside className="w-full lg:w-80 shrink-0 space-y-4">
+          {/* Salary */}
+          <div className="relative overflow-hidden rounded-2xl bg-brand-grad p-5 text-white shadow-lg shadow-blue-500/20">
+            <div className="absolute -top-10 -end-10 w-40 h-40 rounded-full border-[18px] border-white/10 pointer-events-none"/>
+            <div className="relative">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold tracking-[0.14em] uppercase" style={{color:'rgba(255,255,255,.8)'}}>{t('tm_salary_card')}</span>
+                <span className="text-[11px]" style={{color:'rgba(255,255,255,.75)'}}>{monthLabel}</span>
+              </div>
+              <div className="text-3xl font-semibold mt-2" style={{color:'#fff'}}>{money(salNet)}</div>
+              <div className="text-xs mt-0.5" style={{color:'rgba(255,255,255,.8)'}}>{t('tm_salary_people').replace('{{n}}', paidPeople.length)}</div>
+              <div className="grid grid-cols-3 gap-2 mt-4 text-[11px]">
+                {[[t('tm_salary_base'), money(salBase)], [t('tm_salary_ded'), '−'+money(salDed)], [t('tm_salary_bonus'), '+'+money(salBon)]].map(([k,v]) => (
+                  <div key={k} className="rounded-lg bg-white/10 px-2 py-1.5">
+                    <div style={{color:'rgba(255,255,255,.7)'}}>{k}</div>
+                    <div className="font-semibold tabular-nums" style={{color:'#fff', fontFamily:"'IBM Plex Sans Arabic', sans-serif"}}>{v}</div>
+                  </div>
+                ))}
+              </div>
+              {onOpenSalaries && canSee(currentUser,'finance',customRoles) && (
+                <button onClick={onOpenSalaries}
+                  className="mt-4 w-full rounded-lg bg-white/15 hover:bg-white/25 py-2 text-xs font-semibold transition-colors" style={{color:'#fff'}}>
+                  {t('tm_open_salaries')}
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* ── ROLES TAB ── */}
-          {tab==='roles'&&(
-            <div className="space-y-3">
-              <p className="text-xs text-slate-500">{t('tm_roles_hint')}</p>
-              {allRolesSorted.map((r,idx)=>{
+          {/* Roles */}
+          <div className="bg-slate-800/60 border border-slate-700/40 rounded-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/40">
+              <span className="text-sm font-semibold text-white">{t('tm_col_role')} <span className="text-slate-500 font-normal">({allRolesSorted.length})</span></span>
+              {canAdminRoles && (
+                <button onClick={() => { setEditRole(null); setRoleFormOpen(true); }}
+                  className="flex items-center gap-1 text-xs font-medium text-cyan-300 hover:text-white">
+                  <Ic name="plus" size={13}/>{t('tm_add_role')}
+                </button>
+              )}
+            </div>
+            <div className="p-2 space-y-0.5 max-h-[420px] overflow-y-auto">
+              {allRolesSorted.map((r, idx) => {
                 const isFixed = r.fixed || r.isClient;
-                const pal = ROLE_COLOR_PALETTE.find(p=>p.key===r.colorKey)||null;
-                const memberCount = teamMembers.filter(m=>m.role===r.id).length + teamClients.filter(c=>c.role===r.id).length;
-                const permCount = r.permissions ? DEPT_KEYS.filter(k=>r.permissions[k]?.access).length : null;
                 const ri = getRoleInfo(r.id, customRoles);
-                const canMoveUp = !isFixed && idx > 0 && !allRolesSorted[idx-1]?.fixed;
-                const canMoveDown = !isFixed && idx < allRolesSorted.length-1 && !allRolesSorted[idx+1]?.isClient;
-                const shiftRank = (dir) => {
-                  const neighbor = allRolesSorted[idx+dir];
-                  if (!neighbor||neighbor.fixed||neighbor.isClient) return;
-                  const newRank = neighbor.rank + (dir>0?-5:5);
-                  onUpdateCustomRole({...r, rank:newRank});
+                const count = teamMembers.filter(m=>m.role===r.id).length + teamClients.filter(c=>c.role===r.id).length + (r.isClient ? teamClients.filter(c=>!c.role).length : 0);
+                const canUp   = !isFixed && idx > 0 && !allRolesSorted[idx-1]?.fixed;
+                const canDown = !isFixed && idx < allRolesSorted.length-1 && !allRolesSorted[idx+1]?.isClient;
+                const shiftRank = dir => {
+                  const nb = allRolesSorted[idx+dir];
+                  if (!nb || nb.fixed || nb.isClient) return;
+                  onUpdateCustomRole({ ...r, rank: nb.rank + (dir > 0 ? -5 : 5) });
                 };
+                const active = roleFilter === r.id;
                 return (
-                  <div key={r.id} className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all
-                    ${isFixed?'bg-slate-800/30 border-slate-700/30':'bg-slate-800/60 border-slate-700/50 hover:border-blue-500/30'}`}>
-                    <div className="flex flex-col gap-0.5 flex-shrink-0">
-                      <button onClick={()=>shiftRank(-1)} disabled={!canMoveUp||!canAdminRoles}
-                        className={`w-5 h-4 flex items-center justify-center rounded transition-colors ${canMoveUp&&canAdminRoles?'text-slate-400 hover:text-white hover:bg-slate-700':'text-slate-700 cursor-default'}`}>
-                        <Ic name="chevron_up" size={10}/>
-                      </button>
-                      <button onClick={()=>shiftRank(1)} disabled={!canMoveDown||!canAdminRoles}
-                        className={`w-5 h-4 flex items-center justify-center rounded transition-colors ${canMoveDown&&canAdminRoles?'text-slate-400 hover:text-white hover:bg-slate-700':'text-slate-700 cursor-default'}`}>
-                        <Ic name="chevron_down" size={10}/>
-                      </button>
-                    </div>
-                    <span className="text-slate-600 text-xs w-7 text-center flex-shrink-0 font-mono">{r.rank}</span>
-                    <span className={`text-[10px] px-2.5 py-1 rounded-full border flex-shrink-0 ${ri.badge}`}>{ri.label}</span>
-                    {isFixed&&<span className="text-[10px] text-slate-600 flex items-center gap-1"><Ic name="shield2" size={9}/>{t('tm_fixed')}</span>}
-                    <div className="flex-1 min-w-0">
-                      {permCount!==null&&(
-                        <div className="flex flex-wrap gap-1 mt-0.5">
-                          {DEPT_KEYS.filter(k=>r.permissions[k]?.access).map(k=>(
-                            <span key={k} className="text-[9px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded-md">{DEPT_LABELS[k]}</span>
-                          ))}
-                          {permCount===0&&<span className="text-[10px] text-slate-600">{t('tm_no_access')}</span>}
-                        </div>
-                      )}
-                    </div>
-                    <span className="text-xs text-slate-500 flex-shrink-0">{memberCount} {t('tm_person')}</span>
-                    {!isFixed&&canAdminRoles&&(
-                      <div className="flex gap-1">
-                        <button onClick={()=>{setEditRole(r);setRoleFormOpen(true);}}
-                          className="p-1.5 rounded-lg text-slate-600 hover:text-blue-400 hover:bg-blue-500/10 transition-all"><Ic name="edit2" size={12}/></button>
+                  <div key={r.id} onClick={() => !r.isClient && isTeam && setRoleFilter(active ? null : r.id)}
+                    className={`group flex items-center gap-2 px-2.5 py-2 rounded-xl transition-colors ${!r.isClient && isTeam ? 'cursor-pointer' : ''}
+                      ${active ? 'bg-blue-600/20' : 'hover:bg-slate-700/40'}`}>
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full border whitespace-nowrap ${ri.badge}`}>{ri.label}</span>
+                    {isFixed && <span className="text-slate-600" title={t('tm_fixed')}><Ic name="shield2" size={11}/></span>}
+                    <span className="flex-1"/>
+                    <span className="text-[11px] text-slate-500 tabular-nums w-5 text-center">{count}</span>
+                    {canAdminRoles && (
+                      <span className={`w-[96px] shrink-0 flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${isFixed ? 'invisible' : ''}`} onClick={e=>e.stopPropagation()}>
+                        {!isFixed && <>
+                        <button onClick={()=>shiftRank(-1)} disabled={!canUp} className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-white disabled:opacity-30"><Ic name="chevron_up" size={11}/></button>
+                        <button onClick={()=>shiftRank(1)}  disabled={!canDown} className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-white disabled:opacity-30"><Ic name="chevron_down" size={11}/></button>
+                        <button onClick={()=>{setEditRole(r);setRoleFormOpen(true);}} className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-cyan-300"><Ic name="edit2" size={11}/></button>
                         <button onClick={()=>{
-                            if(memberCount>0){showToast(t('tm_no_del_role'));return;}
+                            if(count>0){showToast(t('tm_no_del_role'));return;}
                             if(!confirm(`${t('delete')} "${r.name}"?`))return;
                             onDeleteCustomRole(r.id);showToast(`${t('delete')}: "${r.name}" ✓`);
-                          }}
-                          className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"><Ic name="trash" size={12}/></button>
-                      </div>
+                          }} className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-red-300"><Ic name="trash" size={11}/></button>
+                        </>}
+                      </span>
                     )}
                   </div>
                 );
               })}
             </div>
-          )}
+          </div>
+        </aside>
+      );
 
-          {/* ── ATTENDANCE TAB ── */}
-          {tab==='attendance'&&(
-            <AttendanceAdminView
-              teamMembers={teamMembers}
-              attendanceRecords={attendanceRecords||[]}
-              offDays={offDays||[]}
-              deductions={deductions||[]}
-              bonuses={bonuses||[]}
-              overtime={overtime||[]}
-              onAddDeduction={onAddDeduction}
-              onAddOffDay={onAddOffDay}
-              onUpdateOffDay={onUpdateOffDay}
-              onAddBonus={onAddBonus}
-              onAddOvertime={onAddOvertime}
-              onResetSession={onResetSession}
-              onUpdateAttendance={onUpdateAttendance}
-              onAddAttendance={onAddAttendance}
-              showToast={showToast}
-              currentUser={currentUser}
-              customRoles={customRoles}
-            />
-          )}
-
-          {/* ── TEAM / CLIENTS TABS ── */}
-          {tab!=='roles'&&tab!=='attendance'&&<>
-            <div className="relative">
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"><Ic name="search" size={13}/></span>
-              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={t('tm_search')}
-                className="bg-slate-800 border border-slate-700 focus:border-blue-500 rounded-lg pr-9 pl-3 py-2 text-sm text-white placeholder-slate-500 outline-none w-52"/>
-            </div>
-            <div className="bg-slate-800/60 rounded-2xl border border-slate-700/40 overflow-hidden">
-              <div className="overflow-x-auto scroll-fade-x">
-                <table className="w-full text-sm">
-                  <thead><tr className="border-b border-slate-700/60 text-right">
-                    <th className="px-4 py-3 text-xs font-medium text-slate-500 min-w-[180px]">{t('tm_col_name')}</th>
-                    <th className="px-4 py-3 text-xs font-medium text-slate-500">{t('prf_email')}</th>
-                    <th className="px-4 py-3 text-xs font-medium text-slate-500">{t('tm_col_role')}</th>
-                    {isTeam&&<th className="px-4 py-3 text-xs font-medium text-slate-500">{t('tm_col_salary')}</th>}
-                    {isTeam&&<th className="px-4 py-3 text-xs font-medium text-slate-500">{t('tm_col_joined')}</th>}
-                    <th className="px-4 py-3 text-xs font-medium text-slate-500">{t('tm_col_perms')}</th>
-                    <th className="px-4 py-3 text-xs font-medium text-slate-500">{t('tm_col_status')}</th>
-                    <th className="px-3 py-3 w-32"></th>
-                  </tr></thead>
-                  <tbody>
-                    {filtered.length===0&&<tr><td colSpan={isTeam?8:6} className="text-center py-16 text-slate-600">{t('tm_no_res')}</td></tr>}
-                    {filtered.sort((a,b)=>getRank(b.role,customRoles)-getRank(a.role,customRoles)).map(member=>{
-                      const ri=getRoleInfo(member.role,customRoles);
-                      const mst=TEAM_MEMBER_STATUSES.find(s=>s.id===member.status);
-                      const isSysRole=['super_admin','admin'].includes(member.role);
-                      const crPerms = isSysRole ? null : customRoles.find(r=>r.id===member.role)?.permissions;
-                      const permCount = isSysRole ? null : member.role==='client'
-                        ? DEPT_KEYS.filter(k=>member.permissions?.[k]?.access).length
-                        : (crPerms ? DEPT_KEYS.filter(k=>crPerms[k]?.access).length : 0);
-                      return (
-                        <tr key={member.id} className={`border-b border-slate-700/30 hover:bg-white/[0.02] transition-colors ${member.status!=='active'?'opacity-60':''}`}>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2.5">
-                              <UserAvatar userId={member.id} name={member.name} grad={ri.grad} size="w-9 h-9" rounded="rounded-xl" textCls="text-sm font-bold"/>
-                              <div>
-                                <div className="text-slate-200 font-medium">{member.name}</div>
-                                {member.status==='timeout'&&member.timeout_until&&<div className="text-xs text-orange-400">{t('tm_until')} {member.timeout_until}</div>}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-slate-400 text-xs">{member.email}</td>
-                          <td className="px-4 py-3"><span className={`text-xs px-2.5 py-1 rounded-full border ${ri.badge}`}>{ri.label}</span></td>
-                          {isTeam&&<td className="px-4 py-3 text-slate-300">{member.salary?`$${Number(member.salary).toLocaleString()}`:<span className="text-slate-600">—</span>}</td>}
-                          {isTeam&&<td className="px-4 py-3 text-slate-500 text-xs">{member.join_date||'—'}</td>}
-                          <td className="px-4 py-3">
-                            {isSysRole?<span className="text-xs text-slate-600">{t('tm_all_depts')}</span>
-                              :<span className="text-xs text-slate-400">{permCount}/{DEPT_KEYS.length} {t('tm_depts')}</span>}
-                          </td>
-                          <td className="px-4 py-3">{mst&&<span className={`text-xs px-2.5 py-1 rounded-full border flex items-center gap-1.5 w-fit ${mst.badge}`}><span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${mst.dot}`}/>{sl(mst,t)}</span>}</td>
-                          <td className="px-3 py-3">
-                            <div className="flex items-center gap-1">
-                              {/* Call button — visible for active team members who aren't yourself */}
-                              {isTeam && member.id !== currentUser?.id && member.status === 'active' && (
-                                <button onClick={() => window._bmsStartCall?.(member)}
-                                  className="p-1.5 rounded-lg text-slate-600 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all" title="اتصال / Call">
-                                  <Ic name="phone" size={13}/>
-                                </button>
-                              )}
-                              {canManage(currentUser,member,customRoles)?(
-                                <>
-                                  <button onClick={()=>{if(isTeam)setEditMember(member);else setEditClient(member);setFormOpen(true);}}
-                                    className="p-1.5 rounded-lg text-slate-600 hover:text-blue-400 hover:bg-blue-500/10 transition-all" title={t('edit')}><Ic name="edit2" size={13}/></button>
-                                  {member.role!=='super_admin'&&<>
-                                    <button onClick={()=>handlePause(member)}
-                                      className={`p-1.5 rounded-lg transition-all text-sm ${member.status==='paused'?'text-amber-400 bg-amber-500/10':'text-slate-600 hover:text-amber-400 hover:bg-amber-500/10'}`}
-                                      title={member.status==='paused'?t('tm_reactivate'):t('tm_pause_btn')}>⏸</button>
-                                    <button onClick={()=>setTimeoutTarget(member)}
-                                      className="p-1.5 rounded-lg text-slate-600 hover:text-orange-400 hover:bg-orange-500/10 transition-all text-sm" title={t('tm_timeout_btn')}>⏱</button>
-                                    <button onClick={()=>handleDelete(member)}
-                                      className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all" title={t('tm_del_perm')}><Ic name="trash" size={13}/></button>
-                                    <button onClick={()=>handleResetPass(member)}
-                                      className="p-1.5 rounded-lg text-slate-600 hover:text-violet-400 hover:bg-violet-500/10 transition-all text-sm" title="Reset Password">🔑</button>
-                                  </>}
-                                </>
-                              ):(
-                                <span className="p-1.5 text-slate-700 cursor-not-allowed" title={t('tm_perm_deny')}>
-                                  <Ic name="shield2" size={13}/>
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+      /* ── person detail panel ── */
+      const detailPanel = detail && (() => {
+        const m = [...teamMembers, ...teamClients].find(x => x.id === detail.id) || detail;
+        const ri = getRoleInfo(m.role, customRoles);
+        const chips = permChips(m);
+        const field = (label, value) => (
+          <div className="bg-slate-900/60 rounded-xl px-3 py-2.5">
+            <div className="text-[11px] text-slate-500">{label}</div>
+            <div className="text-sm text-slate-200 mt-0.5 break-words">{value || '—'}</div>
+          </div>
+        );
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onMouseDown={e => e.target === e.currentTarget && setDetail(null)}>
+            <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+              <div className="bg-brand-grad px-6 pt-6 pb-5 relative">
+                <button onClick={() => setDetail(null)} className="absolute top-3 end-3 w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center" style={{color:'#fff'}}><Ic name="x" size={15}/></button>
+                <div className="flex items-center gap-4">
+                  <UserAvatar userId={m.id} name={m.name} grad={ri.grad} size="w-14 h-14" rounded="rounded-2xl" textCls="text-xl font-bold"/>
+                  <div className="min-w-0">
+                    <div className="text-lg font-semibold truncate" style={{color:'#fff'}}>{m.name}</div>
+                    <div className="text-xs truncate" style={{color:'rgba(255,255,255,.8)'}}>{m.email}</div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/20 font-medium" style={{color:'#fff'}}>{ri.label}</span>
+                      {statusPill(m)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="p-5 space-y-4">
+                <div className="grid grid-cols-2 gap-2">
+                  {isTeam && field(t('tm_col_salary'), m.salary ? money(Number(m.salary)) : null)}
+                  {isTeam && field(t('tm_col_joined'), m.join_date)}
+                  {m.phone && field(t('phone'), m.phone)}
+                  {m.status === 'timeout' && m.timeout_until && field(t('tm_until'), m.timeout_until)}
+                </div>
+                <div>
+                  <div className="text-[11px] text-slate-500 mb-1.5">{t('tm_col_perms')}</div>
+                  {chips === null
+                    ? <span className="text-xs text-slate-400">{t('tm_all_depts')}</span>
+                    : chips.length
+                      ? <div className="flex flex-wrap gap-1.5">{chips.map(k => <span key={k} className="text-[11px] bg-blue-500/15 text-blue-300 px-2 py-0.5 rounded-md">{DEPT_LABELS[k]}</span>)}</div>
+                      : <span className="text-xs text-slate-500">{t('tm_no_access')}</span>}
+                </div>
+                <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-800">
+                  <div className="w-full h-1"/>
+                  {personActions(m, true)}
+                </div>
               </div>
             </div>
-          </>}
+          </div>
+        );
+      })();
+
+      return (
+        <div className="space-y-5">
+          {/* Header */}
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h1 className="text-3xl font-bold text-white" style={{fontFamily:"'IBM Plex Sans Arabic', sans-serif"}}>{t('nav_team')}</h1>
+              <p className="text-slate-500 text-sm mt-1">
+                {teamMembers.filter(m=>m.status==='active').length} {t('dash_active_sub')} · {teamClients.filter(c=>c.status==='active').length} {t('tm_portal_clients')} · {customRoles.length} {t('tm_col_role')}
+              </p>
+            </div>
+            <div className="flex gap-1 p-1 rounded-xl bg-slate-800/60 border border-slate-700/40">
+              {[
+                {id:'team',       label:t('nav_team'),         n:teamMembers.length},
+                {id:'clients',    label:t('tm_portal_clients'), n:teamClients.length},
+                {id:'attendance', label:t('prf_att_salary')},
+              ].map(ti => (
+                <button key={ti.id} onClick={() => { setTab(ti.id); setSearch(''); setRoleFilter(null); }}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab===ti.id ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>
+                  {ti.label}{ti.n != null && <span className="opacity-70 ms-1.5 tabular-nums">{ti.n}</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* ── ATTENDANCE ── */}
+          {tab==='attendance' && (
+            <AttendanceAdminView
+              teamMembers={teamMembers} attendanceRecords={attendanceRecords||[]} offDays={offDays||[]}
+              deductions={deductions||[]} bonuses={bonuses||[]} overtime={overtime||[]}
+              onAddDeduction={onAddDeduction} onAddOffDay={onAddOffDay} onUpdateOffDay={onUpdateOffDay}
+              onAddBonus={onAddBonus} onAddOvertime={onAddOvertime} onResetSession={onResetSession}
+              onUpdateAttendance={onUpdateAttendance} onAddAttendance={onAddAttendance}
+              showToast={showToast} currentUser={currentUser} customRoles={customRoles}/>
+          )}
+
+          {/* ── TEAM / CLIENTS: numbered list + side panel ── */}
+          {tab!=='attendance' && (
+            <div className="flex flex-col-reverse lg:flex-row gap-5 items-start">
+              {sidePanel}
+              <section className="flex-1 min-w-0 w-full bg-slate-800/60 border border-slate-700/40 rounded-2xl overflow-hidden">
+                <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-slate-700/40">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base font-semibold text-white">{isTeam ? t('nav_team') : t('tm_portal_clients')}</span>
+                    <span className="text-xs text-slate-500 tabular-nums">{rows.length}</span>
+                    {roleFilterInfo && (
+                      <button onClick={() => setRoleFilter(null)} className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-blue-600/20 text-blue-300 hover:text-white">
+                        {roleFilterInfo.label} <Ic name="x" size={10}/>
+                      </button>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <span className="absolute start-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"><Ic name="search" size={13}/></span>
+                    <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={t('tm_search')}
+                      className="bg-slate-900 border border-slate-700 focus:border-blue-500 rounded-lg ps-9 pe-3 py-2 text-sm text-white placeholder-slate-500 outline-none w-56"/>
+                  </div>
+                </div>
+
+                <ol>
+                  {rows.length === 0 && <li className="text-center py-16 text-slate-500 text-sm">{t('tm_no_res')}</li>}
+                  {rows.map((member, i) => {
+                    const ri = getRoleInfo(member.role, customRoles);
+                    return (
+                      <li key={member.id} onClick={() => setDetail(member)} style={{ borderColor: 'var(--tbl-line)' }}
+                        className={`group flex items-center gap-3 px-5 py-3 cursor-pointer transition-colors border-b last:border-b-0 hover:bg-blue-500/[0.07] ${member.status!=='active' ? 'opacity-60' : ''}`}>
+                        <span className="w-6 text-center text-sm font-semibold text-slate-500 tabular-nums shrink-0">{i + 1}</span>
+                        <UserAvatar userId={member.id} name={member.name} grad={ri.grad} size="w-10 h-10" rounded="rounded-full" textCls="text-sm font-bold"/>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-semibold text-white truncate">{member.name}</div>
+                          <div className="text-xs text-slate-500 truncate">{member.email}</div>
+                        </div>
+                        <span className="hidden sm:flex w-32 shrink-0"><span className={`text-[11px] px-2.5 py-1 rounded-full border whitespace-nowrap truncate ${ri.badge}`}>{ri.label}</span></span>
+                        <span className="hidden md:flex w-24 shrink-0">{statusPill(member)}</span>
+                        <div className="hidden md:flex w-[200px] shrink-0 items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">{personActions(member, false)}</div>
+                      </li>
+                    );
+                  })}
+                </ol>
+
+                {canAddPeople && (
+                  <div className="p-4 border-t border-slate-700/40">
+                    <button onClick={() => { setEditMember(null); setEditClient(null); setFormOpen(true); }}
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-slate-700 hover:border-cyan-400/70 hover:bg-cyan-500/5 text-slate-400 hover:text-cyan-300 text-sm font-semibold transition-all">
+                      <Ic name="plus" size={16}/>{isTeam ? t('tm_add_member') : t('tm_add_client')}
+                    </button>
+                  </div>
+                )}
+              </section>
+            </div>
+          )}
+
+          {detailPanel}
           {formOpen&&(isTeam
             ?<TeamMemberForm member={editMember} isClient={false} customRoles={customRoles} currentUser={currentUser} onSave={handleSaveMember} onClose={()=>{setFormOpen(false);setEditMember(null);}}/>
             :<TeamMemberForm member={editClient} isClient={true} customRoles={customRoles} currentUser={currentUser} onSave={handleSaveClient} onClose={()=>{setFormOpen(false);setEditClient(null);}}/>
@@ -7545,7 +7629,7 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
     /* ─── Finance Module ─── */
     const FinanceModule = ({ invoices, projects, clients, teamMembers, expenses, salaries, deductions, bonuses, customRoles, onAddExpense, onUpdateExpense, onDeleteExpense, onAddSalary, onUpdateSalary, onDeleteSalary, onSaveInvoice, onDeleteInvoice, showToast }) => {
       const { t } = useLang();
-      const [tab,      setTab]      = useState('money_in');
+      const [tab,      setTab]      = useState(() => { const v = window.__bmsFinanceTab; window.__bmsFinanceTab = null; return v || 'money_in'; });
       const [month,    setMonth]    = useState(() => new Date().toISOString().slice(0,7));
       const [expModal, setExpModal] = useState(null);
       const [salModal, setSalModal] = useState(null);
@@ -14789,7 +14873,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
               onAddProject={handleAddProject} onSaveProject={handleSaveProject} onDeleteProject={handleDeleteProject} onSaveInvoice={handleSaveInvoice} onDeleteInvoice={handleDeleteInvoice} showToast={showToast}/>
           );
           case 'team': return (
-            <TeamModule teamMembers={teamMembers} teamClients={teamClients} customRoles={customRoles} currentUser={currentUser}
+            <TeamModule onOpenSalaries={() => { window.__bmsFinanceTab = 'salary'; setPage('finance'); }} teamMembers={teamMembers} teamClients={teamClients} customRoles={customRoles} currentUser={currentUser}
               onAddMember={handleAddMember} onUpdateMember={handleUpdateMember} onDeleteMember={handleDeleteMember}
               onAddClient={handleAddClient} onUpdateClient={handleUpdateClient} onDeleteClient={handleDeleteClient}
               onAddCustomRole={handleAddCustomRole} onUpdateCustomRole={handleUpdateCustomRole} onDeleteCustomRole={handleDeleteCustomRole}
