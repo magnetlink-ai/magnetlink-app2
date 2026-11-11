@@ -726,6 +726,12 @@
         des_sp_connected:'تم الاتصال بـ SharePoint ✓', des_sp_connect_err:'فشل الاتصال: ',
         des_sp_session_expired:'انتهت جلسة SharePoint، الرجاء الاتصال من جديد',
         des_sp_auth_err:'تعذّر الوصول إلى SharePoint — تأكد من حسابك وصلاحياتك', des_sp_server_tip:'متصل عبر خادم الموقع — لا حاجة لحساب Microsoft',
+        des_tree_title:'المشاريع', des_tree_search:'ابحث عن مشروع أو عميل...', des_folder_new:'مجلد جديد', des_upload:'رفع ملفات',
+        des_drop_files:'أفلت الملفات للرفع إلى «{{name}}»', des_folder_missing:'لا يوجد مجلد لهذا المشروع على SharePoint بعد',
+        des_folder_missing_short:'لا يوجد مجلد بعد', des_folder_missing_hint:'أنشئ هيكل المجلدات الافتراضي (Design / From Client / Documents)، أو ارفع ملفاً مباشرةً وسيُنشأ المجلد تلقائياً.',
+        des_empty_folder:'هذا المجلد فارغ — اسحب ملفات إلى هنا أو اضغط +', des_count:'{{f}} مجلد · {{n}} ملف', des_items_n:'{{n}} عنصر',
+        des_uploading_n:'جاري رفع {{n}}...', des_toast_uploaded:'تم رفع {{n}} ملف ✓', des_toast_folder_added:'تم إنشاء المجلد ✓',
+        des_name_exists:'يوجد عنصر بنفس الاسم', des_create_structure:'إنشاء المجلدات', des_open_sp:'فتح الملف', des_rename:'إعادة تسمية', des_refresh:'تحديث',
         des_sp_folders_ok:'تم إنشاء مجلدات "{{name}}" بـ SharePoint ✓',
         des_err_prefix:'خطأ: ', des_sp_err_move:'خطأ SP: ', des_sp_err_delete:'خطأ حذف SP: ', des_sp_err_restore:'خطأ الاسترجاع: ',
         des_sync_loading:'⏳ جاري...', des_sync_btn:'🔄 مزامنة', des_sync_action:'مزامنة',
@@ -1356,6 +1362,12 @@
         des_sp_connected:'Connected to SharePoint ✓', des_sp_connect_err:'Connection failed: ',
         des_sp_session_expired:'SharePoint session expired, please reconnect',
         des_sp_auth_err:'Could not access SharePoint — check your account and permissions', des_sp_server_tip:'Connected through the BMS server — no Microsoft account needed',
+        des_tree_title:'Projects', des_tree_search:'Search projects or clients...', des_folder_new:'New folder', des_upload:'Upload files',
+        des_drop_files:'Drop files to upload to “{{name}}”', des_folder_missing:'This project has no SharePoint folder yet',
+        des_folder_missing_short:'No folder yet', des_folder_missing_hint:'Create the default folder structure (Design / From Client / Documents), or upload a file and the folder is created automatically.',
+        des_empty_folder:'This folder is empty — drag files here or press +', des_count:'{{f}} folders · {{n}} files', des_items_n:'{{n}} items',
+        des_uploading_n:'Uploading {{n}}...', des_toast_uploaded:'Uploaded {{n}} file(s) ✓', des_toast_folder_added:'Folder created ✓',
+        des_name_exists:'An item with that name already exists', des_create_structure:'Create folders', des_open_sp:'Open file', des_rename:'Rename', des_refresh:'Refresh',
         des_sp_folders_ok:'Created folders for "{{name}}" in SharePoint ✓',
         des_err_prefix:'Error: ', des_sp_err_move:'SP Error: ', des_sp_err_delete:'SP Delete Error: ', des_sp_err_restore:'Restore error: ',
         des_sync_loading:'⏳ Loading...', des_sync_btn:'🔄 Sync', des_sync_action:'Sync',
@@ -2444,6 +2456,10 @@
       crm:        ['M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2','M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z','M23 21v-2a4 4 0 0 0-3-3.87','M16 3.13a4 4 0 0 1 0 7.75'],
       client:     ['M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2','M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z'],
       projects:   ['M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z'],
+      folder:     ['M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z'],
+      folder_plus:['M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z','M12 11v6','M9 14h6'],
+      upload:     ['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4','M17 8l-5-5-5 5','M12 3v12'],
+      refresh:    ['M23 4v6h-6','M1 20v-6h6','M3.51 9a9 9 0 0 1 14.85-3.36L23 10','M1 14l4.64 4.36A9 9 0 0 0 20.49 15'],
       finance:    ['M12 1v22','M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'],
       team:       ['M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2','M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z','M23 21v-2a4 4 0 0 0-3-3.87','M16 3.13a4 4 0 0 1 0 7.75'],
       social:     ['M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z'],
@@ -8793,900 +8809,496 @@ ${pmtsToShow.length>1||mode==='single'?`<div class="pmt-title">${mode==='full'?'
       );
     };
 
+    /* ═══════════════ Design & Content — SharePoint explorer ═══════════════
+       Tree of projects → real SharePoint folders (any depth) on the start side,
+       card grid of the selected folder (sub-folders, files, "+" upload tile) on the other.
+       Status / designer / due date / comments stay in the BMS tables
+       (design_assets / client_assets / documents), matched to files by sp_item_id;
+       which table a file belongs to is decided by its top-level folder
+       (Design / From Client / Documents — anything else counts as Design). */
+    const DC_KIND_BY_FOLDER = { 'design':'design', 'from client':'from_client', 'documents':'documents' };
+    const dcSafeName = n => (n || 'General').replace(/[/\\?%*:|"<>]/g, '-');
+    const dcEncPath  = p => p.split('/').map(encodeURIComponent).join('/');
+    const dcFmtSize  = b => b == null ? '—' : b < 1048576 ? (b/1024).toFixed(1)+' KB' : (b/1048576).toFixed(2)+' MB';
+    const dcExt      = name => (name.includes('.') ? name.split('.').pop() : '').toUpperCase();
+
     const DesignContentModule = ({ projects, clients, teamMembers, designAssets, clientAssets, documents, onSaveDesignAsset, onDeleteDesignAsset, onSaveClientAsset, onDeleteClientAsset, onSaveDocument, onDeleteDocument, showToast }) => {
-      const { t } = useLang();
-      const [selProjectId, setSelProjectId] = useState(projects[0]?.id||null);
-      const [activeTab,    setActiveTab]    = useState('design');
-      const [customCats,   setCustomCats]   = useState({ design:[], client:[], docs:[] });
-      const [detailAsset,  setDetailAsset]  = useState(null);
-      const [addModal,     setAddModal]     = useState(null);
-      const [addCatModal,  setAddCatModal]  = useState(null);
-      const [spUser,       setSpUser]       = useState({ name: 'SharePoint · WebApp' });   // server-side connection, always on
-      const [spLoading,    setSpLoading]    = useState(false);
-      const [spRootPath,   setSpRootPath]   = useState('');
-      const [showPathInput,setShowPathInput]= useState(false);
-      const [dragInfo,      setDragInfo]     = useState(null);
-      const [dragOverTab,   setDragOverTab]  = useState(null);
-      const [dragOverCat,   setDragOverCat]  = useState(null);
-      const [spBrowsePath,  setSpBrowsePath] = useState([]);
-      const [spBrowseItems, setSpBrowseItems]= useState([]);
-      const [spBrowseLoad,  setSpBrowseLoad] = useState(false);
-      const [spBrowseUploading, setSpBrowseUploading] = useState(false);
-      const [spBrowseDrag,      setSpBrowseDrag]      = useState(null);
-      const [spBrowseDragOver,  setSpBrowseDragOver]  = useState(null);
-      const [renamingItemId,    setRenamingItemId]    = useState(null);
-      const [renameVal,         setRenameVal]         = useState('');
-      const [spLive,        setSpLive]       = useState([]);
-      const [spLiveLoad,    setSpLiveLoad]   = useState(false);
+      const { t, lang } = useLang();
+      const [nodes,      setNodes]      = useState({});     // folder path → { loading, loaded, missing, folders, files }
+      const [expanded,   setExpanded]   = useState({});     // folder path → open in tree
+      const [selPath,    setSelPath]    = useState(null);   // folder shown in the grid
+      const [treeQuery,  setTreeQuery]  = useState('');
+      const [uploading,  setUploading]  = useState(0);
+      const [fileDrop,   setFileDrop]   = useState(false);  // OS files dragged over the grid
+      const [dragItem,   setDragItem]   = useState(null);   // { item, fromPath } card being dragged
+      const [dropPath,   setDropPath]   = useState(null);   // folder under the dragged card
+      const [detail,     setDetail]     = useState(null);   // record open in AssetDetailOverlay
+      const [renaming,   setRenaming]   = useState(null);   // { id, value }
+      const [settingUp,  setSettingUp]  = useState(false);
+      const fileInputRef = useRef(null);
+      const nodesRef = useRef(nodes); nodesRef.current = nodes;
 
-      const project = projects.find(p=>p.id===selProjectId);
-      const cats = (type) => [...DC_DEFAULT_CATS, ...(type==='docs'?['Content']:[] ), ...customCats[type]];
+      const isSpAuth = e => e && (e.code === 'SP_SESSION_EXPIRED' || e.code === 'SP_AUTH');
+      const fail = (e, prefix) => showToast(isSpAuth(e) ? (e.message || t('des_sp_auth_err')) : (prefix || t('des_err_prefix')) + e.message);
 
-      const pDesign = designAssets.filter(a=>a.projectId===selProjectId);
-      const pClient = clientAssets.filter(a=>a.projectId===selProjectId);
-      const pDocs   = documents.filter(d=>d.projectId===selProjectId);
+      const roots = useMemo(() => projects.map(p => ({
+        project: p, path: dcSafeName(p.name), client: clients.find(c => c.id === p.clientId),
+      })), [projects, clients]);
+      const rootOf = path => roots.find(r => r.path === (path || '').split('/')[0]);
+      const kindOf = path => DC_KIND_BY_FOLDER[((path || '').split('/')[1] || '').toLowerCase()] || 'design';
 
-      /* ── كل الفئات الموجودة فعلاً بالداتا + الافتراضية ── */
-      const allDesignCats = [...new Set([...DC_DEFAULT_CATS, ...customCats.design, ...pDesign.map(a=>a.category)])];
-      const allClientCats = [...new Set([...DC_DEFAULT_CATS, ...customCats.client, ...pClient.map(a=>a.category)])];
-      const allDocCats    = [...new Set(['Content', ...DC_DEFAULT_CATS, ...customCats.docs, ...pDocs.map(d=>d.category)])];
-
-      const statusBadge = s => {
-        const cfg = DESIGN_STATUSES.find(x=>x.id===s);
-        return cfg ? <span className={`text-xs px-2 py-0.5 rounded-full border ${cfg.badge}`}>{t(cfg.tKey)}</span> : null;
+      const lists = {
+        design:      { items: designAssets, save: onSaveDesignAsset, del: onDeleteDesignAsset },
+        from_client: { items: clientAssets, save: onSaveClientAsset, del: onDeleteClientAsset },
+        documents:   { items: documents,    save: onSaveDocument,    del: onDeleteDocument    },
       };
-
-      /* ── SP paths for current project ── */
-      const spPaths = project ? getSpPaths(project.name) : null;
-
-
-      /* ── Auto-load live SP files when tab/project/auth changes ── */
-      useEffect(() => { loadCurrentTab(); }, [spUser, selProjectId, activeTab]);
-
-      /* ── SharePoint auth problem (server rejected the BMS user) — explain, don't disconnect ── */
-      const handleSpSessionExpired = (e) => {
-        showToast((e && e.message) || t('des_sp_auth_err'));
-      };
-      const isSpSessionExpired = e => e && (e.code === 'SP_SESSION_EXPIRED' || e.code === 'SP_AUTH');
-
-      /* ── Live SP loading for Design/From Client/Documents tabs ── */
-      const TAB_SP_FOLDER = { design:'Design', from_client:'From Client', documents:'Documents' };
-
-      const loadCurrentTab = async () => {
-        const folder = TAB_SP_FOLDER[activeTab];
-        if (!spUser || !project || !folder) { setSpLive([]); return; }
-        setSpLiveLoad(true);
-        try {
-          const driveId = await getDriveId();
-          const safe = project.name.replace(/[\?%*:|"<>]/g, '-');
-          const rootData = await graphFetch(
-            `/drives/${driveId}/root:/${safe}/${folder}:/children?$select=id,name,size,webUrl,folder,file,lastModifiedDateTime&$orderby=name`
-          ).catch(() => ({ value: [] }));
-          const items = rootData.value || [];
-          const rootFiles = items.filter(i => !i.folder).map(i => ({ ...i, _cat: folder }));
-          const subFolders = await Promise.all(items.filter(i => i.folder).map(async sf => {
-            const sfData = await graphFetch(
-              `/drives/${driveId}/items/${sf.id}/children?$select=id,name,size,webUrl,folder,file,lastModifiedDateTime&$orderby=name`
-            ).catch(() => ({ value: [] }));
-            return (sfData.value || []).filter(i => !i.folder).map(i => ({ ...i, _cat: sf.name }));
-          }));
-          setSpLive([...rootFiles, ...subFolders.flat()]);
-        } catch(e) { setSpLive([]); if (isSpSessionExpired(e)) handleSpSessionExpired(e); }
-        setSpLiveLoad(false);
-      };
-
-      const getMeta = (spItem, assets) => {
-        const m = assets.find(a => a.sp_item_id === spItem.id);
-        if (m) return spItem._cat ? { ...m, category: spItem._cat } : m;
-        const sz = spItem.size != null
-          ? spItem.size < 1048576 ? (spItem.size/1024).toFixed(1)+' KB' : (spItem.size/1048576).toFixed(2)+' MB'
-          : '—';
-        return {
-          id: 'sp_'+spItem.id, projectId: selProjectId, sp_item_id: spItem.id,
-          title: spItem.name.replace(/\.[^.]+$/, ''),
-          file_type: (spItem.name.split('.').pop()||'').toUpperCase(),
-          file_size: sz, sp_web_url: spItem.webUrl||'', sharepoint_path: spItem.webUrl||'',
-          status: 'under_modification', designer_id: '', due_date: '', comments: [],
-          created: (spItem.lastModifiedDateTime||'').split('T')[0], category: spItem._cat,
-        };
-      };
-
-      /* ── SharePoint file browser ── */
-      const spBrowseFetch = async (itemId = null, breadcrumb = []) => {
-        if (!spUser) return;
-        setSpBrowseLoad(true);
-        try {
-          const driveId = await getDriveId();
-          const url = itemId
-            ? `/drives/${driveId}/items/${itemId}/children?$select=id,name,size,webUrl,folder,file,lastModifiedDateTime,createdBy&$orderby=name`
-            : `/drives/${driveId}/root/children?$select=id,name,size,webUrl,folder,file,lastModifiedDateTime,createdBy&$orderby=name`;
-          const data = await graphFetch(url);
-          setSpBrowseItems(data.value || []);
-          setSpBrowsePath(breadcrumb);
-        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast('SharePoint error: ' + e.message); }
-        setSpBrowseLoad(false);
-      };
-
-      useEffect(() => {
-        if (activeTab === 'sharepoint' && spUser && spBrowseItems.length === 0 && !spBrowseLoad) {
-          spBrowseFetch(null, []);
+      const findRecord = spId => {
+        for (const kind of Object.keys(lists)) {
+          const rec = lists[kind].items.find(a => a.sp_item_id === spId);
+          if (rec) return { kind, rec };
         }
-      }, [activeTab, spUser]);
-
-      /* ── Browser tab: current folder helpers ── */
-      const browseFolderId = spBrowsePath.length ? spBrowsePath[spBrowsePath.length-1].id : null;
-      const browseFolderPath = spBrowsePath.map(s=>s.name).join('/');
-      const refreshBrowse = () => spBrowseFetch(browseFolderId, spBrowsePath);
-
-      /* ── Find a live item's local metadata record across all three tabs, by sp_item_id ── */
-      const findLocalBySpId = (spItemId) => {
-        let item = designAssets.find(a=>a.sp_item_id===spItemId);
-        if (item) return { list:'design', item };
-        item = clientAssets.find(a=>a.sp_item_id===spItemId);
-        if (item) return { list:'client', item };
-        item = documents.find(a=>a.sp_item_id===spItemId);
-        if (item) return { list:'documents', item };
         return null;
       };
-      const syncLocalSave = (found, patch) => {
-        const updated = { ...found.item, ...patch };
-        if (found.list==='design') onSaveDesignAsset(updated);
-        else if (found.list==='client') onSaveClientAsset(updated);
-        else onSaveDocument(updated);
-      };
-      const syncLocalDelete = (found) => {
-        if (found.list==='design') onDeleteDesignAsset(found.item.id);
-        else if (found.list==='client') onDeleteClientAsset(found.item.id);
-        else onDeleteDocument(found.item.id);
+      const clean = ({ _spItem, _folderPath, _saved, _srcTab, ...rest }) => rest;
+      /* BMS record for a SharePoint file — the stored one if tracked, otherwise a default */
+      const recordFor = (item, folderPath) => {
+        const found = findRecord(item.id);
+        const kind  = found?.kind || kindOf(folderPath);
+        const cat   = folderPath.split('/').pop();
+        const base  = {
+          id: 'sp_' + item.id, projectId: rootOf(folderPath)?.project.id ?? null, sp_item_id: item.id,
+          title: item.name.replace(/\.[^.]+$/, ''), file_type: dcExt(item.name), file_size: dcFmtSize(item.size),
+          sp_web_url: item.webUrl || '', sharepoint_path: item.webUrl || '',
+          status: kind === 'documents' ? 'pending' : 'under_modification',
+          designer_id: '', created_by_id: '', due_date: '', comments: [],
+          created: (item.createdDateTime || item.lastModifiedDateTime || '').split('T')[0], category: cat,
+        };
+        const rec = found ? { ...base, ...found.rec, category: cat } : base;
+        return { ...rec, _srcTab: kind, _spItem: item, _folderPath: folderPath, _saved: !!found };
       };
 
-      /* ── Browser tab: upload file(s) into the currently browsed folder ── */
-      const handleBrowseUpload = async (fileList) => {
-        if (!fileList || !fileList.length) return;
-        setSpBrowseUploading(true);
+      /* ── load one folder's children (paged) ── */
+      const loadNode = async (path, force = false) => {
+        const cur = nodesRef.current[path];
+        if (!path || (!force && cur && (cur.loading || cur.loaded))) return;
+        setNodes(n => ({ ...n, [path]: { ...(n[path] || {}), loading: true } }));
         try {
-          for (const file of Array.from(fileList)) {
-            const buf = await file.arrayBuffer();
-            await spUploadFile(browseFolderPath, file.name, buf);
+          const driveId = await getDriveId();
+          const items = [];
+          let url = `/drives/${driveId}/root:/${dcEncPath(path)}:/children?$select=id,name,size,webUrl,folder,file,createdDateTime,lastModifiedDateTime&$top=200`;
+          while (url) {
+            const d = await graphFetch(url);
+            items.push(...(d.value || []));
+            url = d['@odata.nextLink'] ? d['@odata.nextLink'].replace('https://graph.microsoft.com/v1.0', '') : null;
           }
-          showToast(t('des_toast_asset_added'));
-          await refreshBrowse();
-        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_err_prefix') + e.message); }
-        setSpBrowseUploading(false);
+          const byName = (a, b) => a.name.localeCompare(b.name, undefined, { numeric: true });
+          setNodes(n => ({ ...n, [path]: {
+            loaded: true, loading: false, missing: false,
+            folders: items.filter(i => i.folder).sort(byName),
+            files:   items.filter(i => !i.folder).sort(byName),
+          } }));
+        } catch (e) {
+          const missing = /Graph error 404/.test(e.message || '');
+          setNodes(n => ({ ...n, [path]: { loaded: true, loading: false, missing, folders: [], files: [] } }));
+          if (!missing) fail(e);
+        }
+      };
+      const refresh = (path = selPath) => path && loadNode(path, true);
+      /* forget cached folders at/under a path (after a folder rename / move / delete) */
+      const dropCache = path => setNodes(n => Object.fromEntries(Object.entries(n).filter(([k]) => k !== path && !k.startsWith(path + '/'))));
+
+      const openFolder = path => {
+        const parts = path.split('/'), open = {};
+        for (let i = 1; i <= parts.length; i++) open[parts.slice(0, i).join('/')] = true;
+        setExpanded(x => ({ ...x, ...open }));
+        setSelPath(path);
+      };
+      const toggle = path => { setExpanded(x => ({ ...x, [path]: !x[path] })); loadNode(path); };
+
+      useEffect(() => { if (!selPath && roots.length) openFolder(roots[0].path); }, [roots]);
+      useEffect(() => { loadNode(selPath); }, [selPath]);
+
+      /* ── actions ── */
+      const uploadFiles = async (fileList, folderPath = selPath) => {
+        const files = Array.from(fileList || []);
+        if (!files.length || !folderPath) return;
+        setUploading(files.length);
+        let ok = 0;
+        for (const file of files) {
+          try { await spUploadFile(folderPath, file.name, file); ok++; }
+          catch (e) { fail(e, t('asset_sp_err')); if (isSpAuth(e)) break; }
+          setUploading(n => Math.max(0, n - 1));
+        }
+        setUploading(0);
+        if (ok) { showToast(t('des_toast_uploaded').replace('{{n}}', ok)); refresh(folderPath); }
       };
 
-      /* ── Browser tab: create a new folder in the currently browsed folder ── */
-      const handleBrowseNewFolder = async () => {
-        const name = (prompt(t('des_new_folder_name_ph'))||'').trim();
-        if (!name) return;
+      const newFolder = async () => {
+        const name = (prompt(t('des_new_folder_name_ph')) || '').trim().replace(/[/\\?%*:|"<>]/g, '-');
+        if (!name || !selPath) return;
         try {
-          await spCreateFolder(browseFolderPath ? `${browseFolderPath}/${name}` : name);
-          showToast(t('des_toast_cat_added'));
-          await refreshBrowse();
-        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_err_prefix') + e.message); }
+          await spCreateFolder(`${selPath}/${name}`);
+          setExpanded(x => ({ ...x, [selPath]: true }));
+          await refresh();
+          showToast(t('des_toast_folder_added'));
+        } catch (e) { fail(e); }
       };
 
-      /* ── Browser tab: rename a file or folder — renames the real SharePoint item + syncs the local title if tracked ── */
-      const handleBrowseRename = async (item) => {
-        const newName = renameVal.trim();
-        setRenamingItemId(null);
-        if (!newName || newName === item.name) return;
+      const setupProject = async root => {
+        setSettingUp(true);
         try {
-          await spRenameItem(item.id, newName);
-        } catch(e) {
-          isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_err_prefix') + e.message);
-          return;
-        }
-        if (!item.folder) {
-          const found = findLocalBySpId(item.id);
-          if (found) syncLocalSave(found, { title: newName.replace(/\.[^.]+$/, '') });
-        }
+          for (const cfg of Object.values(getSpPaths(root.project.name)))
+            for (const cat of cfg.cats) await spCreateFolder(`${cfg.root}/${cat}`);
+          dropCache(root.path);
+          showToast(t('des_sp_folders_ok').replace('{{name}}', root.project.name));
+          openFolder(root.path);
+          loadNode(root.path, true);
+        } catch (e) { fail(e); }
+        setSettingUp(false);
+      };
+
+      const commitRename = async (item, folderPath) => {
+        const v = (renaming?.value || '').trim();
+        setRenaming(null);
+        if (!v || v === item.name) return;
+        try { await spRenameItem(item.id, v); }
+        catch (e) { e.message === 'nameAlreadyExists' ? showToast(t('des_name_exists')) : fail(e); return; }
+        if (item.folder) dropCache(`${folderPath}/${item.name}`);
+        else { const f = findRecord(item.id); if (f) lists[f.kind].save({ ...f.rec, title: v.replace(/\.[^.]+$/, '') }); }
         showToast(t('des_toast_renamed'));
-        await refreshBrowse();
+        refresh(folderPath);
       };
 
-      /* ── Browser tab: delete a file or folder — deletes from SharePoint + removes matching local metadata, with undo ── */
-      const handleBrowseDelete = async (item) => {
-        if (!confirm(item.folder ? t('des_confirm_delete_folder') : t('des_confirm_delete_asset'))) return;
-        try { await spDeleteFile(item.id); }
-        catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_sp_err_delete') + e.message); return; }
-        const found = !item.folder ? findLocalBySpId(item.id) : null;
-        if (found) syncLocalDelete(found);
-        await refreshBrowse();
+      const removeItem = async (item, folderPath, skipConfirm = false) => {
+        if (!skipConfirm && !confirm(item.folder ? t('des_confirm_delete_folder') : t('des_confirm_delete_asset'))) return;
+        try { await spDeleteFile(item.id); } catch (e) { fail(e, t('des_sp_err_delete')); return; }
+        const found = item.folder ? null : findRecord(item.id);
+        if (found) lists[found.kind].del(found.rec.id);
+        if (item.folder) dropCache(`${folderPath}/${item.name}`);
+        refresh(folderPath);
         showToast(t('des_toast_deleted').replace('{{name}}', item.name), {
           undoLabel: t('des_undo'),
           onUndo: async () => {
-            try { await spRestoreFile(item.id); await refreshBrowse(); showToast(t('des_toast_restored')); }
-            catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_sp_err_restore') + e.message); }
+            try { await spRestoreFile(item.id); if (found) lists[found.kind].save(found.rec); refresh(folderPath); showToast(t('des_toast_restored')); }
+            catch (e) { fail(e, t('des_sp_err_restore')); }
           },
         });
       };
 
-      /* ── Browser tab: drag a file/folder onto a folder row to move it ── */
-      const handleBrowseMove = async (dragged, destFolder) => {
-        if (dragged.id === destFolder.id) return;
-        try {
-          const destPath = browseFolderPath ? `${browseFolderPath}/${destFolder.name}` : destFolder.name;
-          await spMoveItem(dragged.id, destPath);
-        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_sp_err_move') + e.message); return; }
-        if (!dragged.folder) {
-          const found = findLocalBySpId(dragged.id);
-          if (found) syncLocalSave(found, { category: destFolder.name });
-        }
-        showToast(t('des_toast_moved').replace('{{dest}}', destFolder.name));
-        await refreshBrowse();
-      };
-
-      /* ── Setup: create per-project folder structure in SharePoint ── */
-      const handleSetupFolders = async () => {
-        if (!project) return;
-        setSpLoading(true);
-        try {
-          const paths = getSpPaths(project.name);
-          for (const cfg of Object.values(paths))
-            for (const cat of cfg.cats)
-              await spCreateFolder(`${cfg.root}/${cat}`);
-          showToast(t('des_sp_folders_ok').replace('{{name}}', project.name));
-        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_err_prefix') + e.message); }
-        setSpLoading(false);
-      };
-
-      /* ── Sync: read per-project SP folders → fill state ── */
-      const handleSpSync = async () => {
-        if (!project) return;
-        setSpLoading(true);
-        try {
-          const driveId = await getDriveId();
-          const paths   = getSpPaths(project.name);
-          let addedCount = 0;
-
-          const getChildren = async (path) => {
-            try { const d = await graphFetch(`/drives/${driveId}/root:/${path}:/children`); return d.value||[]; }
-            catch { return []; }
-          };
-
-          const mkAsset = (item, category) => ({
-            id: item.id, projectId: selProjectId, category,
-            title: item.name.replace(/\.[^.]+$/,''), status:'under_modification',
-            designer_id:'', due_date:'',
-            file_type: (item.name.split('.').pop()||'').toUpperCase(),
-            file_size: item.size ? (item.size/1024/1024).toFixed(2)+' MB' : '—',
-            sharepoint_path: item.webUrl||'', sp_item_id: item.id, sp_web_url: item.webUrl||'',
-            comments:[], created: (item.createdDateTime||'').split('T')[0],
-          });
-
-          /* Design */
-          for (const cat of paths.design.cats) {
-            const files = await getChildren(`${paths.design.root}/${cat}`);
-            files.filter(f=>!f.folder).forEach(f => {
-              if (!designAssets.find(a=>a.sp_item_id===f.id)) { onSaveDesignAsset(mkAsset(f,cat)); addedCount++; }
-            });
+      const moveItem = async (item, fromPath, destPath) => {
+        const itemPath = `${fromPath}/${item.name}`;
+        if (!item || destPath === fromPath || destPath === itemPath || destPath.startsWith(itemPath + '/')) return;
+        try { await spMoveItem(item.id, destPath); } catch (e) { fail(e, t('des_sp_err_move')); return; }
+        if (item.folder) dropCache(itemPath);
+        else {
+          const f = findRecord(item.id);
+          if (f) {
+            const toKind = kindOf(destPath);
+            const upd = { ...f.rec, category: destPath.split('/').pop(), projectId: rootOf(destPath)?.project.id ?? f.rec.projectId };
+            if (toKind !== f.kind) { lists[f.kind].del(f.rec.id); lists[toKind].save(upd); }
+            else lists[f.kind].save(upd);
           }
-          /* From Client */
-          for (const cat of paths.from_client.cats) {
-            const files = await getChildren(`${paths.from_client.root}/${cat}`);
-            files.filter(f=>!f.folder).forEach(f => {
-              if (!clientAssets.find(a=>a.sp_item_id===f.id)) { onSaveClientAsset(mkAsset(f,cat)); addedCount++; }
-            });
-          }
-          /* Documents */
-          for (const cat of paths.documents.cats) {
-            const files = await getChildren(`${paths.documents.root}/${cat}`);
-            files.filter(f=>!f.folder).forEach(f => {
-              if (!documents.find(a=>a.sp_item_id===f.id)) { onSaveDocument(mkAsset(f,cat)); addedCount++; }
-            });
-          }
-          showToast(t('des_toast_sync').replace('{{name}}',project.name).replace('{{n}}',addedCount));
-        } catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_err_prefix') + e.message); console.error(e); }
-        setSpLoading(false);
-      };
-
-      /* ── Move asset between tabs (+ SP move) ── */
-      const handleMoveAsset = async (asset, fromTab, toTab) => {
-        if (!project) return;
-        const paths = getSpPaths(project.name);
-        const destCfg = paths[toTab];
-        const destCat = destCfg.cats[0];
-        /* Move in SharePoint */
-        if (asset.sp_item_id && spUser) {
-          try { await spMoveItem(asset.sp_item_id, `${destCfg.root}/${destCat}`); }
-          catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_sp_err_move') + e.message); return; }
         }
-        /* Remove from source */
-        if (fromTab==='design')      onDeleteDesignAsset(asset.id);
-        else if (fromTab==='from_client') onDeleteClientAsset(asset.id);
-        else if (fromTab==='documents')   onDeleteDocument(asset.id);
-        /* Add to destination */
-        const moved = { ...asset, category: destCat, sp_web_url: asset.sp_web_url };
-        if (toTab==='design')      onSaveDesignAsset(moved);
-        else if (toTab==='from_client') onSaveClientAsset(moved);
-        else if (toTab==='documents')   onSaveDocument(moved);
-        showToast(t('des_toast_moved').replace('{{dest}}', MOVE_TABS.find(tk=>tk.key===toTab)?.label||toTab));
+        showToast(t('des_toast_moved').replace('{{dest}}', destPath.split('/').pop()));
+        refresh(fromPath);
+        if (nodesRef.current[destPath]?.loaded) refresh(destPath);
       };
 
-      /* ── SP-aware delete wrappers ── */
-      /* Generic SP-aware delete with undo (restores the file from the SP recycle bin + re-saves local metadata) */
-      const deleteWithUndo = async (item, { deleteLocal, saveLocal }) => {
-        if (item.sp_item_id && spUser) {
-          try { await spDeleteFile(item.sp_item_id); }
-          catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_sp_err_delete') + e.message); return; }
-          setSpLive(prev => prev.filter(f => f.id !== item.sp_item_id));
-        }
-        deleteLocal(item.id);
-        showToast(t('des_toast_deleted').replace('{{name}}', item.title||'—'), {
-          undoLabel: t('des_undo'),
-          onUndo: async () => {
-            saveLocal(item);
-            if (item.sp_item_id && spUser) {
-              try { await spRestoreFile(item.sp_item_id); await loadCurrentTab(); showToast(t('des_toast_restored')); }
-              catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_sp_err_restore') + e.message); }
-            }
-          },
-        });
-      };
-      const deleteDesign   = asset => deleteWithUndo(asset, { deleteLocal: onDeleteDesignAsset, saveLocal: onSaveDesignAsset });
-      const deleteClient   = asset => deleteWithUndo(asset, { deleteLocal: onDeleteClientAsset,  saveLocal: onSaveClientAsset });
-      const deleteDocument = doc   => deleteWithUndo(doc,   { deleteLocal: onDeleteDocument,      saveLocal: onSaveDocument   });
-
-      /* ── Move between categories within same tab ── */
-      const handleMoveCat = async (asset, fromTab, toCat) => {
-        if (asset.category === toCat) return;
-        if (asset.sp_item_id && spUser && spPaths) {
-          const tabKey = fromTab==='from_client' ? 'from_client' : fromTab==='documents' ? 'documents' : 'design';
-          try { await spMoveItem(asset.sp_item_id, `${spPaths[tabKey].root}/${toCat}`); }
-          catch(e) { isSpSessionExpired(e) ? handleSpSessionExpired(e) : showToast(t('des_sp_err_move') + e.message); return; }
-        }
-        const updated = { ...asset, category: toCat };
-        if (fromTab==='design')       onSaveDesignAsset(updated);
-        else if (fromTab==='from_client') onSaveClientAsset(updated);
-        else if (fromTab==='documents')   onSaveDocument(updated);
-        showToast(t('des_toast_cat_moved').replace('{{cat}}', toCat));
+      const openInSharePoint = async item => {
+        try { window.open(item.folder ? item.webUrl : (await spGetDownloadUrl(item.id)) || item.webUrl, '_blank'); }
+        catch (e) { fail(e); }
       };
 
-      /* ── Delete an empty custom category ── */
-      const handleDeleteCategory = (type, cat) => {
-        setCustomCats(p => ({ ...p, [type]: p[type].filter(c => c !== cat) }));
-        showToast(t('des_toast_cat_deleted'));
+      /* drag a card onto a tree row / folder card */
+      const dropProps = path => ({
+        onDragOver: e => { if (dragItem) { e.preventDefault(); setDropPath(path); } },
+        onDragLeave: () => setDropPath(p => (p === path ? null : p)),
+        onDrop: e => {
+          if (!dragItem) return;
+          e.preventDefault(); e.stopPropagation();
+          const d = dragItem; setDragItem(null); setDropPath(null);
+          moveItem(d.item, d.fromPath, path);
+        },
+      });
+
+      /* ── derived view state ── */
+      const node     = selPath ? nodes[selPath] : null;
+      const selRoot  = rootOf(selPath);
+      const crumbs   = selPath ? selPath.split('/') : [];
+      const isRTL    = lang === 'ar';
+      const q        = treeQuery.trim().toLowerCase();
+      const shownRoots = q ? roots.filter(r => r.project.name.toLowerCase().includes(q) || (r.client?.name || '').toLowerCase().includes(q)) : roots;
+      const memberName = id => teamMembers.find(m => String(m.id) === String(id))?.name;
+      const kindRoot = p => p.split('/').slice(0, 2).join('/');
+      const catOptionsFor = rec => {
+        const kr = kindRoot(rec._folderPath);
+        const sib = (nodes[kr]?.folders || []).map(f => f.name);
+        return [...new Set([...(sib.length ? sib : DC_DEFAULT_CATS), rec.category])];
       };
 
-      return (
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-white">Design & Content</h1>
-              <p className="text-slate-500 text-sm mt-0.5">{t('des_subtitle')}</p>
-            </div>
-            {/* SharePoint Connection */}
-            <div className="flex items-center gap-2">
-              {spUser ? (
-                <>
-                  <div className="flex items-center gap-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg px-3 py-1.5" title={t('des_sp_server_tip')}>
-                    <span className="w-2 h-2 rounded-full bg-cyan-400"/>
-                    <span className="text-cyan-300 text-xs font-medium">{spUser.name}</span>
-                  </div>
-                  <button onClick={loadCurrentTab} disabled={spLiveLoad}
-                    className="text-xs px-2 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg disabled:opacity-50" title="Refresh">
-                    {spLiveLoad ? '⟳' : '↺'}
-                  </button>
-                  <button onClick={handleSetupFolders} disabled={spLoading}
-                    className="text-xs px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg disabled:opacity-50" title={t('des_setup_title')}>
-                    {t('des_setup_btn')}
-                  </button>
-                </>
-              ) : null}
-            </div>
-          </div>
-
-          {/* Project Selector */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 mb-6">
-            <div className="flex items-center gap-3">
-              <span className="text-slate-500 text-sm flex-shrink-0">{t('des_project_lbl')}</span>
-              {projects.length === 0
-                ? <span className="text-slate-600 text-sm">{t('des_no_projects')}</span>
-                : <select
-                    value={selProjectId || ''}
-                    onChange={e => setSelProjectId(Number(e.target.value))}
-                    className="flex-1 max-w-xs bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 focus:border-blue-500/60 outline-none transition-all cursor-pointer">
-                    {projects.map(p => {
-                      const cl = clients.find(c => c.id === p.clientId);
-                      return (
-                        <option key={p.id} value={p.id}>
-                          {p.name}{cl ? ` (${cl.name})` : ''}
-                        </option>
-                      );
-                    })}
-                  </select>
-              }
-            </div>
-          </div>
-
-          {/* Tab Bar — always visible */}
-          <div className="flex gap-1 bg-slate-900/60 border border-slate-800 rounded-xl p-1 mb-6 w-fit">
-            {[['design','🎨 Design'],['from_client','📥 From Client'],['documents','📝 Documents'],['sharepoint','📁 SharePoint']].map(([id,label])=>(
-              <button key={id}
-                onClick={()=>setActiveTab(id)}
-                onDragOver={e=>{ e.preventDefault(); setDragOverTab(id); }}
-                onDragLeave={()=>setDragOverTab(null)}
-                onDrop={e=>{ e.preventDefault(); setDragOverTab(null); if(dragInfo&&dragInfo.fromTab!==id){ handleMoveAsset(dragInfo.asset,dragInfo.fromTab,id); setDragInfo(null); } }}
-                className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
-                  dragOverTab===id&&dragInfo?.fromTab!==id ? 'bg-blue-600/40 text-blue-200 ring-1 ring-blue-500 scale-105' :
-                  activeTab===id ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
-                }`}>
-                {dragOverTab===id&&dragInfo?.fromTab!==id ? `+ ${label}` : label}
+      /* ── tree ── */
+      const chevron = open => (
+        <span className="inline-flex transition-transform" style={{ transform: open ? 'none' : `rotate(${isRTL ? 90 : -90}deg)` }}>
+          <Ic name="chevdown" size={12} />
+        </span>
+      );
+      const renderNode = (path, label, depth, sub) => {
+        const n = nodes[path], open = !!expanded[path], active = selPath === path, over = dropPath === path;
+        const hasKids = !n?.loaded || (n.folders || []).length > 0;
+        return (
+          <div key={path}>
+            <div {...dropProps(path)}
+              className={`group flex items-center gap-1.5 rounded-lg pe-2 py-1.5 cursor-pointer transition-colors
+                ${active ? 'bg-blue-600/20 text-white' : 'text-slate-300 hover:bg-slate-800'}
+                ${over ? 'ring-2 ring-cyan-400/70 bg-cyan-500/10' : ''}`}
+              style={{ paddingInlineStart: 6 + depth * 14 }}
+              onClick={() => openFolder(path)}>
+              <button onClick={e => { e.stopPropagation(); toggle(path); }}
+                className={`w-5 h-5 flex items-center justify-center rounded text-slate-500 hover:text-white ${hasKids ? '' : 'invisible'}`}>
+                {n?.loading && open ? <span className="text-[10px] animate-spin">⟳</span> : chevron(open)}
               </button>
-            ))}
-          </div>
-
-          {activeTab==='sharepoint' ? null : !project ? (
-            <div className="text-center text-slate-600 py-20">{t('des_select_project')}</div>
-          ) : (
-            <>
-              {/* Tab Bar placeholder - content below */}
-
-              {/* ── Design Tab ── */}
-              {activeTab==='design'&&(
-                <div>
-                  {!spUser ? (
-                    <div className="text-center text-slate-500 py-20">{t('des_connect_hint')}</div>
-                  ) : spLiveLoad ? (
-                    <div className="text-center text-slate-600 py-20">{t('des_loading_files')}</div>
-                  ) : (
-                  <>
-                  <div className="flex items-center justify-between mb-5">
-                    {(() => { const lv = spLive.map(s=>getMeta(s,designAssets)); return (
-                    <div className="flex gap-4 text-sm text-slate-500">
-                      <span>{t('des_status_modifying')}: <strong className="text-amber-400">{lv.filter(a=>a.status==='under_modification').length}</strong></span>
-                      <span>{t('des_status_ready')}: <strong className="text-blue-400">{lv.filter(a=>a.status==='ready').length}</strong></span>
-                      <span>{t('des_status_published')}: <strong className="text-emerald-400">{lv.filter(a=>a.status==='published').length}</strong></span>
-                    </div>
-                    ); })()}
-                    <div className="flex gap-2">
-                      <button onClick={()=>setAddCatModal({type:'design',name:''})} className="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg border border-slate-700">{t('des_add_cat')}</button>
-                      <button onClick={()=>setAddModal({type:'design'})} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">{t('des_add_asset')}</button>
-                    </div>
-                  </div>
-
-                  {(() => {
-                    const liveCats = [...new Set(spLive.map(f=>f._cat))];
-                    const allCats  = [...new Set([...DC_DEFAULT_CATS, ...customCats.design, ...liveCats])];
-                    return allCats.map(cat=>{
-                    const spCatItems = spLive.filter(f=>f._cat===cat);
-                    const items = spCatItems.map(sp=>getMeta(sp,designAssets));
-                    const underMod = items.filter(a=>a.status==='under_modification');
-                    const approved  = items.filter(a=>a.status!=='under_modification');
-                    const isDropTarget = dragOverCat===cat && dragInfo?.fromTab==='design' && dragInfo?.asset?.category!==cat;
-                    const isCustomCat = customCats.design.includes(cat);
-                    return (
-                      <div key={cat}
-                        onDragOver={e=>{e.preventDefault();if(dragInfo?.fromTab==='design')setDragOverCat(cat);}}
-                        onDragLeave={e=>{if(!e.currentTarget.contains(e.relatedTarget))setDragOverCat(null);}}
-                        onDrop={e=>{e.preventDefault();setDragOverCat(null);if(dragInfo?.fromTab==='design'&&dragInfo.asset.category!==cat){handleMoveCat(dragInfo.asset,'design',cat);setDragInfo(null);}}}
-                        className={`mb-8 rounded-xl transition-all ${isDropTarget?'ring-2 ring-blue-500/60 bg-blue-500/5 p-3':''}`}>
-                        <div className="flex items-center gap-3 mb-4">
-                          <h3 className={`font-semibold ${isDropTarget?'text-blue-300':'text-white'}`}>{cat}</h3>
-                          <span className="text-xs text-slate-600">{items.length} {t('des_asset_count')}</span>
-                          <div className={`flex-1 h-px ${isDropTarget?'bg-blue-500/40':'bg-slate-800'}`}/>
-                          {isDropTarget&&<span className="text-xs text-blue-400 font-medium">{t('des_drop_here')}</span>}
-                          <button onClick={()=>setAddModal({type:'design',category:cat})} className="text-xs w-5 h-5 flex items-center justify-center rounded bg-slate-800 hover:bg-blue-600 text-slate-400 hover:text-white" title={t('des_add_asset')}>+</button>
-                          {isCustomCat&&items.length===0&&(
-                            <button onClick={()=>handleDeleteCategory('design',cat)} className="text-xs w-5 h-5 flex items-center justify-center rounded bg-slate-800 hover:bg-red-900/40 text-slate-500 hover:text-red-400" title={t('des_delete_cat')}>×</button>
-                          )}
-                        </div>
-                        {items.length===0&&(
-                          <div className="text-center text-slate-600 text-xs py-6 border border-dashed border-slate-800 rounded-lg mb-2">{t('des_empty_cat')}</div>
-                        )}
-                        {underMod.length>0&&(
-                          <div className="mb-4">
-                            <div className="text-xs text-amber-400/70 font-medium mb-3 flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-amber-400 inline-block"/>{t('des_status_modifying')}
-                            </div>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                              {underMod.map(asset=>{
-                                const designer = teamMembers.find(m=>m.id===asset.designer_id);
-                                return (
-                                  <div key={asset.id} draggable onDragStart={()=>setDragInfo({asset,fromTab:'design'})} onDragEnd={()=>setDragInfo(null)} className="bg-slate-900 border border-amber-500/25 rounded-xl overflow-hidden cursor-grab active:cursor-grabbing active:opacity-60 active:scale-95 transition-transform">
-                                    <SpThumbnail itemId={asset.sp_item_id} fileType={asset.file_type} className="h-28" onClick={()=>setDetailAsset({...asset,_srcTab:'design'})} />
-                                    <div className="p-3">
-                                      <div className="text-white text-sm font-medium truncate mb-0.5">{asset.title}</div>
-                                      <div className="text-xs text-slate-500 mb-1">{designer?.name||'—'} · {asset.file_type||'—'}</div>
-                                      {asset.due_date&&<div className="text-xs text-slate-600 mb-2">Due: {asset.due_date}</div>}
-                                      <div className="flex gap-1.5">
-                                        <button onClick={()=>{onSaveDesignAsset({...asset,status:'ready'});showToast(t('des_toast_approved'));}}
-                                          className="flex-1 bg-blue-600/80 hover:bg-blue-600 text-white text-xs py-1.5 rounded-lg font-medium">{t('des_btn_approve_doc')}</button>
-                                        <button onClick={()=>setDetailAsset({...asset,_srcTab:'design'})}
-                                          className="px-3 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs py-1.5 rounded-lg">{t('edit')}</button>
-                                        <MoveMenu asset={asset} fromTab="design" onMove={handleMoveAsset}/>
-                                        <button onClick={()=>{if(confirm(t('des_confirm_delete_asset')))deleteDesign(asset);}} className="px-2 bg-slate-800 hover:bg-red-900/40 text-slate-500 hover:text-red-400 text-xs py-1.5 rounded-lg">×</button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-                        {approved.length>0&&(
-                          <div>
-                            <div className="text-xs text-emerald-400/70 font-medium mb-3 flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block"/>{t('des_section_approved')}
-                            </div>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                              {approved.map(asset=>{
-                                const designer = teamMembers.find(m=>m.id===asset.designer_id);
-                                return (
-                                  <div key={asset.id} draggable onDragStart={()=>setDragInfo({asset,fromTab:'design'})} onDragEnd={()=>setDragInfo(null)} className={`bg-slate-900 border rounded-xl overflow-hidden cursor-grab active:cursor-grabbing active:opacity-60 active:scale-95 transition-transform ${asset.status==='published'?'border-emerald-500/25':'border-blue-500/25'}`}>
-                                    <SpThumbnail itemId={asset.sp_item_id} fileType={asset.file_type} className="h-28" onClick={()=>setDetailAsset({...asset,_srcTab:'design'})} />
-                                    <div className="p-3">
-                                      <div className="flex items-start justify-between gap-1 mb-0.5">
-                                        <div className="text-white text-sm font-medium truncate">{asset.title}</div>
-                                        {statusBadge(asset.status)}
-                                      </div>
-                                      <div className="text-xs text-slate-500 mb-2">{designer?.name||'—'} · {asset.file_type||'—'}</div>
-                                      <div className="flex gap-1.5">
-                                        {asset.status==='ready'&&<button onClick={()=>{onSaveDesignAsset({...asset,status:'published'});showToast(t('des_toast_published'));}} className="flex-1 bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs py-1.5 rounded-lg font-medium">{t('des_btn_publish')}</button>}
-                                        <button onClick={()=>setDetailAsset({...asset,_srcTab:'design'})} className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs py-1.5 rounded-lg">{t('des_details')}</button>
-                                        <MoveMenu asset={asset} fromTab="design" onMove={handleMoveAsset}/>
-                                        <button onClick={()=>{if(confirm(t('des_confirm_delete_asset')))deleteDesign(asset);}} className="px-2 bg-slate-800 hover:bg-red-900/40 text-slate-500 hover:text-red-400 text-xs py-1.5 rounded-lg">×</button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })})()}
-                  {spLive.length===0&&<div className="text-center text-slate-600 py-16">{t('des_empty_design')}</div>}
-                  </>
-                  )}
-                </div>
-              )}
-
-              {/* ── From Client Tab ── */}
-              {activeTab==='from_client'&&(
-                <div>
-                  {!spUser ? (
-                    <div className="text-center text-slate-500 py-20">{t('des_connect_hint')}</div>
-                  ) : spLiveLoad ? (
-                    <div className="text-center text-slate-600 py-20">{t('des_loading_files')}</div>
-                  ) : (
-                  <>
-                  <div className="flex items-center justify-between mb-5">
-                    <div className="text-sm text-slate-500">{t('des_client_count').replace('{{n}}', spLive.length)}</div>
-                    <div className="flex gap-2">
-                      <button onClick={()=>setAddCatModal({type:'client',name:''})} className="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg border border-slate-700">{t('des_add_cat')}</button>
-                      <button onClick={()=>setAddModal({type:'client'})} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">{t('des_add_file')}</button>
-                    </div>
-                  </div>
-                  {(() => {
-                    const liveCats = [...new Set(spLive.map(f=>f._cat))];
-                    const allCats  = [...new Set([...DC_DEFAULT_CATS, ...customCats.client, ...liveCats])];
-                    return allCats.map(cat=>{
-                    const spCatItems = spLive.filter(f=>f._cat===cat);
-                    const items = spCatItems.map(sp=>getMeta(sp,clientAssets));
-                    const isDropTarget = dragOverCat===cat && dragInfo?.fromTab==='from_client' && dragInfo?.asset?.category!==cat;
-                    const isCustomCat = customCats.client.includes(cat);
-                    return (
-                      <div key={cat}
-                        onDragOver={e=>{e.preventDefault();if(dragInfo?.fromTab==='from_client')setDragOverCat(cat);}}
-                        onDragLeave={e=>{if(!e.currentTarget.contains(e.relatedTarget))setDragOverCat(null);}}
-                        onDrop={e=>{e.preventDefault();setDragOverCat(null);if(dragInfo?.fromTab==='from_client'&&dragInfo.asset.category!==cat){handleMoveCat(dragInfo.asset,'from_client',cat);setDragInfo(null);}}}
-                        className={`mb-8 rounded-xl transition-all ${isDropTarget?'ring-2 ring-blue-500/60 bg-blue-500/5 p-3':''}`}>
-                        <div className="flex items-center gap-3 mb-4">
-                          <h3 className={`font-semibold ${isDropTarget?'text-blue-300':'text-white'}`}>{cat}</h3>
-                          <span className="text-xs text-slate-600">{items.length} {t('des_file_count')}</span>
-                          <div className={`flex-1 h-px ${isDropTarget?'bg-blue-500/40':'bg-slate-800'}`}/>
-                          {isDropTarget&&<span className="text-xs text-blue-400 font-medium">{t('des_drop_here')}</span>}
-                          <button onClick={()=>setAddModal({type:'client',category:cat})} className="text-xs w-5 h-5 flex items-center justify-center rounded bg-slate-800 hover:bg-blue-600 text-slate-400 hover:text-white" title={t('des_add_file')}>+</button>
-                          {isCustomCat&&items.length===0&&(
-                            <button onClick={()=>handleDeleteCategory('client',cat)} className="text-xs w-5 h-5 flex items-center justify-center rounded bg-slate-800 hover:bg-red-900/40 text-slate-500 hover:text-red-400" title={t('des_delete_cat')}>×</button>
-                          )}
-                        </div>
-                        {items.length===0&&(
-                          <div className="text-center text-slate-600 text-xs py-6 border border-dashed border-slate-800 rounded-lg mb-2">{t('des_empty_cat')}</div>
-                        )}
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                          {items.map(asset=>(
-                            <div key={asset.id} draggable onDragStart={()=>setDragInfo({asset,fromTab:'from_client'})} onDragEnd={()=>setDragInfo(null)} className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl overflow-hidden cursor-grab active:cursor-grabbing active:opacity-60 active:scale-95 transition-all">
-                              <SpThumbnail itemId={asset.sp_item_id} fileType={asset.file_type} className="h-28" onClick={()=>setDetailAsset({...asset,_srcTab:'from_client'})} />
-                              <div className="p-3">
-                                <div className="text-white text-sm font-medium truncate mb-0.5">{asset.title}</div>
-                                <div className="text-xs text-slate-500 mb-2">{asset.file_type||'—'} · {asset.file_size||'—'}</div>
-                                <div className="flex gap-1.5">
-                                  <a href={asset.sp_web_url||'#'} target="_blank" className="flex-1 bg-blue-600/80 hover:bg-blue-600 text-white text-xs py-1.5 rounded-lg font-medium text-center">{t('des_download')}</a>
-                                  <MoveMenu asset={asset} fromTab="from_client" onMove={handleMoveAsset}/>
-                                  <button onClick={()=>{if(confirm(t('des_confirm_delete')))deleteClient(asset);}} className="px-2 bg-slate-800 hover:bg-red-900/40 text-slate-500 hover:text-red-400 text-xs py-1.5 rounded-lg">×</button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })})()}
-                  {spLive.length===0&&<div className="text-center text-slate-600 py-16">{t('des_empty_client')}</div>}
-                  </>
-                  )}
-                </div>
-              )}
-
-              {/* ── Documents Tab ── */}
-              {activeTab==='documents'&&(
-                <div>
-                  {!spUser ? (
-                    <div className="text-center text-slate-500 py-20">{t('des_connect_hint')}</div>
-                  ) : spLiveLoad ? (
-                    <div className="text-center text-slate-600 py-20">{t('des_loading_files')}</div>
-                  ) : (
-                  <>
-                  <div className="flex items-center justify-between mb-5">
-                    {(() => { const lv = spLive.map(s=>getMeta(s,documents)); return (
-                    <div className="flex gap-4 text-sm text-slate-500">
-                      <span>{t('doc_status_pending')}: <strong className="text-amber-400">{lv.filter(d=>d.status==='pending').length}</strong></span>
-                      <span>{t('doc_status_approved')}: <strong className="text-emerald-400">{lv.filter(d=>d.status==='approved').length}</strong></span>
-                      <span>{t('doc_status_rejected')}: <strong className="text-red-400">{lv.filter(d=>d.status==='rejected').length}</strong></span>
-                    </div>
-                    ); })()}
-                    <div className="flex gap-2">
-                      <button onClick={()=>setAddCatModal({type:'docs',name:''})} className="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg border border-slate-700">{t('des_add_cat')}</button>
-                      <button onClick={()=>setAddModal({type:'doc'})} className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">{t('des_add_doc')}</button>
-                    </div>
-                  </div>
-                  {(() => {
-                    const liveCats = [...new Set(spLive.map(f=>f._cat))];
-                    const allCats  = [...new Set(['Content',...DC_DEFAULT_CATS,...customCats.docs,...liveCats])];
-                    return allCats.map(cat=>{
-                    const spCatItems = spLive.filter(f=>f._cat===cat);
-                    const items = spCatItems.map(sp=>getMeta(sp,documents));
-                    const isDropTarget = dragOverCat===cat && dragInfo?.fromTab==='documents' && dragInfo?.asset?.category!==cat;
-                    const isCustomCat = customCats.docs.includes(cat);
-                    return (
-                      <div key={cat}
-                        onDragOver={e=>{e.preventDefault();if(dragInfo?.fromTab==='documents')setDragOverCat(cat);}}
-                        onDragLeave={e=>{if(!e.currentTarget.contains(e.relatedTarget))setDragOverCat(null);}}
-                        onDrop={e=>{e.preventDefault();setDragOverCat(null);if(dragInfo?.fromTab==='documents'&&dragInfo.asset.category!==cat){handleMoveCat(dragInfo.asset,'documents',cat);setDragInfo(null);}}}
-                        className={`mb-8 rounded-xl transition-all ${isDropTarget?'ring-2 ring-blue-500/60 bg-blue-500/5 p-3':''}`}>
-                        <div className="flex items-center gap-3 mb-4">
-                          <h3 className={`font-semibold ${isDropTarget?'text-blue-300':'text-white'}`}>{cat}</h3>
-                          <span className="text-xs text-slate-600">{items.length} {t('des_doc_count')}</span>
-                          <div className={`flex-1 h-px ${isDropTarget?'bg-blue-500/40':'bg-slate-800'}`}/>
-                          {isDropTarget&&<span className="text-xs text-blue-400 font-medium">{t('des_drop_here')}</span>}
-                          <button onClick={()=>setAddModal({type:'doc',category:cat})} className="text-xs w-5 h-5 flex items-center justify-center rounded bg-slate-800 hover:bg-blue-600 text-slate-400 hover:text-white" title={t('des_add_doc')}>+</button>
-                          {isCustomCat&&items.length===0&&(
-                            <button onClick={()=>handleDeleteCategory('docs',cat)} className="text-xs w-5 h-5 flex items-center justify-center rounded bg-slate-800 hover:bg-red-900/40 text-slate-500 hover:text-red-400" title={t('des_delete_cat')}>×</button>
-                          )}
-                        </div>
-                        {items.length===0&&(
-                          <div className="text-center text-slate-600 text-xs py-6 border border-dashed border-slate-800 rounded-lg mb-2">{t('des_empty_cat')}</div>
-                        )}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {items.map(doc=>{
-                            const dcfg = DOC_STATUS_CFG[doc.status]||DOC_STATUS_CFG.pending;
-                            return (
-                              <div key={doc.id} draggable onDragStart={()=>setDragInfo({asset:doc,fromTab:'documents'})} onDragEnd={()=>setDragInfo(null)} onClick={()=>setDetailAsset({...doc,_srcTab:'documents'})} className={`bg-slate-900 border border-slate-800 border-r-4 rounded-xl p-4 cursor-grab active:cursor-grabbing active:opacity-60 active:scale-95 hover:border-slate-600 transition-all ${dcfg.borderColor}`}>
-                                <div className="flex items-start justify-between mb-2">
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    <span className="text-2xl flex-shrink-0">{fileTypeIcon(doc.file_type)}</span>
-                                    <div className="min-w-0">
-                                      <div className="text-white font-medium text-sm truncate">{doc.title}</div>
-                                      <div className="text-xs text-slate-500">{doc.file_type} · {doc.due_date||'—'}</div>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-1.5 flex-shrink-0 mr-2">
-                                    <span className={`w-2 h-2 rounded-full ${dcfg.dot}`}/>
-                                    <span className="text-xs text-slate-400">{t(dcfg.tKey)}</span>
-                                  </div>
-                                </div>
-                                {(doc.comments||[]).length>0&&(
-                                  <div className="bg-slate-800/50 rounded-lg px-3 py-2 mb-2 text-xs text-slate-400">
-                                    💬 "{doc.comments[doc.comments.length-1]?.text?.slice(0,50)}..."
-                                  </div>
-                                )}
-                                <div className="flex gap-1.5 mt-2">
-                                  {doc.status!=='approved'&&<button onClick={e=>{e.stopPropagation();onSaveDocument({...doc,status:'approved'});showToast(t('des_toast_approved'));}} className="flex-1 bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs py-1.5 rounded-lg font-medium">{t('des_btn_approve_doc')}</button>}
-                                  {doc.status!=='rejected'&&<button onClick={e=>{e.stopPropagation();onSaveDocument({...doc,status:'rejected'});showToast(t('des_toast_rejected'));}} className="flex-1 bg-red-600/80 hover:bg-red-600 text-white text-xs py-1.5 rounded-lg">{t('des_btn_reject')}</button>}
-                                  {doc.status==='approved'&&<button onClick={e=>{e.stopPropagation();onSaveDocument({...doc,status:'pending'});}} className="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs py-1.5 rounded-lg">{t('des_btn_revert_doc')}</button>}
-                                  <button onClick={e=>{e.stopPropagation();setDetailAsset({...doc,_srcTab:'documents'});}} className="px-3 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs py-1.5 rounded-lg">💬</button>
-                                  <button onClick={e=>{e.stopPropagation();if(confirm(t('des_confirm_delete')))deleteDocument(doc);}} className="px-2 bg-slate-800 hover:bg-red-900/40 text-slate-500 hover:text-red-400 text-xs py-1.5 rounded-lg">×</button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })})()}
-                  {spLive.length===0&&<div className="text-center text-slate-600 py-16">{t('des_empty_docs')}</div>}
-                  </>
-                  )}
-                </div>
-              )}
-
-            </>
-          )}
-
-          {/* ── SharePoint File Browser ── */}
-          {activeTab==='sharepoint'&&(
-            <div>
-              {!spUser ? (
-                <div className="flex flex-col items-center justify-center py-24 gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center">
-                    <svg viewBox="0 0 23 23" width="28" height="28"><rect x="1" y="1" width="10" height="10" fill="#1b4a8c"/><rect x="12" y="1" width="10" height="10" fill="#2b6fc6"/><rect x="1" y="12" width="10" height="10" fill="#4fc3f0"/><rect x="12" y="12" width="10" height="10" fill="#8fbbe9"/></svg>
-                  </div>
-                  <p className="text-slate-400 text-sm">{t('des_browse_connect_hint')}</p>
-                </div>
-              ) : (
-                <div>
-                  {/* Breadcrumb + toolbar */}
-                  <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
-                    <div className="flex items-center gap-1 flex-wrap">
-                      <button onClick={()=>spBrowseFetch(null,[])} className="text-blue-400 hover:text-blue-300 text-sm font-medium">WebApp</button>
-                      {spBrowsePath.map((seg,i)=>(
-                        <React.Fragment key={seg.id}>
-                          <span className="text-slate-600 text-sm">/</span>
-                          <button
-                            onClick={()=>spBrowseFetch(seg.id, spBrowsePath.slice(0,i+1))}
-                            className={`text-sm font-medium ${i===spBrowsePath.length-1?'text-white':'text-blue-400 hover:text-blue-300'}`}>
-                            {seg.name}
-                          </button>
-                        </React.Fragment>
-                      ))}
-                      {spBrowseLoad&&<span className="text-slate-500 text-xs ml-2">{t('des_browse_loading_short')}</span>}
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={handleBrowseNewFolder} disabled={spBrowseUploading}
-                        className="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg border border-slate-700 disabled:opacity-50">{t('des_new_folder')}</button>
-                      <label className={`text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer ${spBrowseUploading?'opacity-50 pointer-events-none':''}`}>
-                        {spBrowseUploading ? t('asset_uploading') : t('des_upload_here')}
-                        <input type="file" multiple className="hidden" onChange={e=>{ handleBrowseUpload(e.target.files); e.target.value=''; }} />
-                      </label>
-                    </div>
-                  </div>
-                  {/* File list */}
-                  {spBrowseLoad && spBrowseItems.length===0 ? (
-                    <div className="text-center text-slate-600 py-16">{t('des_browse_loading')}</div>
-                  ) : spBrowseItems.length===0 ? (
-                    <div className="text-center text-slate-600 py-16">{t('des_folder_empty')}</div>
-                  ) : (
-                    <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-                      <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-slate-800 text-xs text-slate-500 font-medium">
-                        <div className="col-span-5">{t('des_col_name')}</div>
-                        <div className="col-span-2 text-center">{t('des_col_type')}</div>
-                        <div className="col-span-2 text-center">{t('des_col_size')}</div>
-                        <div className="col-span-2 text-center">{t('des_col_modified')}</div>
-                        <div className="col-span-1"></div>
-                      </div>
-                      {spBrowseItems.map(item=>{
-                        const isFolder = !!item.folder;
-                        const ext = !isFolder ? (item.name.split('.').pop()||'').toLowerCase() : '';
-                        const fileIcon = isFolder ? '📁'
-                          : ['jpg','jpeg','png','gif','webp','svg'].includes(ext) ? '🖼️'
-                          : ['pdf'].includes(ext) ? '📄'
-                          : ['doc','docx'].includes(ext) ? '📝'
-                          : ['xls','xlsx'].includes(ext) ? '📊'
-                          : ['ppt','pptx'].includes(ext) ? '📑'
-                          : ['mp4','mov','avi','mkv'].includes(ext) ? '🎬'
-                          : ['mp3','wav','aac'].includes(ext) ? '🎵'
-                          : ['zip','rar','7z'].includes(ext) ? '🗜️'
-                          : '📎';
-                        const size = item.size != null ? (item.size < 1024*1024 ? (item.size/1024).toFixed(1)+' KB' : (item.size/1024/1024).toFixed(1)+' MB') : '—';
-                        const modified = item.lastModifiedDateTime ? new Date(item.lastModifiedDateTime).toLocaleDateString('ar-SA',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '—';
-                        const isDropTarget = isFolder && spBrowseDragOver===item.id && spBrowseDrag?.id!==item.id;
-                        const isRenaming = renamingItemId===item.id;
-                        return (
-                          <div key={item.id}
-                            draggable={!isRenaming}
-                            onDragStart={()=>setSpBrowseDrag(item)}
-                            onDragEnd={()=>{setSpBrowseDrag(null);setSpBrowseDragOver(null);}}
-                            onDragOver={e=>{ if(isFolder&&spBrowseDrag&&spBrowseDrag.id!==item.id){ e.preventDefault(); setSpBrowseDragOver(item.id); } }}
-                            onDragLeave={e=>{ if(!e.currentTarget.contains(e.relatedTarget)) setSpBrowseDragOver(null); }}
-                            onDrop={e=>{ e.preventDefault(); setSpBrowseDragOver(null); if(isFolder&&spBrowseDrag&&spBrowseDrag.id!==item.id){ handleBrowseMove(spBrowseDrag,item); setSpBrowseDrag(null); } }}
-                            className={`grid grid-cols-12 gap-2 px-4 py-3 border-b border-slate-800/60 transition-colors items-center group ${isDropTarget?'bg-blue-500/10 ring-1 ring-blue-500/60':'hover:bg-slate-800/40'}`}>
-                            <div className="col-span-5 flex items-center gap-2 min-w-0">
-                              <span className="text-lg flex-shrink-0">{fileIcon}</span>
-                              {isRenaming ? (
-                                <input autoFocus value={renameVal} onChange={e=>setRenameVal(e.target.value)}
-                                  onBlur={()=>handleBrowseRename(item)}
-                                  onKeyDown={e=>{ if(e.key==='Enter') handleBrowseRename(item); if(e.key==='Escape') setRenamingItemId(null); }}
-                                  className="flex-1 min-w-0 bg-slate-800 border border-blue-500 rounded-md px-2 py-0.5 text-sm text-white outline-none" dir="ltr" />
-                              ) : isFolder ? (
-                                <button onClick={()=>spBrowseFetch(item.id,[...spBrowsePath,{id:item.id,name:item.name}])}
-                                  className="text-blue-300 hover:text-blue-200 text-sm font-medium truncate text-left" dir="ltr">
-                                  {item.name}
-                                </button>
-                              ) : (
-                                <a href={item.webUrl} target="_blank" rel="noopener noreferrer"
-                                  className="text-slate-200 hover:text-white text-sm truncate group-hover:underline" dir="ltr">
-                                  {item.name}
-                                </a>
-                              )}
-                              {isDropTarget&&<span className="text-xs text-blue-400 font-medium flex-shrink-0">{t('des_drop_move_here')}</span>}
-                            </div>
-                            <div className="col-span-2 text-center text-xs text-slate-500 uppercase">{isFolder?'Folder':ext||'—'}</div>
-                            <div className="col-span-2 text-center text-xs text-slate-500">{isFolder?`${item.folder.childCount??''} items`:size}</div>
-                            <div className="col-span-2 text-center text-xs text-slate-500">{modified}</div>
-                            <div className="col-span-1 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={()=>{setRenamingItemId(item.id);setRenameVal(item.name);}} title={t('des_rename_title')}
-                                className="text-slate-500 hover:text-blue-400 text-xs w-6 h-6 flex items-center justify-center rounded hover:bg-slate-800">✎</button>
-                              <button onClick={()=>handleBrowseDelete(item)} title={t('des_delete_btn')}
-                                className="text-slate-500 hover:text-red-400 text-xs w-6 h-6 flex items-center justify-center rounded hover:bg-red-900/40">×</button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
+              <span className={depth === 0 ? 'text-blue-400' : 'text-cyan-400'}><Ic name={depth === 0 ? 'projects' : 'folder'} size={14} /></span>
+              <span className="min-w-0 flex-1">
+                <span className={`block truncate text-sm ${depth === 0 ? 'font-semibold' : ''}`} title={label}>{label}</span>
+                {sub && <span className="block truncate text-[11px] text-slate-500">{sub}</span>}
+              </span>
             </div>
-          )}
+            {open && n?.loaded && (n.folders || []).map(f => renderNode(`${path}/${f.name}`, f.name, depth + 1))}
+            {open && depth === 0 && n?.missing && (
+              <div className="text-[11px] text-slate-500 py-1" style={{ paddingInlineStart: 34 }}>{t('des_folder_missing_short')}</div>
+            )}
+          </div>
+        );
+      };
 
-          {/* Detail / Comments Overlay */}
-          {detailAsset&&(
-            <AssetDetailOverlay
-              asset={detailAsset}
-              srcTab={detailAsset._srcTab}
-              teamMembers={teamMembers}
-              categories={detailAsset._srcTab==='documents'?allDocCats:detailAsset._srcTab==='from_client'?allClientCats:allDesignCats}
-              onCategoryChange={async v=>{ await handleMoveCat(detailAsset, detailAsset._srcTab, v); setDetailAsset(p=>({...p, category:v})); }}
-              onUpdate={a=>{
-                if (a._srcTab==='documents') onSaveDocument(a);
-                else if (a._srcTab==='from_client') onSaveClientAsset(a);
-                else onSaveDesignAsset(a);
-                setDetailAsset(a);
-              }}
-              onDelete={a=>{
-                if (a._srcTab==='documents') deleteDocument(a);
-                else if (a._srcTab==='from_client') deleteClient(a);
-                else deleteDesign(a);
-                setDetailAsset(null);
-              }}
-              onClose={()=>setDetailAsset(null)}
-            />
-          )}
+      /* ── cards ── */
+      const actionBtn = (icon, title, onClick, danger) => (
+        <button title={title} onClick={e => { e.stopPropagation(); onClick(); }}
+          className={`w-7 h-7 rounded-full flex items-center justify-center bg-slate-900/85 backdrop-blur text-slate-300 ${danger ? 'hover:text-red-400' : 'hover:text-cyan-300'}`}>
+          <Ic name={icon} size={13} />
+        </button>
+      );
+      const nameOrEditor = (item, folderPath, cls) => renaming?.id === item.id ? (
+        <input autoFocus value={renaming.value} onClick={e => e.stopPropagation()}
+          onChange={e => setRenaming({ id: item.id, value: e.target.value })}
+          onBlur={() => commitRename(item, folderPath)}
+          onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setRenaming(null); }}
+          className="w-full bg-slate-900 border border-blue-500 rounded-md px-2 py-1 text-sm text-white outline-none" />
+      ) : <div className={`truncate ${cls}`} title={item.name}>{item.name}</div>;
 
-          {/* Add Asset Modals */}
-          {addModal?.type==='design'&&(
-            <AssetModal mode="design" categories={allDesignCats} initialCategory={addModal.category} teamMembers={teamMembers}
-              spFolder={spUser&&spPaths ? spPaths.design.root : null} showToast={showToast} onAuthExpired={handleSpSessionExpired}
-              onSave={a=>{ onSaveDesignAsset({...a,projectId:selProjectId}); showToast(t('des_toast_asset_added')); loadCurrentTab(); }}
-              onClose={()=>setAddModal(null)} />
-          )}
-          {addModal?.type==='client'&&(
-            <AssetModal mode="client" categories={allClientCats} initialCategory={addModal.category} teamMembers={teamMembers}
-              spFolder={spUser&&spPaths ? spPaths.from_client.root : null} showToast={showToast} onAuthExpired={handleSpSessionExpired}
-              onSave={a=>{ onSaveClientAsset({...a,projectId:selProjectId}); showToast(t('des_toast_client_added')); loadCurrentTab(); }}
-              onClose={()=>setAddModal(null)} />
-          )}
-          {addModal?.type==='doc'&&(
-            <DocumentModal categories={allDocCats} initialCategory={addModal.category} teamMembers={teamMembers}
-              spFolder={spUser&&spPaths ? spPaths.documents.root : null} showToast={showToast} onAuthExpired={handleSpSessionExpired}
-              onSave={d=>{ onSaveDocument({...d,projectId:selProjectId}); showToast(t('des_toast_doc_added')); loadCurrentTab(); }}
-              onClose={()=>setAddModal(null)} />
-          )}
+      const folderCard = item => {
+        const path = `${selPath}/${item.name}`;
+        return (
+          <div key={item.id} draggable
+            onDragStart={() => setDragItem({ item, fromPath: selPath })} onDragEnd={() => { setDragItem(null); setDropPath(null); }}
+            {...dropProps(path)}
+            onClick={() => openFolder(path)}
+            className={`group relative rounded-2xl border p-4 cursor-pointer transition-all bg-slate-800/60
+              ${dropPath === path ? 'border-cyan-400 ring-2 ring-cyan-400/40' : 'border-slate-700/40 hover:border-blue-500/50'}`}>
+            <div className="w-12 h-12 rounded-xl bg-brand-grad flex items-center justify-center text-white mb-3 shadow-lg shadow-blue-500/20">
+              <Ic name="folder" size={22} />
+            </div>
+            {nameOrEditor(item, selPath, 'text-sm font-semibold text-white')}
+            <div className="text-xs text-slate-500 mt-0.5">{t('des_items_n').replace('{{n}}', item.folder?.childCount ?? 0)}</div>
+            <div className="absolute top-2 end-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {actionBtn('edit2', t('des_rename'), () => setRenaming({ id: item.id, value: item.name }))}
+              {actionBtn('trash', t('des_delete_btn'), () => removeItem(item, selPath), true)}
+            </div>
+          </div>
+        );
+      };
 
-          {/* Add Category Modal */}
-          {addCatModal&&(
-            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-              <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-80">
-                <h3 className="text-white font-bold mb-4">{t('des_add_cat_title')}</h3>
-                <input className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm mb-4"
-                  value={addCatModal.name} onChange={e=>setAddCatModal(p=>({...p,name:e.target.value}))}
-                  placeholder={t('des_cat_name_ph')} onKeyDown={e=>e.key==='Enter'&&document.getElementById('addCatBtn')?.click()} />
-                <div className="flex gap-2">
-                  <button id="addCatBtn" onClick={()=>{
-                    const name = addCatModal.name.trim();
-                    if (!name) return;
-                    setCustomCats(p=>({...p,[addCatModal.type]:[...p[addCatModal.type],name]}));
-                    setAddCatModal(null);
-                    showToast(t('des_toast_cat_added'));
-                  }} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2 text-sm font-medium">{t('add')}</button>
-                  <button onClick={()=>setAddCatModal(null)} className="px-4 bg-slate-800 text-slate-400 rounded-lg py-2 text-sm">{t('cancel')}</button>
-                </div>
+      const fileCard = item => {
+        const rec = recordFor(item, selPath);
+        const kind = rec._srcTab;
+        const tracked = rec._saved || !!DC_KIND_BY_FOLDER[(selPath.split('/')[1] || '').toLowerCase()];
+        const st = tracked && kind === 'design' ? DESIGN_STATUSES.find(s => s.id === rec.status) : null;
+        const dst = tracked && kind === 'documents' ? DOC_STATUS_CFG[rec.status] : null;
+        const person = memberName(kind === 'documents' ? rec.created_by_id : rec.designer_id);
+        return (
+          <div key={item.id} draggable
+            onDragStart={() => setDragItem({ item, fromPath: selPath })} onDragEnd={() => { setDragItem(null); setDropPath(null); }}
+            onClick={() => renaming?.id !== item.id && setDetail(rec)}
+            className="group relative rounded-2xl border border-slate-700/40 bg-slate-800/60 overflow-hidden cursor-pointer transition-all hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10">
+            <div className="aspect-[4/3] bg-slate-900 overflow-hidden flex items-center justify-center">
+              <SpThumbnail itemId={item.id} fileType={dcExt(item.name)} className="w-full h-full" />
+            </div>
+            <div className="p-3">
+              {nameOrEditor(item, selPath, 'text-sm font-medium text-white')}
+              <div className="flex items-center gap-2 mt-2 min-h-[22px]">
+                {st && <span className={`text-[11px] px-2 py-0.5 rounded-full border whitespace-nowrap shrink-0 ${st.badge}`}>{t(st.tKey)}</span>}
+                {dst && <span className="flex items-center gap-1 text-[11px] text-slate-400 whitespace-nowrap shrink-0"><span className={`w-1.5 h-1.5 rounded-full ${dst.dot}`} />{t(dst.tKey)}</span>}
+                {!st && !dst && <span className="text-[11px] text-slate-500">{dcExt(item.name) || '—'} · {dcFmtSize(item.size)}</span>}
+                {person && (
+                  <span className="ms-auto flex items-center gap-1 min-w-0" title={person}>
+                    <span className="ml-avatar w-5 h-5 rounded-full text-[10px] font-semibold flex items-center justify-center shrink-0">{person.charAt(0)}</span>
+                    <span className="text-[11px] text-slate-400 truncate">{person.split(' ')[0]}</span>
+                  </span>
+                )}
               </div>
             </div>
+            <div className="absolute top-2 end-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {actionBtn('link2', t('des_open_sp'), () => openInSharePoint(item))}
+              {actionBtn('edit2', t('des_rename'), () => setRenaming({ id: item.id, value: item.name }))}
+              {actionBtn('trash', t('des_delete_btn'), () => removeItem(item, selPath), true)}
+            </div>
+          </div>
+        );
+      };
+
+      const plusTile = (
+        <button onClick={() => fileInputRef.current?.click()} disabled={!selPath}
+          className="rounded-2xl border-2 border-dashed border-slate-700 hover:border-cyan-400/70 hover:bg-cyan-500/5 transition-all flex flex-col items-center justify-center gap-2 min-h-[180px] text-slate-500 hover:text-cyan-300">
+          <span className="w-12 h-12 rounded-full border-2 border-current flex items-center justify-center"><Ic name="plus" size={22} /></span>
+          <span className="text-xs font-medium">{t('des_upload')}</span>
+        </button>
+      );
+
+      /* ── render ── */
+      return (
+        <div>
+          {/* Page header */}
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+            <div>
+              <h1 className="text-2xl font-bold text-white" style={{fontFamily:"'IBM Plex Sans Arabic', sans-serif"}}>Design & Content</h1>
+              <p className="text-slate-500 text-sm mt-0.5">{t('des_subtitle')}</p>
+            </div>
+            <div className="flex items-center gap-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg px-3 py-1.5" title={t('des_sp_server_tip')}>
+              <span className="w-2 h-2 rounded-full bg-cyan-400" />
+              <span className="text-cyan-300 text-xs font-medium">SharePoint · WebApp</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-4 items-start">
+            {/* ── Tree (start side: right in Arabic) ── */}
+            <aside className="w-full md:w-72 shrink-0 bg-slate-800/60 border border-slate-700/40 rounded-2xl p-3 md:sticky md:top-4 md:max-h-[calc(100vh-7rem)] flex flex-col">
+              <div className="flex items-center justify-between px-1 mb-2">
+                <span className="micro-label">{t('des_tree_title')}</span>
+                <span className="text-[11px] text-slate-500">{roots.length}</span>
+              </div>
+              <div className="relative mb-2">
+                <span className="absolute top-1/2 -translate-y-1/2 start-3 text-slate-500 pointer-events-none"><Ic name="search" size={13} /></span>
+                <input value={treeQuery} onChange={e => setTreeQuery(e.target.value)} placeholder={t('des_tree_search')}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg ps-8 pe-3 py-2 text-sm text-white placeholder-slate-500 outline-none" />
+              </div>
+              <div className="overflow-y-auto -mx-1 px-1 space-y-0.5 flex-1">
+                {roots.length === 0 && <div className="text-slate-500 text-sm text-center py-6">{t('des_no_projects')}</div>}
+                {shownRoots.map(r => renderNode(r.path, r.project.name, 0, r.client?.name))}
+              </div>
+            </aside>
+
+            {/* ── Folder view ── */}
+            <section className="flex-1 min-w-0 w-full relative"
+              onDragOver={e => { if (!dragItem && [...(e.dataTransfer?.types || [])].includes('Files') && selPath) { e.preventDefault(); setFileDrop(true); } }}
+              onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setFileDrop(false); }}
+              onDrop={e => { if (dragItem) return; e.preventDefault(); setFileDrop(false); uploadFiles(e.dataTransfer.files); }}>
+              <input ref={fileInputRef} type="file" multiple className="hidden"
+                onChange={e => { uploadFiles(e.target.files); e.target.value = ''; }} />
+
+              {!selPath ? (
+                <div className="bg-slate-800/60 border border-slate-700/40 rounded-2xl p-12 text-center text-slate-500">{t('des_no_projects')}</div>
+              ) : (
+                <div className="bg-slate-800/60 border border-slate-700/40 rounded-2xl p-5 min-h-[420px]">
+                  {/* breadcrumb + title + actions */}
+                  <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1 text-xs text-slate-500 mb-1">
+                        {crumbs.map((c, i) => (
+                          <React.Fragment key={i}>
+                            {i > 0 && <span className="opacity-60">{isRTL ? '‹' : '›'}</span>}
+                            <button onClick={() => openFolder(crumbs.slice(0, i + 1).join('/'))}
+                              {...dropProps(crumbs.slice(0, i + 1).join('/'))}
+                              className={`hover:text-cyan-300 truncate max-w-[180px] ${i === crumbs.length - 1 ? 'text-slate-300' : ''}`}>{c}</button>
+                          </React.Fragment>
+                        ))}
+                      </div>
+                      <h2 className="text-xl font-semibold text-white truncate" style={{fontFamily:"'IBM Plex Sans Arabic', sans-serif"}}>{crumbs[crumbs.length - 1]}</h2>
+                      {node?.loaded && !node.missing && (
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          {t('des_count').replace('{{f}}', node.folders.length).replace('{{n}}', node.files.length)}
+                          {selRoot?.client?.name && crumbs.length === 1 && <> · {selRoot.client.name}</>}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => refresh()} disabled={node?.loading} title={t('des_refresh')}
+                        className="w-9 h-9 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 flex items-center justify-center disabled:opacity-50">
+                        <span className={node?.loading ? 'animate-spin' : ''}><Ic name="refresh" size={15} /></span>
+                      </button>
+                      <button onClick={newFolder} disabled={node?.missing}
+                        className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 disabled:opacity-40">
+                        <Ic name="folder_plus" size={15} /> {t('des_folder_new')}
+                      </button>
+                      <button onClick={() => fileInputRef.current?.click()} disabled={!!uploading}
+                        className="flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium disabled:opacity-60">
+                        <Ic name="upload" size={15} /> {uploading ? t('des_uploading_n').replace('{{n}}', uploading) : t('des_upload')}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* body */}
+                  {!node || (node.loading && !node.loaded) ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                      {Array.from({ length: 8 }).map((_, i) => <div key={i} className="rounded-2xl bg-slate-700/30 animate-pulse min-h-[180px]" />)}
+                    </div>
+                  ) : node.missing ? (
+                    <div className="text-center py-14 px-6">
+                      <div className="w-14 h-14 mx-auto rounded-2xl bg-brand-grad flex items-center justify-center text-white mb-4"><Ic name="folder" size={26} /></div>
+                      <div className="text-white font-medium">{t('des_folder_missing')}</div>
+                      <div className="text-slate-500 text-sm mt-1 max-w-md mx-auto">{t('des_folder_missing_hint')}</div>
+                      <div className="flex justify-center gap-2 mt-5">
+                        {selRoot && crumbs.length === 1 && (
+                          <button onClick={() => setupProject(selRoot)} disabled={settingUp}
+                            className="text-sm px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium disabled:opacity-60">
+                            {settingUp ? '⟳' : t('des_create_structure')}
+                          </button>
+                        )}
+                        <button onClick={() => fileInputRef.current?.click()}
+                          className="text-sm px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200">{t('des_upload')}</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                        {node.folders.map(folderCard)}
+                        {node.files.map(fileCard)}
+                        {plusTile}
+                      </div>
+                      {!node.folders.length && !node.files.length && (
+                        <div className="text-center text-slate-500 text-sm mt-6">{t('des_empty_folder')}</div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* OS-file drop overlay */}
+              {fileDrop && (
+                <div className="absolute inset-0 rounded-2xl border-2 border-dashed border-cyan-400 bg-cyan-500/10 backdrop-blur-[2px] flex items-center justify-center pointer-events-none z-10">
+                  <div className="flex flex-col items-center gap-2 text-cyan-200">
+                    <Ic name="upload" size={30} />
+                    <span className="text-sm font-medium">{t('des_drop_files').replace('{{name}}', crumbs[crumbs.length - 1] || '')}</span>
+                  </div>
+                </div>
+              )}
+            </section>
+          </div>
+
+          {/* Details / status / comments for a file */}
+          {detail && (
+            <AssetDetailOverlay
+              asset={detail}
+              srcTab={detail._srcTab}
+              teamMembers={teamMembers}
+              categories={catOptionsFor(detail)}
+              onCategoryChange={async v => {
+                const d = detail; setDetail(null);
+                await moveItem(d._spItem, d._folderPath, `${kindRoot(d._folderPath)}/${v}`);
+              }}
+              onUpdate={a => { lists[a._srcTab].save(clean(a)); setDetail({ ...a, _saved: true }); }}
+              onDelete={a => { setDetail(null); removeItem(a._spItem, a._folderPath, true); }}
+              onClose={() => setDetail(null)}
+            />
           )}
         </div>
       );
