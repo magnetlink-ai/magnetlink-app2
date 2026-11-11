@@ -2021,9 +2021,27 @@
       no_permission:   'SharePoint: you do not have access to Design & Content',
     };
 
+    /* Passwords used to live only in this browser's localStorage for some accounts, so the
+       server (and the sharepoint function) can't verify them. On sign-in / session restore,
+       copy the signed-in user's local password up — only when the server has none, so an
+       admin reset made elsewhere is never overwritten. Temporary until Supabase Auth. */
+    let _pwSyncPromise = Promise.resolve();
+    const syncPasswordToServer = (email) => {
+      _pwSyncPromise = (async () => {
+        try {
+          const key = (email || '').toLowerCase().trim();
+          const local = key && JSON.parse(localStorage.getItem('bms_passwords') || '{}')[key];
+          if (!local) return;
+          const rec = await db.loadOne('user_passwords', key);
+          if (!rec?.password) await db.save('user_passwords', { id: key, password: local });
+        } catch (_) {}
+      })();
+    };
+
     const spAuthToken = async (force = false) => {
       const email = (_currentBmsUserEmail || '').toLowerCase().trim();
       if (!email) throw spError('SharePoint: not signed in', 'SP_SESSION_EXPIRED');
+      await _pwSyncPromise;
       if (!force && _spSession && _spSession.email === email && _spSession.exp > Date.now() + 60000) return _spSession.token;
       const ps = JSON.parse(localStorage.getItem('bms_passwords') || '{}');
       const res = await fetch(`${SP_FN()}?action=login`, {
@@ -14869,6 +14887,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9}
       const handleLogin = (user, skipPageReset) => {
         _currentBmsUserId = user.id;
         _currentBmsUserEmail = user.email || null;
+        syncPasswordToServer(user.email);
         setCurrentUser(user);
         localStorage.setItem('bms_session_user', user.id);
         tryAutoLinkMicrosoft(user.id);
